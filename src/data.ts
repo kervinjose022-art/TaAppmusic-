@@ -125,21 +125,21 @@ export const VIP_TICKETS: VipFeature[] = [
   },
   {
     name: 'VIP 2',
-    price: '15 USD o Activo',
+    price: '150 USD o Activo',
     bonusMultiplier: 1.5,
     badgeColor: 'bg-purple-900/30 text-purple-300 border-purple-500/30',
     glowColor: 'shadow-purple-500/20'
   },
   {
     name: 'VIP 3',
-    price: '40 USD o Premium',
+    price: '400 USD o Premium',
     bonusMultiplier: 2.2,
     badgeColor: 'bg-amber-950/40 text-amber-300 border-amber-500/30',
     glowColor: 'shadow-amber-500/25'
   },
   {
     name: 'VIP 4',
-    price: '100 USD o Élite',
+    price: '1000 USD o Élite',
     bonusMultiplier: 3.5,
     badgeColor: 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30',
     glowColor: 'shadow-emerald-500/30 font-extrabold'

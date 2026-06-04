@@ -31,7 +31,7 @@ export default function App() {
       }
     }
     return {
-      username: 'kervin_flow',
+      username: 'usuario_vip',
       email: '',
       password: '',
       vipLevel: 'VIP 1',
@@ -56,7 +56,7 @@ export default function App() {
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    const name = inputUsername.trim().toLowerCase() || 'invitado_flow';
+    const name = inputUsername.trim().toLowerCase() || 'invitado_vip';
     const updated: UserProfile = {
       username: name,
       email: inputEmail,
@@ -142,7 +142,7 @@ export default function App() {
                   <input
                     type="text"
                     required
-                    placeholder="Ej. kervin_flow"
+                    placeholder="Ej. melodia_tapp"
                     value={inputUsername}
                     onChange={(e) => setInputUsername(e.target.value)}
                     className="w-full text-xs font-semibold bg-black border border-[#39FF14]/30 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
@@ -195,9 +195,9 @@ export default function App() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
                     {([
                       { name: 'VIP 1', price: 'Gratis' },
-                      { name: 'VIP 2', price: '$15 USD' },
-                      { name: 'VIP 3', price: '$40 USD' },
-                      { name: 'VIP 4', price: '$100 USD' }
+                      { name: 'VIP 2', price: '$150 USD' },
+                      { name: 'VIP 3', price: '$400 USD' },
+                      { name: 'VIP 4', price: '$1000 USD' }
                     ]).map(v => (
                       <button
                         key={v.name}
