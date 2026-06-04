@@ -22,7 +22,13 @@ export interface PlaybackState {
   isShuffled: boolean;
 }
 
-export type VipLevel = 'VIP 1' | 'VIP 2' | 'VIP 3' | 'VIP 4';
+export type VipLevel = 
+  | 'VIP ORO 10$'
+  | 'VIP ORO 20$'
+  | 'VIP RUBÍ 40$'
+  | 'VIP DIAMANTE 120$'
+  | 'VIP PLATINO 420$'
+  | 'VIP SÚPER VIP 1000$';
 
 export interface VipFeature {
   name: VipLevel;

@@ -30,7 +30,15 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
   });
 
   // VIP numbers to check locker status
-  const getVipRank = (level: VipLevel) => parseInt(level.split(' ')[1], 10);
+  const VIP_RANK_MAPPING: Record<VipLevel, number> = {
+    'VIP ORO 10$': 1,
+    'VIP ORO 20$': 2,
+    'VIP RUBÍ 40$': 3,
+    'VIP DIAMANTE 120$': 4,
+    'VIP PLATINO 420$': 5,
+    'VIP SÚPER VIP 1000$': 6,
+  };
+  const getVipRank = (level: VipLevel) => VIP_RANK_MAPPING[level] || 1;
   const userVipRank = getVipRank(userProfile.vipLevel);
 
   // Core handler: Click to "Hacer Tarea" (Do Task) with fancy simulated loader
@@ -195,13 +203,17 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
                       {task.category}
                     </span>
                     <span className={`px-2 py-0.5 rounded text-[9px] font-bold font-mono tracking-wider uppercase border ${
-                      task.vipRequired === 'VIP 4' 
-                        ? 'border-emerald-500/30 text-emerald-300' 
-                        : task.vipRequired === 'VIP 3'
-                        ? 'border-amber-500/30 text-amber-300'
-                        : task.vipRequired === 'VIP 2'
-                        ? 'border-purple-500/30 text-purple-300'
-                        : 'border-[#39FF14]/25 text-[#39FF14]'
+                      task.vipRequired === 'VIP SÚPER VIP 1000$' 
+                        ? 'border-emerald-550/40 text-emerald-300 bg-emerald-500/5 font-black' 
+                        : task.vipRequired === 'VIP PLATINO 420$'
+                        ? 'border-purple-500/30 text-purple-300 bg-purple-500/5'
+                        : task.vipRequired === 'VIP DIAMANTE 120$'
+                        ? 'border-sky-500/30 text-sky-400 bg-sky-500/5'
+                        : task.vipRequired === 'VIP RUBÍ 40$'
+                        ? 'border-red-500/30 text-red-400 bg-red-400/5'
+                        : task.vipRequired === 'VIP ORO 20$'
+                        ? 'border-yellow-400/35 text-yellow-300 bg-yellow-400/5'
+                        : 'border-yellow-500/30 text-yellow-500 bg-yellow-500/5'
                     }`}>
                       {task.vipRequired}
                     </span>

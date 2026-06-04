@@ -34,7 +34,7 @@ export default function App() {
       username: 'usuario_vip',
       email: '',
       password: '',
-      vipLevel: 'VIP 1',
+      vipLevel: 'VIP ORO 10$',
       earnings: 25.50,
       completedTaskIds: ['task_1'],
       isRegistered: false // prompts registration card first
@@ -52,17 +52,24 @@ export default function App() {
   const [inputEmail, setInputEmail] = useState('');
   const [inputPassword, setInputPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedInitialVip, setSelectedInitialVip] = useState<VipLevel>('VIP 1');
+  const [selectedInitialVip, setSelectedInitialVip] = useState<VipLevel>('VIP ORO 10$');
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     const name = inputUsername.trim().toLowerCase() || 'invitado_vip';
+    let startEarnings = 10.00;
+    if (selectedInitialVip === 'VIP ORO 20$') startEarnings = 20.00;
+    else if (selectedInitialVip === 'VIP RUBÍ 40$') startEarnings = 40.00;
+    else if (selectedInitialVip === 'VIP DIAMANTE 120$') startEarnings = 120.00;
+    else if (selectedInitialVip === 'VIP PLATINO 420$') startEarnings = 420.00;
+    else if (selectedInitialVip === 'VIP SÚPER VIP 1000$') startEarnings = 1000.00;
+
     const updated: UserProfile = {
       username: name,
       email: inputEmail,
       password: inputPassword,
       vipLevel: selectedInitialVip,
-      earnings: selectedInitialVip === 'VIP 1' ? 10.00 : selectedInitialVip === 'VIP 2' ? 50.00 : selectedInitialVip === 'VIP 3' ? 120.00 : 350.00,
+      earnings: startEarnings,
       completedTaskIds: [],
       isRegistered: true
     };
@@ -190,30 +197,32 @@ export default function App() {
 
                 <div className="space-y-1 text-left">
                   <label className="text-[10px] uppercase font-mono tracking-widest text-purple-400 font-bold block">
-                    Selecciona Nivel VIP Inicial (Ver Precios de Activación)
+                    Selecciona Nivel VIP Inicial (Precios de Activación Oficial)
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
                     {([
-                      { name: 'VIP 1', price: 'Gratis' },
-                      { name: 'VIP 2', price: '$150 USD' },
-                      { name: 'VIP 3', price: '$400 USD' },
-                      { name: 'VIP 4', price: '$1000 USD' }
+                      { name: 'VIP ORO 10$', price: '$10 USD' },
+                      { name: 'VIP ORO 20$', price: '$20 USD' },
+                      { name: 'VIP RUBÍ 40$', price: '$40 USD' },
+                      { name: 'VIP DIAMANTE 120$', price: '$120 USD' },
+                      { name: 'VIP PLATINO 420$', price: '$420 USD' },
+                      { name: 'VIP SÚPER VIP 1000$', price: '$1000 USD' }
                     ]).map(v => (
                       <button
                         key={v.name}
                         type="button"
                         onClick={() => setSelectedInitialVip(v.name as VipLevel)}
-                        className={`p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border flex flex-col items-center justify-center gap-1 uppercase ${
+                        className={`p-3 rounded-xl text-[11px] font-bold transition-all cursor-pointer border flex flex-col items-center justify-center gap-1 uppercase ${
                           selectedInitialVip === v.name
                             ? 'bg-purple-950/40 text-white border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.4)] bg-radial'
-                            : 'bg-zinc-950 text-gray-500 border-zinc-800 hover:border-zinc-700/60'
+                            : 'bg-zinc-950 text-gray-400 border-zinc-800 hover:border-zinc-700/60'
                         }`}
                       >
-                        <span className="font-extrabold tracking-wider">{v.name}</span>
+                        <span className="font-extrabold tracking-tight text-center">{v.name}</span>
                         <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded leading-none ${
                           selectedInitialVip === v.name
                             ? 'bg-purple-900/50 text-purple-200'
-                            : 'bg-zinc-900/50 text-zinc-600'
+                            : 'bg-zinc-900/50 text-zinc-500'
                         }`}>
                           {v.price}
                         </span>
@@ -435,23 +444,25 @@ export default function App() {
                 <p className="text-[11px] text-zinc-400">Prueba los diferentes niveles para ver tareas y Reels asociados.</p>
               </div>
 
-              <div className="space-y-2 pt-2 text-left">
+              <div className="space-y-2 pt-2 text-left max-h-[350px] overflow-y-auto pr-1">
                 {[
-                  { lvl: 'VIP 1', desc: 'Tareas básicas de $5.5 y $8', bonus: 'Bono x1.0', col: 'text-zinc-300' },
-                  { lvl: 'VIP 2', desc: 'Tareas activas de $12 y $15', bonus: 'Bono x1.5', col: 'text-purple-400' },
-                  { lvl: 'VIP 3', desc: 'Video-anuncios de $24 y $35', bonus: 'Bono x2.2', col: 'text-amber-400' },
-                  { lvl: 'VIP 4', desc: 'Misiones supremas de $50 y $75', bonus: 'Bono x3.5', col: 'text-emerald-400' }
+                  { lvl: 'VIP ORO 10$', desc: 'Tareas de $5.50 y $8.00', bonus: 'Bono x1.0', col: 'text-yellow-505' },
+                  { lvl: 'VIP ORO 20$', desc: 'Tareas de $12.00 y $15.50', bonus: 'Bono x1.5', col: 'text-yellow-400' },
+                  { lvl: 'VIP RUBÍ 40$', desc: 'Tareas de $24.00 y $35.00', bonus: 'Bono x2.2', col: 'text-red-400' },
+                  { lvl: 'VIP DIAMANTE 120$', desc: 'Misiones de $50.00 y $75.00', bonus: 'Bono x3.5', col: 'text-sky-400 border border-sky-500/20 px-1 rounded' },
+                  { lvl: 'VIP PLATINO 420$', desc: 'Misiones de $150.00 y $220.00', bonus: 'Bono x5.0', col: 'text-purple-400 border border-purple-500/20 px-1 rounded' },
+                  { lvl: 'VIP SÚPER VIP 1000$', desc: 'Ganancias de $450.00 y $600.00', bonus: 'Bono x8.0', col: 'text-emerald-400 font-extrabold border border-emerald-500/35 px-1 rounded' }
                 ].map((item) => (
                   <button
                     key={item.lvl}
                     onClick={() => handleUpgradeVip(item.lvl as VipLevel)}
-                    className="w-full p-3 rounded-xl border border-white/5 bg-black hover:border-purple-500/50 transition-all flex items-center justify-between cursor-pointer"
+                    className="w-full p-2.5 rounded-xl border border-white/5 bg-black hover:border-purple-500/50 transition-all flex items-center justify-between cursor-pointer"
                   >
-                    <div>
-                      <p className={`text-xs font-black uppercase ${item.col}`}>{item.lvl}</p>
-                      <p className="text-[10px] text-zinc-500">{item.desc}</p>
+                    <div className="pr-2">
+                      <p className={`text-[11px] font-black uppercase ${item.col}`}>{item.lvl}</p>
+                      <p className="text-[9px] text-zinc-500 leading-tight">{item.desc}</p>
                     </div>
-                    <span className="text-[10px] font-mono font-bold bg-white/5 px-2 py-0.5 rounded text-white shrink-0">
+                    <span className="text-[9px] font-mono font-bold bg-white/5 px-2 py-0.5 rounded text-white shrink-0">
                       {item.bonus}
                     </span>
                   </button>

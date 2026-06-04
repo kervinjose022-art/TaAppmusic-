@@ -13,7 +13,7 @@ interface VipReelsProps {
 export default function VipReels({ currentVip }: VipReelsProps) {
   // Let's copy initial database so user can like individually
   const [reels, setReels] = useState<Reel[]>(REELS_DATABASE);
-  const [activeTab, setActiveTab] = useState<VipLevel>('VIP 1');
+  const [activeTab, setActiveTab] = useState<VipLevel>('VIP ORO 10$');
   
   // Track active playing reel ID
   const [playingReelId, setPlayingReelId] = useState<string | null>(null);
@@ -142,8 +142,15 @@ export default function VipReels({ currentVip }: VipReelsProps) {
       </div>
 
       {/* Selector VIP Tabs */}
-      <div className="grid grid-cols-4 gap-1 sm:gap-2 mb-6">
-        {(['VIP 1', 'VIP 2', 'VIP 3', 'VIP 4'] as VipLevel[]).map(lvl => {
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2 mb-6">
+        {([
+          'VIP ORO 10$', 
+          'VIP ORO 20$', 
+          'VIP RUBÍ 40$', 
+          'VIP DIAMANTE 120$', 
+          'VIP PLATINO 420$', 
+          'VIP SÚPER VIP 1000$'
+        ] as VipLevel[]).map(lvl => {
           const isActive = activeTab === lvl;
           const isUserLevel = currentVip === lvl;
 

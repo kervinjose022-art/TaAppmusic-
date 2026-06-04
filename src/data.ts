@@ -117,32 +117,46 @@ export const TRACKS: Track[] = [
 
 export const VIP_TICKETS: VipFeature[] = [
   {
-    name: 'VIP 1',
-    price: 'Gratis o Inicial',
+    name: 'VIP ORO 10$',
+    price: '$10 USD',
     bonusMultiplier: 1.0,
-    badgeColor: 'bg-zinc-800 text-zinc-100 border-zinc-700',
-    glowColor: 'shadow-zinc-500/10'
+    badgeColor: 'bg-yellow-950/40 text-yellow-500 border-yellow-500/30',
+    glowColor: 'shadow-yellow-500/10'
   },
   {
-    name: 'VIP 2',
-    price: '150 USD o Activo',
+    name: 'VIP ORO 20$',
+    price: '$20 USD',
     bonusMultiplier: 1.5,
-    badgeColor: 'bg-purple-900/30 text-purple-300 border-purple-500/30',
-    glowColor: 'shadow-purple-500/20'
+    badgeColor: 'bg-yellow-900/40 text-yellow-400 border-yellow-400/40',
+    glowColor: 'shadow-yellow-400/20'
   },
   {
-    name: 'VIP 3',
-    price: '400 USD o Premium',
+    name: 'VIP RUBÍ 40$',
+    price: '$40 USD',
     bonusMultiplier: 2.2,
-    badgeColor: 'bg-amber-950/40 text-amber-300 border-amber-500/30',
-    glowColor: 'shadow-amber-500/25'
+    badgeColor: 'bg-rose-950/40 text-red-400 border-red-500/30',
+    glowColor: 'shadow-red-500/25'
   },
   {
-    name: 'VIP 4',
-    price: '1000 USD o Élite',
+    name: 'VIP DIAMANTE 120$',
+    price: '$120 USD',
     bonusMultiplier: 3.5,
-    badgeColor: 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30',
-    glowColor: 'shadow-emerald-500/30 font-extrabold'
+    badgeColor: 'bg-sky-950/40 text-sky-400 border-sky-500/30',
+    glowColor: 'shadow-sky-500/30 font-extrabold'
+  },
+  {
+    name: 'VIP PLATINO 420$',
+    price: '$420 USD',
+    bonusMultiplier: 5.0,
+    badgeColor: 'bg-purple-950/40 text-purple-300 border-purple-500/30 font-extrabold',
+    glowColor: 'shadow-purple-500/35 font-extrabold'
+  },
+  {
+    name: 'VIP SÚPER VIP 1000$',
+    price: '$1000 USD',
+    bonusMultiplier: 8.0,
+    badgeColor: 'bg-gradient-to-r from-purple-900/30 to-yellow-500/10 text-emerald-400 border-emerald-500/40 font-extrabold',
+    glowColor: 'shadow-emerald-500/45 font-extrabold'
   }
 ];
 
@@ -153,7 +167,7 @@ export const TASKS_DATABASE: UserTask[] = [
     description: 'Reproduce la canción de introducción "Intro: TaAppMusic" durante al menos 30 segundos para sintonizar el flow.',
     rewardValue: 5.50,
     isCompleted: false,
-    vipRequired: 'VIP 1',
+    vipRequired: 'VIP ORO 10$',
     category: 'Escucha'
   },
   {
@@ -162,16 +176,16 @@ export const TASKS_DATABASE: UserTask[] = [
     description: 'Copia el enlace de lanzamiento oficial de nuestra plataforma y compártelo por WhatsApp o Telegram.',
     rewardValue: 8.00,
     isCompleted: false,
-    vipRequired: 'VIP 1',
+    vipRequired: 'VIP ORO 10$',
     category: 'Share'
   },
   {
     id: 'task_3',
-    title: 'Verificar Video Promocional VIP 2',
-    description: 'Visualiza la presentación animada de DJ TaApp de 15 segundos para desbloquear la recompensa acelerada de nivel VIP 2.',
+    title: 'Verificar Video Promocional ORO 20$',
+    description: 'Visualiza la presentación animada de DJ TaApp de 15 segundos para desbloquear la recompensa acelerada.',
     rewardValue: 12.00,
     isCompleted: false,
-    vipRequired: 'VIP 2',
+    vipRequired: 'VIP ORO 20$',
     category: 'Ad Watch'
   },
   {
@@ -180,49 +194,85 @@ export const TASKS_DATABASE: UserTask[] = [
     description: 'Dale like y marca Favorito en la canción "Flow Dominicano (Urban Beat)" de La Sensación.',
     rewardValue: 15.50,
     isCompleted: false,
-    vipRequired: 'VIP 2',
+    vipRequired: 'VIP ORO 20$',
     category: 'Rate'
   },
   {
     id: 'task_5',
-    title: 'Auditoría de Audio VIP 3',
+    title: 'Auditoría de Audio RUBÍ 40$',
     description: 'Comenta y opina sobre el Bass Boost del tema "Trap de las Calles" en los comentarios del reproductor.',
     rewardValue: 24.00,
     isCompleted: false,
-    vipRequired: 'VIP 3',
+    vipRequired: 'VIP RUBÍ 40$',
     category: 'Rate'
   },
   {
     id: 'task_6',
-    title: 'Ver Anuncio Premium de Auriculares LED',
-    description: 'Mira el anuncio del socio auspiciador de los audífonos con luces violetas y doradas (10 seg).',
+    title: 'Ver Anuncio de Auriculares LED',
+    description: 'Mira el anuncio comercial exclusivo del socio auspiciador de los audífonos con luces (10 seg).',
     rewardValue: 35.00,
     isCompleted: false,
-    vipRequired: 'VIP 3',
+    vipRequired: 'VIP RUBÍ 40$',
     category: 'Ad Watch'
   },
   {
     id: 'task_7',
-    title: 'Embajador Élite: Promoción República Dominicana',
+    title: 'Embajador Diamante: Promoción Santo Domingo',
     description: 'Comparte el enlace de la app en tus estados públicos con un mensaje que incluya el hashtag #Tappmusic.',
     rewardValue: 50.00,
     isCompleted: false,
-    vipRequired: 'VIP 4',
+    vipRequired: 'VIP DIAMANTE 120$',
     category: 'Share'
   },
   {
     id: 'task_8',
-    title: 'Escucha Suprema VIP 4: Deep House',
+    title: 'Escucha Suprema Diamante: Deep House',
     description: 'Escucha el set completo de "Deep House Sunset" por Marina Club para recargar el fondo de regalías.',
     rewardValue: 75.00,
     isCompleted: false,
-    vipRequired: 'VIP 4',
+    vipRequired: 'VIP DIAMANTE 120$',
     category: 'Escucha'
+  },
+  {
+    id: 'task_9',
+    title: 'Misión Platino: Beats del Futuro',
+    description: 'Completa el análisis sonoro del tema premium "Futurista Célio" en calidad de audio Ultra HD.',
+    rewardValue: 150.00,
+    isCompleted: false,
+    vipRequired: 'VIP PLATINO 420$',
+    category: 'Escucha'
+  },
+  {
+    id: 'task_10',
+    title: 'Embajador Platino: Difusión Global',
+    description: 'Promociona Tappmusic en Reels de Instagram o TikTok usando nuestro banner oficial de referidos.',
+    rewardValue: 220.00,
+    isCompleted: false,
+    vipRequired: 'VIP PLATINO 420$',
+    category: 'Share'
+  },
+  {
+    id: 'task_11',
+    title: 'Súper VIP: Auditoría de Red Inversora',
+    description: 'Verifica el bloque comercial de los principales auspiciadores exclusivos de Tappmusic.',
+    rewardValue: 450.00,
+    isCompleted: false,
+    vipRequired: 'VIP SÚPER VIP 1000$',
+    category: 'Ad Watch'
+  },
+  {
+    id: 'task_12',
+    title: 'Súper VIP: Consagración del Flow',
+    description: 'Evalúa los arreglos de mezcla final para la discográfica internacional de DJ TaApp en República Dominicana.',
+    rewardValue: 600.00,
+    isCompleted: false,
+    vipRequired: 'VIP SÚPER VIP 1000$',
+    category: 'Rate'
   }
 ];
 
 export const REELS_DATABASE: Reel[] = [
-  // VIP 1 Reels
+  // VIP ORO 10$ Reels
   {
     id: 'reel_1',
     title: 'Caminando con Jesús Cristo 🕊️',
@@ -232,7 +282,7 @@ export const REELS_DATABASE: Reel[] = [
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     likes: 540,
     commentsCount: 32,
-    vipLevel: 'VIP 1',
+    vipLevel: 'VIP ORO 10$',
     duration: '0:15'
   },
   {
@@ -244,11 +294,11 @@ export const REELS_DATABASE: Reel[] = [
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
     likes: 820,
     commentsCount: 45,
-    vipLevel: 'VIP 1',
+    vipLevel: 'VIP ORO 10$',
     duration: '0:12'
   },
 
-  // VIP 2 Reels
+  // VIP ORO 20$ Reels
   {
     id: 'reel_3',
     title: 'Motivación Millonaria: Disciplina Absoluta 📈💼',
@@ -258,7 +308,7 @@ export const REELS_DATABASE: Reel[] = [
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
     likes: 1250,
     commentsCount: 68,
-    vipLevel: 'VIP 2',
+    vipLevel: 'VIP ORO 20$',
     duration: '0:18'
   },
   {
@@ -270,11 +320,11 @@ export const REELS_DATABASE: Reel[] = [
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
     likes: 1420,
     commentsCount: 89,
-    vipLevel: 'VIP 2',
+    vipLevel: 'VIP ORO 20$',
     duration: '0:20'
   },
 
-  // VIP 3 Reels
+  // VIP RUBÍ 40$ Reels
   {
     id: 'reel_5',
     title: 'Aprende de Jesús: El Maestro de Vida ✝️🔥',
@@ -284,7 +334,7 @@ export const REELS_DATABASE: Reel[] = [
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
     likes: 3100,
     commentsCount: 143,
-    vipLevel: 'VIP 3',
+    vipLevel: 'VIP RUBÍ 40$',
     duration: '0:25'
   },
   {
@@ -296,11 +346,11 @@ export const REELS_DATABASE: Reel[] = [
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
     likes: 2900,
     commentsCount: 112,
-    vipLevel: 'VIP 3',
+    vipLevel: 'VIP RUBÍ 40$',
     duration: '0:30'
   },
 
-  // VIP 4 Reels
+  // VIP DIAMANTE 120$ Reels
   {
     id: 'reel_7',
     title: 'Riqueza Espiritual y Propósito Millonario 👑💎',
@@ -310,7 +360,7 @@ export const REELS_DATABASE: Reel[] = [
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     likes: 9800,
     commentsCount: 450,
-    vipLevel: 'VIP 4',
+    vipLevel: 'VIP DIAMANTE 120$',
     duration: '0:35'
   },
   {
@@ -322,7 +372,35 @@ export const REELS_DATABASE: Reel[] = [
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
     likes: 12400,
     commentsCount: 512,
-    vipLevel: 'VIP 4',
+    vipLevel: 'VIP DIAMANTE 120$',
     duration: '0:40'
+  },
+
+  // VIP PLATINO 420$ Reels
+  {
+    id: 'reel_9',
+    title: 'Impacto Platino: La Unión de Liderazgo ⚡🔥',
+    caption: 'Cuando los líderes trabajan bajo una visión divina, los milagros se multiplican. Permanece firme. #PlatinoLevel #Liderazgo #ExitoCristiano',
+    artist: 'Platino Sound',
+    coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80',
+    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+    likes: 15600,
+    commentsCount: 680,
+    vipLevel: 'VIP PLATINO 420$',
+    duration: '0:45'
+  },
+
+  // VIP SÚPER VIP 1000$ Reels
+  {
+    id: 'reel_10',
+    title: 'Súper VIP: La Cima de la Bendición 👑🌍',
+    caption: 'Dedicado a los valientes que no temen soñar en grande. La excelencia es un hábito inspirado en Su gracia infinita. #SuperVip #Excelencia #Abundancia',
+    artist: 'DJ TaApp Celestial',
+    coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&auto=format&fit=crop&q=80',
+    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
+    likes: 31200,
+    commentsCount: 1240,
+    vipLevel: 'VIP SÚPER VIP 1000$',
+    duration: '0:50'
   }
 ];

@@ -49,17 +49,21 @@ export default function Header({ userProfile, onOpenShareModal, onOpenVipSelecto
         <button
           onClick={onOpenVipSelector}
           className={`flex items-center gap-2 rounded-xl border p-1 bg-zinc-950 hover:bg-zinc-900 transition-all text-left group pr-2.5 cursor-pointer max-w-[140px] sm:max-w-none ${
-            userProfile.vipLevel === 'VIP 4' 
-              ? 'border-emerald-500/30 text-emerald-400' 
-              : userProfile.vipLevel === 'VIP 3'
-              ? 'border-amber-500/30 text-amber-400'
-              : userProfile.vipLevel === 'VIP 2'
+            userProfile.vipLevel === 'VIP SÚPER VIP 1000$' 
+              ? 'border-emerald-500/40 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.15)] bg-gradient-to-tr from-black to-emerald-950/20' 
+              : userProfile.vipLevel === 'VIP PLATINO 420$'
               ? 'border-purple-500/30 text-purple-400'
-              : 'border-[#39FF14]/20 text-[#39FF14]'
+              : userProfile.vipLevel === 'VIP DIAMANTE 120$'
+              ? 'border-sky-500/30 text-sky-450'
+              : userProfile.vipLevel === 'VIP RUBÍ 40$'
+              ? 'border-red-500/30 text-red-400'
+              : userProfile.vipLevel === 'VIP ORO 20$'
+              ? 'border-yellow-400/35 text-yellow-300'
+              : 'border-yellow-500/25 text-yellow-500'
           }`}
           title="Cambiar Nivel VIP"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#303138] text-[10px] font-black uppercase text-white">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#303138] text-[9px] font-black uppercase text-white px-0.5">
             {userProfile.vipLevel.split(' ')[1]}
           </div>
           <div className="text-left leading-none">
