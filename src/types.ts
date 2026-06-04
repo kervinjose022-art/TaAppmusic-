@@ -45,7 +45,7 @@ export interface UserTask {
   rewardValue: number;
   isCompleted: boolean;
   vipRequired: VipLevel;
-  category: 'Escucha' | 'Share' | 'Rate' | 'Ad Watch';
+  category: 'Video de Fe' | 'Compartir' | 'Familia' | 'Mentalidad';
 }
 
 export interface Reel {

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Header from './components/Header';
 import PromoShareCard from './components/PromoShareCard';
-import MusicPlayer from './components/MusicPlayer';
 import BrainLogo from './components/BrainLogo';
 import VipTasks from './components/VipTasks';
 import VipReels from './components/VipReels';
@@ -12,7 +11,6 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [copiedModalLink, setCopiedModalLink] = useState(false);
   const [isVipSelectorOpen, setIsVipSelectorOpen] = useState(false);
@@ -117,7 +115,7 @@ export default function App() {
               Tappmusic<span className="text-[#39FF14] text-neon-green font-black">.com</span>
             </h1>
             <p className="text-gray-400 text-xs tracking-wider max-w-md mx-auto leading-relaxed">
-              El portal definitivo de reproducción dominicana, tareas remuneradas y reels con el mejor estilo urbano de la calle.
+              El portal definitivo de fe, familia, mentalidad de éxito y tareas VIP remuneradas con los mejores Reels inspiradores.
             </p>
           </div>
         </div>
@@ -135,9 +133,9 @@ export default function App() {
               </div>
 
               <div className="space-y-1">
-                <h3 className="text-xl font-bold text-white uppercase tracking-wider">Registro Oficial de Fanáticos</h3>
+                <h3 className="text-xl font-bold text-white uppercase tracking-wider">Registro de Miembros VIP</h3>
                 <p className="text-xs text-gray-400">
-                  Regístrate gratis para desbloquear el <strong className="text-[#39FF14]">Botón de Hacer Tareas</strong> y los <strong className="text-purple-400">Reels VIP</strong> de Tappmusic.com
+                  Regístrate gratis para desbloquear el <strong className="text-[#39FF14]">Panel de Tareas Diarias</strong> y los <strong className="text-purple-400">Reels Motivacionales</strong> de Tappmusic.com
                 </p>
               </div>
 
@@ -266,7 +264,7 @@ export default function App() {
                     ¡Está listo nuestro proyecto, hermano! 🚀
                   </h2>
                   <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
-                    Hemos subido todo a producción. Ya puedes compartir el enlace definitivo <strong className="text-white lower">Tappmusic.com</strong> con tus fanáticos para que escuchen en vivo, hagan tareas VIP de regalías, y disfruten de los mejores Reels del movimiento dominicano.
+                    Hemos subido todo a producción. Ya puedes compartir el enlace definitivo <strong className="text-white lower">Tappmusic.com</strong> con tus fanáticos para que realicen tareas VIP de fe, familia y mentalidad millonaria, ganen regalías y disfruten de los mejores Reels de motivación en vivo.
                   </p>
                 </div>
 
@@ -301,26 +299,14 @@ export default function App() {
               </div>
             </div>
 
-            {/* THREE COLUMN BENTO GRID OF TAPPMUSIC SYSTEM */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* TWO COLUMN BENTO GRID OF FEED AND TASKS */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start max-w-5xl mx-auto">
               
-              {/* Columns index 1 to 5: Music Live Player (Equal to left player block) */}
-              <div className="lg:col-span-4 space-y-4">
+              {/* Column 1: VIP Tasks Board (Hacer Tareas) */}
+              <div className="space-y-4">
                 <div className="text-left pl-1">
-                  <h3 className="text-sm font-black tracking-widest text-[#39FF14] uppercase">🎵 Reproductor Central</h3>
-                  <p className="text-zinc-500 text-[11px]">Sincronización de bajos y karaoke dominicano.</p>
-                </div>
-                <MusicPlayer 
-                  currentTrackIndex={currentTrackIndex} 
-                  setCurrentTrackIndex={setCurrentTrackIndex} 
-                />
-              </div>
-
-              {/* Columns index 6 to 12: VIP Tasks Board (Hacer Tareas) */}
-              <div className="lg:col-span-4 space-y-4">
-                <div className="text-left pl-1">
-                  <h3 className="text-sm font-black tracking-widest text-purple-400 uppercase">💼 Hacer Tareas</h3>
-                  <p className="text-zinc-500 text-[11px]">Completa misiones de audio para acumular regalías.</p>
+                  <h3 className="text-sm font-black tracking-widest text-purple-400 uppercase">💼 Hacer Tareas Diarias</h3>
+                  <p className="text-zinc-500 text-[11px]">Completa misiones inspiradoras para acumular regalías.</p>
                 </div>
                 <VipTasks 
                   userProfile={userProfile} 
@@ -328,11 +314,11 @@ export default function App() {
                 />
               </div>
 
-              {/* Column 3: Instagram/TikTok Style Reels Filtered by VIP Levels */}
-              <div className="lg:col-span-4 space-y-4">
+              {/* Column 2: Instagram/TikTok Style Reels Filtered by VIP Levels */}
+              <div className="space-y-4">
                 <div className="text-left pl-1">
-                  <h3 className="text-sm font-black tracking-widest text-yellow-400 uppercase">📱 Reels TikTok</h3>
-                  <p className="text-zinc-500 text-[11px]">Mira loops, videos cortos y deja comentarios VIP.</p>
+                  <h3 className="text-sm font-black tracking-widest text-yellow-400 uppercase">📱 Reels de Fe y Éxito</h3>
+                  <p className="text-zinc-500 text-[11px]">Mira loops, videos cortos de fe y deja comentarios VIP.</p>
                 </div>
                 <VipReels currentVip={userProfile.vipLevel} />
               </div>
@@ -340,13 +326,13 @@ export default function App() {
             </div>
 
             {/* Support instructions container */}
-            <div className="rounded-2xl border border-white/5 bg-zinc-950/30 p-5 text-left">
+            <div className="rounded-2xl border border-white/5 bg-zinc-950/30 p-5 text-left max-w-5xl mx-auto">
               <div className="flex items-start gap-3.5">
                 <CircleAlert className="h-5 w-5 text-purple-500 shrink-0 mt-0.5 animate-pulse" />
                 <div className="space-y-1">
                   <h3 className="text-xs font-black tracking-wider text-white uppercase">Información general del servidor</h3>
                   <p className="text-xs text-gray-500 leading-relaxed font-mono">
-                    Tappmusic.com ha sincronizado su base de datos de audio con enlaces directos CDN de baja latencia. El botón de "Hacer Tareas" calcula y liquida pagos directamente en tiempo real en la billetera local de tu navegador. Sube de VIP haciendo click en tu medalla del menú de arriba en cualquier momento para poner a prueba nuestro sistema.
+                    Tappmusic.com ha sincronizado su base de datos con enlaces CDN de fe, familia y mentalidad de abundancia. El botón de "Hacer Tareas" calcula y liquida pagos directamente en tiempo real en la billetera local de tu navegador. Sube de VIP haciendo click en tu medalla del menú de arriba en cualquier momento para poner a prueba nuestro sistema.
                   </p>
                 </div>
               </div>

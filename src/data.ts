@@ -163,111 +163,111 @@ export const VIP_TICKETS: VipFeature[] = [
 export const TASKS_DATABASE: UserTask[] = [
   {
     id: 'task_1',
-    title: 'Escuchar el Intro Completo',
-    description: 'Reproduce la canción de introducción "Intro: TaAppMusic" durante al menos 30 segundos para sintonizar el flow.',
+    title: 'Ver Video de Fe: Caminando con Jesús',
+    description: 'Visualiza el video inspirador "Caminando con Jesús" durante al menos 15 segundos para sintonizar tu fe.',
     rewardValue: 5.50,
     isCompleted: false,
     vipRequired: 'VIP ORO 10$',
-    category: 'Escucha'
+    category: 'Video de Fe'
   },
   {
     id: 'task_2',
-    title: 'Compartir el link Tappmusic.com',
-    description: 'Copia el enlace de lanzamiento oficial de nuestra plataforma y compártelo por WhatsApp o Telegram.',
+    title: 'Compartir Mensaje del Evangelio',
+    description: 'Copia nuestro versículo del día y el link oficial de Tappmusic para bendecir a tu familia por WhatsApp o Telegram.',
     rewardValue: 8.00,
     isCompleted: false,
     vipRequired: 'VIP ORO 10$',
-    category: 'Share'
+    category: 'Compartir'
   },
   {
     id: 'task_3',
-    title: 'Verificar Video Promocional ORO 20$',
-    description: 'Visualiza la presentación animada de DJ TaApp de 15 segundos para desbloquear la recompensa acelerada.',
+    title: 'Verificar Mensaje ORO: Dios tiene el Control',
+    description: 'Mira la prédica animada sobre la gracia divina (15 segundos) para desbloquear la recompensa de hoy.',
     rewardValue: 12.00,
     isCompleted: false,
     vipRequired: 'VIP ORO 20$',
-    category: 'Ad Watch'
+    category: 'Familia'
   },
   {
     id: 'task_4',
-    title: 'Calificar Flow Dominicano ★★★★★',
-    description: 'Dale like y marca Favorito en la canción "Flow Dominicano (Urban Beat)" de La Sensación.',
+    title: 'Calificar Prédica: Disciplina Absoluta ★★★★★',
+    description: 'Dale 5 estrellas al testimonio audiovisual sobre disciplina cristiana y mentalidad millonaria.',
     rewardValue: 15.50,
     isCompleted: false,
     vipRequired: 'VIP ORO 20$',
-    category: 'Rate'
+    category: 'Mentalidad'
   },
   {
     id: 'task_5',
-    title: 'Auditoría de Audio RUBÍ 40$',
-    description: 'Comenta y opina sobre el Bass Boost del tema "Trap de las Calles" en los comentarios del reproductor.',
+    title: 'Comentario de Fe: Jesús Maestro de Vida',
+    description: 'Escribe un comentario positivo y un "Amén" en el Reel interactivo de Jesús el Salvador.',
     rewardValue: 24.00,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
-    category: 'Rate'
+    category: 'Mentalidad'
   },
   {
     id: 'task_6',
-    title: 'Ver Anuncio de Auriculares LED',
-    description: 'Mira el anuncio comercial exclusivo del socio auspiciador de los audífonos con luces (10 seg).',
+    title: 'Ver Cortometraje: Amor Familiar Protegido',
+    description: 'Mira el cortometraje sobre el valor y la bendición de un hogar edificado en la fe (10 segundos).',
     rewardValue: 35.00,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
-    category: 'Ad Watch'
+    category: 'Familia'
   },
   {
     id: 'task_7',
-    title: 'Embajador Diamante: Promoción Santo Domingo',
-    description: 'Comparte el enlace de la app en tus estados públicos con un mensaje que incluya el hashtag #Tappmusic.',
+    title: 'Embajador Diamante: Unión Familiar en Redes',
+    description: 'Comparte un mensaje de unión familiar junto con la app en tus estados públicos con el hashtag #Tappmusic.',
     rewardValue: 50.00,
     isCompleted: false,
     vipRequired: 'VIP DIAMANTE 120$',
-    category: 'Share'
+    category: 'Compartir'
   },
   {
     id: 'task_8',
-    title: 'Escucha Suprema Diamante: Deep House',
-    description: 'Escucha el set completo de "Deep House Sunset" por Marina Club para recargar el fondo de regalías.',
+    title: 'Visualizar: Riqueza Espiritual y Propósito',
+    description: 'Mira el video de coaching sobre mentalidad millonaria celestial y abundancia espiritual.',
     rewardValue: 75.00,
     isCompleted: false,
     vipRequired: 'VIP DIAMANTE 120$',
-    category: 'Escucha'
+    category: 'Video de Fe'
   },
   {
     id: 'task_9',
-    title: 'Misión Platino: Beats del Futuro',
-    description: 'Completa el análisis sonoro del tema premium "Futurista Célio" en calidad de audio Ultra HD.',
+    title: 'Misión Platino: Liderazgo y Visión Divina',
+    description: 'Completa la visualización de la mentoría de liderazgo y prosperidad basada en la fe en alta definición.',
     rewardValue: 150.00,
     isCompleted: false,
     vipRequired: 'VIP PLATINO 420$',
-    category: 'Escucha'
+    category: 'Mentalidad'
   },
   {
     id: 'task_10',
-    title: 'Embajador Platino: Difusión Global',
-    description: 'Promociona Tappmusic en Reels de Instagram o TikTok usando nuestro banner oficial de referidos.',
+    title: 'Embajador Platino: Difusión de Esperanza',
+    description: 'Comparte un pasaje bíblico y testimonio de éxito millonario con nuestro cartel en Instagram Reels o TikTok.',
     rewardValue: 220.00,
     isCompleted: false,
     vipRequired: 'VIP PLATINO 420$',
-    category: 'Share'
+    category: 'Compartir'
   },
   {
     id: 'task_11',
-    title: 'Súper VIP: Auditoría de Red Inversora',
-    description: 'Verifica el bloque comercial de los principales auspiciadores exclusivos de Tappmusic.',
+    title: 'Súper VIP: Auditoría de Misiones Familiares',
+    description: 'Verifica y califica el bloque de ayuda social y misiones internacionales en República Dominicana.',
     rewardValue: 450.00,
     isCompleted: false,
     vipRequired: 'VIP SÚPER VIP 1000$',
-    category: 'Ad Watch'
+    category: 'Familia'
   },
   {
     id: 'task_12',
-    title: 'Súper VIP: Consagración del Flow',
-    description: 'Evalúa los arreglos de mezcla final para la discográfica internacional de DJ TaApp en República Dominicana.',
+    title: 'Súper VIP: La Cima de la Bendición Final',
+    description: 'Evalúa la reflexión inspiradora del Reel diario "La Cima de la Bendición" para concluir tu jornada exitosa.',
     rewardValue: 600.00,
     isCompleted: false,
     vipRequired: 'VIP SÚPER VIP 1000$',
-    category: 'Rate'
+    category: 'Mentalidad'
   }
 ];
 
