@@ -1,0 +1,6 @@
+{
+  "name": "TaAppMusic",
+  "description": "La plataforma definitiva para escuchar, disfrutar y compartir la mejor música sin límites.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
