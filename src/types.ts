@@ -58,6 +58,8 @@ export interface Reel {
 
 export interface UserProfile {
   username: string;
+  email?: string;
+  password?: string;
   vipLevel: VipLevel;
   earnings: number;
   completedTaskIds: string[];

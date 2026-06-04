@@ -225,9 +225,9 @@ export const REELS_DATABASE: Reel[] = [
   // VIP 1 Reels
   {
     id: 'reel_1',
-    title: 'El Kervin Flow en Vivo 🎤',
-    caption: '¡Se prendió la calle mi gente! Ya aceptamos los cambios de Github y lanzamos oficialmente esto. ¿Quién tiene frío? 🔥 #Tappmusic #UrbanoDominicano',
-    artist: 'El Kervin Flow',
+    title: 'Caminando con Jesús Cristo 🕊️',
+    caption: 'En los momentos más difíciles de la vida, Su gracia nos sostiene. Sigue adelante con fe, Él nunca te abandonará. ¡Fe inquebrantable! #Jesucristo #Fe #DiosEsAmor #Esperanza',
+    artist: 'Kervin de Fe',
     coverUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&auto=format&fit=crop&q=80',
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     likes: 540,
@@ -237,9 +237,9 @@ export const REELS_DATABASE: Reel[] = [
   },
   {
     id: 'reel_2',
-    title: 'En el Barrio Sonando Fuerte 🇩🇴',
-    caption: 'La bocina LED vibrando en violeta y dorado mientras el ritmo sacude la ciudad. ¡Pasa el enlace, hermano! #Lanzamiento #Aplatanao',
-    artist: 'DJ TaApp',
+    title: 'La Familia es el Mayor Regalo 🏠❤️',
+    caption: 'Las riquezas materiales van y vienen, pero el amor de una familia unida dura para siempre. Protege a tu hogar, edifícalo sobre roca firme. #Familia #Hogar #Bendiciones #Unión',
+    artist: 'Fe y Familia',
     coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&auto=format&fit=crop&q=80',
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
     likes: 820,
@@ -251,9 +251,9 @@ export const REELS_DATABASE: Reel[] = [
   // VIP 2 Reels
   {
     id: 'reel_3',
-    title: 'Session VIP 2: Baile Urbano 🕺',
-    caption: 'Demostrando los pasos prohibidos en la discoteca bajo las luces violetas y doradas. El bajo es adictivo. #VIP2 #DancePractice #Fuego',
-    artist: 'La Sensación',
+    title: 'Motivación Millonaria: Disciplina Absoluta 📈💼',
+    caption: 'Un ganador no nace, se hace con sudor, desvelos y fe ciega. Pon a Dios en primer lugar en tus negocios y verás tu vida prosperar. #Millonario #Motivacion #Esfuerzo #Disciplina',
+    artist: 'Juventud del Éxito',
     coverUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&auto=format&fit=crop&q=80',
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
     likes: 1250,
@@ -263,9 +263,9 @@ export const REELS_DATABASE: Reel[] = [
   },
   {
     id: 'reel_4',
-    title: 'Produciendo desde la Nave Espacial 🎹',
-    caption: 'Armando los acordes del próximo hit global con el sintetizador en modo luces LED. TaApp es otro nivel de ingeniería musical. #ProducerLife #Beats',
-    artist: 'Beatmaker Pro',
+    title: 'Dios Tiene el Control Absoluto 🙌✨',
+    caption: 'No te preocupes por el mañana, ya que Dios está preparando lo mejor para ti. Ora con fervor, trabaja con honestidad y confía en Su proceso eterno. #DiosEsBueno #Oración #Milagro #Fiel',
+    artist: 'DJ Gracia Divina',
     coverUrl: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=400&auto=format&fit=crop&q=80',
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
     likes: 1420,
@@ -277,9 +277,9 @@ export const REELS_DATABASE: Reel[] = [
   // VIP 3 Reels
   {
     id: 'reel_5',
-    title: 'Concierto Luces VIP 3 🌌',
-    caption: 'La euforia de miles de fanáticos cantando. El cerebro de luces LED brillando en todo su esplendor en las pantallas gigantes. #VIP3 #Estadio #LiveStyle',
-    artist: 'La Sensación',
+    title: 'Aprende de Jesús: El Maestro de Vida ✝️🔥',
+    caption: 'Jesús venció al mundo. Con Su fuerza en tu corazón, no hay gigante ni prueba que no puedas derrotar. Levántate con la mente enfocada en Su gloria. #Jesús #Superación #FeActiva',
+    artist: 'La Sensación Cristiana',
     coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&auto=format&fit=crop&q=80',
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
     likes: 3100,
@@ -289,9 +289,9 @@ export const REELS_DATABASE: Reel[] = [
   },
   {
     id: 'reel_6',
-    title: 'Detrás de Escena con DJ TaApp 🎧',
-    caption: 'Mostrando cómo programamos el visualizador de cerebro giratorio con auriculares violeta. ¡Lujo visual e interactivo de verdad! #DetrasDeCamara #VIP',
-    artist: 'DJ TaApp',
+    title: 'Mi Familia Bajo la Cobertura de Dios 🙏🛡️',
+    caption: 'Nada hay más hermoso que ver a toda una familia unida alabando al Creador en armonía. Declaramos paz, provisión y salud sobre tu hogar hoy. #FamiliaDeFe #HogarBendecido #Amor',
+    artist: 'Refugio Familiar',
     coverUrl: 'https://images.unsplash.com/photo-1516280440614-37939bbacd6a?w=400&auto=format&fit=crop&q=80',
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
     likes: 2900,
@@ -303,9 +303,9 @@ export const REELS_DATABASE: Reel[] = [
   // VIP 4 Reels
   {
     id: 'reel_7',
-    title: 'Pasarela de Ganancias VIP 4 💎',
-    caption: 'Nuestros embajadores disfrutando de sus regalías ganadas con el botón de "Hacer Tareas". Flow millonario respaldado por Tappmusic.com! #VIP4 #Regalias #Embajadores',
-    artist: 'Marina Club',
+    title: 'Riqueza Espiritual y Propósito Millonario 👑💎',
+    caption: 'La sabiduría divina nos instruye a ser excelentes administradores de dones y talentos. Multiplica tu servicio, ayuda a tu prójimo y vive con propósito de abundancia. #MillonarioDeFe #Prosperidad',
+    artist: 'Marina Club Celestial',
     coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80',
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     likes: 9800,
@@ -315,8 +315,8 @@ export const REELS_DATABASE: Reel[] = [
   },
   {
     id: 'reel_8',
-    title: 'El Himno de la Calle 👑',
-    caption: 'Celebrando el lanzamiento supremo de Tappmusic.com con fuegos artificiales de colores violeta y dorados. Esto ya es historia nacional. #Imparables #DominicanPride',
+    title: 'La Gloria Postrera de Dios 🙌🌟',
+    caption: 'Se viene una lluvia de bendiciones sobrenaturales que sobreabundará en tu vida, tus sueños y los de tu familia. ¡Pásate al nivel superior con fe y da gracias! #DiosEsFiel #Abundancia #Amen',
     artist: 'El Kervin Flow',
     coverUrl: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=400&auto=format&fit=crop&q=80',
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',

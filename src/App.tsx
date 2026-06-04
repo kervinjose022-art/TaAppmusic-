@@ -8,7 +8,7 @@ import VipReels from './components/VipReels';
 import { UserProfile, VipLevel } from './types';
 import { 
   Sparkles, ShieldCheck, Share2, CircleAlert, Globe, X, 
-  Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock
+  Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock, Eye, EyeOff
 } from 'lucide-react';
 
 export default function App() {
@@ -32,6 +32,8 @@ export default function App() {
     }
     return {
       username: 'kervin_flow',
+      email: '',
+      password: '',
       vipLevel: 'VIP 1',
       earnings: 25.50,
       completedTaskIds: ['task_1'],
@@ -47,6 +49,9 @@ export default function App() {
 
   // Simulated registration fields
   const [inputUsername, setInputUsername] = useState('');
+  const [inputEmail, setInputEmail] = useState('');
+  const [inputPassword, setInputPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [selectedInitialVip, setSelectedInitialVip] = useState<VipLevel>('VIP 1');
 
   const handleRegister = (e: React.FormEvent) => {
@@ -54,6 +59,8 @@ export default function App() {
     const name = inputUsername.trim().toLowerCase() || 'invitado_flow';
     const updated: UserProfile = {
       username: name,
+      email: inputEmail,
+      password: inputPassword,
       vipLevel: selectedInitialVip,
       earnings: selectedInitialVip === 'VIP 1' ? 10.00 : selectedInitialVip === 'VIP 2' ? 50.00 : selectedInitialVip === 'VIP 3' ? 120.00 : 350.00,
       completedTaskIds: [],
@@ -138,27 +145,78 @@ export default function App() {
                     placeholder="Ej. kervin_flow"
                     value={inputUsername}
                     onChange={(e) => setInputUsername(e.target.value)}
-                    className="w-full text-sm font-semibold bg-black border border-[#39FF14]/30 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-700 focus:outline-none focus:border-[#39FF14]"
+                    className="w-full text-xs font-semibold bg-black border border-[#39FF14]/30 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
                   />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1 text-left">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 font-bold block">
+                      Correo Electrónico
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="ejemplo@correo.com"
+                      value={inputEmail}
+                      onChange={(e) => setInputEmail(e.target.value)}
+                      className="w-full text-xs font-semibold bg-black border border-[#39FF14]/30 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                    />
+                  </div>
+
+                  <div className="space-y-1 text-left">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 font-bold block">
+                      Contraseña
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        placeholder="••••••••"
+                        value={inputPassword}
+                        onChange={(e) => setInputPassword(e.target.value)}
+                        className="w-full text-xs font-semibold bg-black border border-[#39FF14]/30 rounded-xl pl-4 pr-10 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-[#39FF14] transition-all cursor-pointer focus:outline-none"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-1 text-left">
                   <label className="text-[10px] uppercase font-mono tracking-widest text-purple-400 font-bold block">
-                    Selecciona Nivel VIP Inicial
+                    Selecciona Nivel VIP Inicial (Ver Precios de Activación)
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                    {(['VIP 1', 'VIP 2', 'VIP 3', 'VIP 4'] as VipLevel[]).map(v => (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                    {([
+                      { name: 'VIP 1', price: 'Gratis' },
+                      { name: 'VIP 2', price: '$15 USD' },
+                      { name: 'VIP 3', price: '$40 USD' },
+                      { name: 'VIP 4', price: '$100 USD' }
+                    ]).map(v => (
                       <button
-                        key={v}
+                        key={v.name}
                         type="button"
-                        onClick={() => setSelectedInitialVip(v)}
-                        className={`py-2 rounded-xl text-xs font-black transition-all cursor-pointer border uppercase ${
-                          selectedInitialVip === v
-                            ? 'bg-purple-900/30 text-white border-purple-500 shadow-[0_0_10px_#a855f7]'
-                            : 'bg-zinc-950 text-gray-500 border-zinc-800'
+                        onClick={() => setSelectedInitialVip(v.name as VipLevel)}
+                        className={`p-3 rounded-xl text-xs font-bold transition-all cursor-pointer border flex flex-col items-center justify-center gap-1 uppercase ${
+                          selectedInitialVip === v.name
+                            ? 'bg-purple-950/40 text-white border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.4)] bg-radial'
+                            : 'bg-zinc-950 text-gray-500 border-zinc-800 hover:border-zinc-700/60'
                         }`}
                       >
-                        {v}
+                        <span className="font-extrabold tracking-wider">{v.name}</span>
+                        <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded leading-none ${
+                          selectedInitialVip === v.name
+                            ? 'bg-purple-900/50 text-purple-200'
+                            : 'bg-zinc-900/50 text-zinc-600'
+                        }`}>
+                          {v.price}
+                        </span>
                       </button>
                     ))}
                   </div>
