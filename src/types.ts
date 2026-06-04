@@ -21,3 +21,45 @@ export interface PlaybackState {
   isLooping: 'none' | 'one' | 'all';
   isShuffled: boolean;
 }
+
+export type VipLevel = 'VIP 1' | 'VIP 2' | 'VIP 3' | 'VIP 4';
+
+export interface VipFeature {
+  name: VipLevel;
+  price: string;
+  bonusMultiplier: number;
+  badgeColor: string;
+  glowColor: string;
+}
+
+export interface UserTask {
+  id: string;
+  title: string;
+  description: string;
+  rewardValue: number;
+  isCompleted: boolean;
+  vipRequired: VipLevel;
+  category: 'Escucha' | 'Share' | 'Rate' | 'Ad Watch';
+}
+
+export interface Reel {
+  id: string;
+  title: string;
+  caption: string;
+  artist: string;
+  coverUrl: string;
+  videoUrl: string; // Simulated or looping audio with beautiful active waveform/music visualization
+  likes: number;
+  hasLiked?: boolean;
+  commentsCount: number;
+  vipLevel: VipLevel;
+  duration: string;
+}
+
+export interface UserProfile {
+  username: string;
+  vipLevel: VipLevel;
+  earnings: number;
+  completedTaskIds: string[];
+  isRegistered: boolean;
+}

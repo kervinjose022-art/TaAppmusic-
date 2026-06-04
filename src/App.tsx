@@ -1,20 +1,72 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Header from './components/Header';
 import PromoShareCard from './components/PromoShareCard';
 import MusicPlayer from './components/MusicPlayer';
+import BrainLogo from './components/BrainLogo';
+import VipTasks from './components/VipTasks';
+import VipReels from './components/VipReels';
+import { UserProfile, VipLevel } from './types';
 import { 
-  Sparkles, ShieldCheck, Share2, CircleAlert, Globe, X, Check, Copy, MessageSquare, Send
+  Sparkles, ShieldCheck, Share2, CircleAlert, Globe, X, 
+  Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock
 } from 'lucide-react';
 
 export default function App() {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [copiedModalLink, setCopiedModalLink] = useState(false);
+  const [isVipSelectorOpen, setIsVipSelectorOpen] = useState(false);
 
-  // Official Shared App URL provided by the AI Studio environment
+  // App URLs & Constants
   const sharedUrl = 'https://ais-pre-efepkfwykzkok6uvpgwtks-582716975968.us-east1.run.app';
-  // User Email retrieved from metadata
-  const userEmail = 'kervinjose022@gmail.com';
+
+  // User profile state persistent in React state (initially unregistered or registered)
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
+    const saved = localStorage.getItem('tappmusic_profile');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return {
+      username: 'kervin_flow',
+      vipLevel: 'VIP 1',
+      earnings: 25.50,
+      completedTaskIds: ['task_1'],
+      isRegistered: false // prompts registration card first
+    };
+  });
+
+  // Save profile to local storage helper
+  const saveProfile = (newProfile: UserProfile) => {
+    setUserProfile(newProfile);
+    localStorage.setItem('tappmusic_profile', JSON.stringify(newProfile));
+  };
+
+  // Simulated registration fields
+  const [inputUsername, setInputUsername] = useState('');
+  const [selectedInitialVip, setSelectedInitialVip] = useState<VipLevel>('VIP 1');
+
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = inputUsername.trim().toLowerCase() || 'invitado_flow';
+    const updated: UserProfile = {
+      username: name,
+      vipLevel: selectedInitialVip,
+      earnings: selectedInitialVip === 'VIP 1' ? 10.00 : selectedInitialVip === 'VIP 2' ? 50.00 : selectedInitialVip === 'VIP 3' ? 120.00 : 350.00,
+      completedTaskIds: [],
+      isRegistered: true
+    };
+    saveProfile(updated);
+  };
+
+  const handleUpgradeVip = (lvl: VipLevel) => {
+    const backup = { ...userProfile, vipLevel: lvl };
+    saveProfile(backup);
+    setIsVipSelectorOpen(false);
+  };
 
   const copyModalLink = async () => {
     try {
@@ -27,191 +79,341 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07070a] text-[#f3f4f6] selection:bg-blue-600 selection:text-white pb-12 antialiased">
-      {/* Visual neon ambient globs */}
-      <div className="fixed top-0 left-1/4 h-[400px] w-[500px] -translate-y-1/2 rounded-full bg-gradient-to-br from-blue-500/10 to-indigo-500/0 blur-[130px] pointer-events-none" />
-      <div className="fixed bottom-0 right-1/4 h-[400px] w-[500px] translate-y-1/2 rounded-full bg-gradient-to-br from-indigo-500/10 to-purple-500/0 blur-[130px] pointer-events-none" />
+    <div className="min-h-screen bg-black text-[#39FF14] pb-16 antialiased selection:bg-[#39FF14] selection:text-black">
+      {/* Visual background ambient LED glows of Violet & Gold */}
+      <div className="fixed top-12 left-1/2 -translate-x-1/2 h-[450px] w-[450px] rounded-full bg-purple-600/10 blur-[140px] pointer-events-none" />
+      <div className="fixed bottom-12 left-1/3 h-[400px] w-[400px] rounded-full bg-yellow-500/10 blur-[130px] pointer-events-none" />
 
-      {/* Main Header */}
+      {/* Main Navigation Header */}
       <Header 
-        userEmail={userEmail} 
+        userProfile={userProfile} 
         onOpenShareModal={() => setIsShareModalOpen(true)} 
+        onOpenVipSelector={() => setIsVipSelectorOpen(true)}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-8 text-center">
         
-        {/* TOP INTRO BANNER: Greet user & provide quick link visibility */}
-        <div className="relative overflow-hidden rounded-2xl border border-blue-500/10 bg-gradient-to-r from-blue-950/20 via-indigo-950/15 to-black/30 p-6 md:p-8 backdrop-blur-sm shadow-xl">
-          <div className="absolute inset-0 bg-blue-500/[0.02] mix-blend-overlay" />
-          
-          <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="space-y-2 max-w-2xl">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 border border-blue-500/20 px-2.5 py-0.5 text-[10px] font-bold text-blue-400 uppercase tracking-widest">
-                  PLATAFORMA LANZADA
-                </span>
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400">
-                  <ShieldCheck className="h-3.5 w-3.5" /> Enlace de Producción Listo
-                </span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-                ¡Está Activa, Mi Hermano! 🚀
-              </h2>
-              <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
-                Aquí tienes el enlace definitivo listo para tus usuarios. Comparte, publica en tus redes, o envíalo por WhatsApp para que todos tus hermanos entren gratis a disfrutar del flow de <strong className="text-white">TaAppMusic</strong>.
-              </p>
+        {/* CENTERED BRANDING LOGO & LED SLOGAN AREA */}
+        <div className="py-6 flex flex-col items-center justify-center text-center space-y-4 max-w-xl mx-auto">
+          {/* Centered Golden & Purple rotating brain with headphones logo */}
+          <BrainLogo size="md" />
+
+          <div className="space-y-1.5">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-widest text-white uppercase select-all">
+              Tappmusic<span className="text-[#39FF14] text-neon-green font-black">.com</span>
+            </h1>
+            <p className="text-gray-400 text-xs tracking-wider max-w-md mx-auto leading-relaxed">
+              El portal definitivo de reproducción dominicana, tareas remuneradas y reels con el mejor estilo urbano de la calle.
+            </p>
+          </div>
+        </div>
+
+        {/* REGISTRATION GUARDIAN CARD (If unregistered, users register to unlock full board) */}
+        {!userProfile.isRegistered ? (
+          <div className="max-w-lg mx-auto rounded-3xl border-2 border-dashed border-[#39FF14]/30 bg-black p-6 sm:p-8 shadow-[0_0_30px_rgba(57,255,20,0.1)] relative">
+            <div className="absolute top-3 right-3 flex items-center gap-1 bg-[#39FF14]/10 text-[#39FF14] font-mono text-[9px] px-2 py-0.5 rounded uppercase font-bold animate-pulse">
+              Acceso Pendiente
             </div>
 
-            {/* Quick action card inside the hero row */}
-            <div className="w-full md:w-auto shrink-0 bg-black/40 border border-white/5 rounded-2xl p-4 flex flex-col sm:flex-row md:flex-col lg:flex-row items-center gap-4">
-              <div className="text-left">
-                <p className="text-[10px] font-bold text-blue-400 tracking-wider uppercase">Link de Lanzamiento</p>
-                <p className="text-xs font-mono text-gray-300 truncate max-w-[200px] select-all lowercase">{sharedUrl}</p>
+            <div className="space-y-4 text-center">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-purple-950/40 border border-purple-500/30 text-purple-400">
+                <UserCheck className="h-6 w-6" />
               </div>
+
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-white uppercase tracking-wider">Registro Oficial de Fanáticos</h3>
+                <p className="text-xs text-gray-400">
+                  Regístrate gratis para desbloquear el <strong className="text-[#39FF14]">Botón de Hacer Tareas</strong> y los <strong className="text-purple-400">Reels VIP</strong> de Tappmusic.com
+                </p>
+              </div>
+
+              <form onSubmit={handleRegister} className="space-y-4 pt-2">
+                <div className="space-y-1 text-left">
+                  <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-bold block">
+                    Nombre de Usuario (Nickname)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej. kervin_flow"
+                    value={inputUsername}
+                    onChange={(e) => setInputUsername(e.target.value)}
+                    className="w-full text-sm font-semibold bg-black border border-[#39FF14]/30 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-700 focus:outline-none focus:border-[#39FF14]"
+                  />
+                </div>
+
+                <div className="space-y-1 text-left">
+                  <label className="text-[10px] uppercase font-mono tracking-widest text-purple-400 font-bold block">
+                    Selecciona Nivel VIP Inicial
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                    {(['VIP 1', 'VIP 2', 'VIP 3', 'VIP 4'] as VipLevel[]).map(v => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setSelectedInitialVip(v)}
+                        className={`py-2 rounded-xl text-xs font-black transition-all cursor-pointer border uppercase ${
+                          selectedInitialVip === v
+                            ? 'bg-purple-900/30 text-white border-purple-500 shadow-[0_0_10px_#a855f7]'
+                            : 'bg-zinc-950 text-gray-500 border-zinc-800'
+                        }`}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[9px] text-zinc-500 mt-2 font-mono">
+                    * Los rangos superiores otorgan bonos multiplicadores automáticos para tus regalías de tareas.
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-yellow-500 hover:from-purple-500 hover:to-yellow-400 text-xs font-black uppercase text-black font-sans tracking-widest transition-all cursor-pointer active:scale-95 text-shadow-none"
+                >
+                  <span>Registrarme y Acceder</span>
+                  <ArrowRight className="h-4 w-4 text-black" />
+                </button>
+              </form>
+            </div>
+          </div>
+        ) : (
+          /* FULL BOARD LAYOUT (Unlocked upon registration) */
+          <div className="space-y-8">
+            
+            {/* INFORMATIVE GREEN PROMO DECK */}
+            <div className="relative overflow-hidden rounded-2xl border border-[#39FF14]/30 bg-zinc-950/50 p-6 md:p-8 backdrop-blur-sm shadow-2xl text-left">
+              <div className="absolute inset-0 bg-[#39FF14]/[0.01] pointer-events-none" />
               
-              <div className="flex items-center gap-2 w-full sm:w-auto md:w-full lg:w-auto">
-                <button
-                  onClick={copyModalLink}
-                  className={`flex-1 sm:flex-initial flex h-9 items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-bold transition-all cursor-pointer ${
-                    copiedModalLink 
-                      ? 'bg-emerald-600 text-white' 
-                      : 'bg-blue-600 hover:bg-blue-500 text-white active:scale-95'
-                  }`}
-                >
-                  {copiedModalLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  <span>{copiedModalLink ? 'Copiado!' : 'Copiar Link'}</span>
-                </button>
-                <button
-                  onClick={() => setIsShareModalOpen(true)}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-all cursor-pointer"
-                  title="Difundir plataforma"
-                >
-                  <Share2 className="h-4 w-4" />
-                </button>
+              <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6">
+                <div className="space-y-2 max-w-2xl">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded bg-[#39FF14]/10 border border-[#39FF14]/30 px-2.5 py-0.5 text-[9px] font-black text-[#39FF14] uppercase tracking-widest">
+                      Lanzamiento Oficial Activo
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-400">
+                      <ShieldCheck className="h-3.5 w-3.5" /> Enlace de Difusión Optimizado
+                    </span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white uppercase">
+                    ¡Está listo nuestro proyecto, hermano! 🚀
+                  </h2>
+                  <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
+                    Hemos subido todo a producción. Ya puedes compartir el enlace definitivo <strong className="text-white lower">Tappmusic.com</strong> con tus fanáticos para que escuchen en vivo, hagan tareas VIP de regalías, y disfruten de los mejores Reels del movimiento dominicano.
+                  </p>
+                </div>
+
+                {/* Quick copy widget for deployment link */}
+                <div className="w-full lg:w-auto shrink-0 bg-black border border-[#39FF14]/20 rounded-2xl p-4 flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-start gap-4">
+                  <div className="text-left">
+                    <p className="text-[9px] font-bold text-[#39FF14] tracking-wider uppercase">Link de Lanzamiento</p>
+                    <p className="text-xs font-mono text-zinc-300 truncate max-w-[180px] select-all lowercase">{sharedUrl}</p>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      onClick={copyModalLink}
+                      className={`flex-1 sm:flex-initial flex h-9 items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-bold transition-all cursor-pointer ${
+                        copiedModalLink 
+                          ? 'bg-emerald-600 text-white border-none' 
+                          : 'bg-black border border-[#39FF14]/40 hover:bg-[#39FF14]/15 text-[#39FF14] active:scale-95'
+                      }`}
+                    >
+                      {copiedModalLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      <span>{copiedModalLink ? 'Copiado!' : 'Copiar'}</span>
+                    </button>
+                    <button
+                      onClick={() => setIsShareModalOpen(true)}
+                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#39FF14]/5 hover:bg-[#39FF14]/15 text-[#39FF14] border border-[#39FF14]/20 transition-all cursor-pointer"
+                      title="Difundir plataforma"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* COMPONENT BODY SPLIT: 
-            Left side: Music Player (9 Columns equivalence) 
-            Right side: Share panel (3 Columns equivalence) */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3">
-            <div className="space-y-2 mb-4">
-              <h2 className="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-amber-500" /> Reproductor En Vivo
-              </h2>
-              <p className="text-gray-400 text-xs">Escucha tracks exclusivos y sigue la letra sincronizada en tiempo real.</p>
-            </div>
-            <MusicPlayer 
-              currentTrackIndex={currentTrackIndex} 
-              setCurrentTrackIndex={setCurrentTrackIndex} 
-            />
-          </div>
+            {/* THREE COLUMN BENTO GRID OF TAPPMUSIC SYSTEM */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              
+              {/* Columns index 1 to 5: Music Live Player (Equal to left player block) */}
+              <div className="lg:col-span-4 space-y-4">
+                <div className="text-left pl-1">
+                  <h3 className="text-sm font-black tracking-widest text-[#39FF14] uppercase">🎵 Reproductor Central</h3>
+                  <p className="text-zinc-500 text-[11px]">Sincronización de bajos y karaoke dominicano.</p>
+                </div>
+                <MusicPlayer 
+                  currentTrackIndex={currentTrackIndex} 
+                  setCurrentTrackIndex={setCurrentTrackIndex} 
+                />
+              </div>
 
-          <div className="lg:col-span-1">
-            <div className="space-y-2 mb-4">
-              <h2 className="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
-                <Globe className="h-4 w-4 text-blue-400" /> Lanzar a Usuarios
-              </h2>
-              <p className="text-gray-400 text-xs">Difusión rápida del link original.</p>
+              {/* Columns index 6 to 12: VIP Tasks Board (Hacer Tareas) */}
+              <div className="lg:col-span-4 space-y-4">
+                <div className="text-left pl-1">
+                  <h3 className="text-sm font-black tracking-widest text-purple-400 uppercase">💼 Hacer Tareas</h3>
+                  <p className="text-zinc-500 text-[11px]">Completa misiones de audio para acumular regalías.</p>
+                </div>
+                <VipTasks 
+                  userProfile={userProfile} 
+                  setUserProfile={setUserProfile} 
+                />
+              </div>
+
+              {/* Column 3: Instagram/TikTok Style Reels Filtered by VIP Levels */}
+              <div className="lg:col-span-4 space-y-4">
+                <div className="text-left pl-1">
+                  <h3 className="text-sm font-black tracking-widest text-yellow-400 uppercase">📱 Reels TikTok</h3>
+                  <p className="text-zinc-500 text-[11px]">Mira loops, videos cortos y deja comentarios VIP.</p>
+                </div>
+                <VipReels currentVip={userProfile.vipLevel} />
+              </div>
+
             </div>
-            <PromoShareCard sharedUrl={sharedUrl} />
-          </div>
-        </div>
-        
-        {/* Support instructions container */}
-        <div className="rounded-2xl border border-white/5 bg-white/[0.01] p-5">
-          <div className="flex items-start gap-3.5">
-            <CircleAlert className="h-5 w-5 text-blue-400 shrink-0 mt-0.5 animate-pulse" />
-            <div className="space-y-1 text-left">
-              <h3 className="text-xs font-black tracking-wider text-white uppercase">Guía de Distribución</h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                El enlace de arriba es independiente para el uso de tus fanáticos. Pueden abrirlo desde PCs, Tablets, Android o iPhones sin necesidad de iniciar sesión o configurar servidores. Toda la sincronización de audio corre localmente y está optimizada para consumos de banda ancha móviles de baja latencia.
-              </p>
+
+            {/* Support instructions container */}
+            <div className="rounded-2xl border border-white/5 bg-zinc-950/30 p-5 text-left">
+              <div className="flex items-start gap-3.5">
+                <CircleAlert className="h-5 w-5 text-purple-500 shrink-0 mt-0.5 animate-pulse" />
+                <div className="space-y-1">
+                  <h3 className="text-xs font-black tracking-wider text-white uppercase">Información general del servidor</h3>
+                  <p className="text-xs text-gray-500 leading-relaxed font-mono">
+                    Tappmusic.com ha sincronizado su base de datos de audio con enlaces directos CDN de baja latencia. El botón de "Hacer Tareas" calcula y liquida pagos directamente en tiempo real en la billetera local de tu navegador. Sube de VIP haciendo click en tu medalla del menú de arriba en cualquier momento para poner a prueba nuestro sistema.
+                  </p>
+                </div>
+              </div>
             </div>
+
           </div>
-        </div>
+        )}
 
       </main>
 
-      {/* SHARE MODAL / DRAWER DIALOG */}
+      {/* SHARE MODAL DIALOG */}
       {isShareModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#0e0f14] p-6 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-4 right-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-sm rounded-2xl border border-[#39FF14]/30 bg-black p-6 shadow-2xl overflow-hidden relative text-center">
+            <div className="absolute top-4 right-4 animate-led-flash">
               <button 
                 onClick={() => setIsShareModalOpen(false)}
-                className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer"
+                className="h-8 w-8 rounded-lg bg-zinc-950 hover:bg-zinc-900 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="space-y-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600/10 border border-blue-500/20 text-blue-400">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#39FF14]/10 border border-[#39FF14]/20 text-[#39FF14]">
                 <Share2 className="h-6 w-6" />
               </div>
 
               <div>
-                <h3 className="text-lg font-extrabold text-white">Compartir plataforma</h3>
-                <p className="text-xs text-gray-400">Elige la vía de difusión para enviar a tus usuarios.</p>
+                <h3 className="text-md font-black tracking-widest text-white uppercase">Compartir plataforma</h3>
+                <p className="text-[11px] text-zinc-400">Copia el link de lanzamiento de Tappmusic.com para enviar a tu gente.</p>
               </div>
 
-              {/* URL card with copy button */}
-              <div className="rounded-xl bg-black/50 border border-white/5 p-3 flex items-center justify-between">
-                <span className="text-xs font-mono text-gray-300 truncate max-w-[200px] lowercase select-all">
-                  {sharedUrl}
-                </span>
+              <div className="rounded-xl bg-black border border-white/10 p-3 flex items-center justify-between font-mono text-xs">
+                <span className="text-zinc-300 truncate max-w-[170px] select-all lowercase">{sharedUrl}</span>
                 <button
                   onClick={copyModalLink}
-                  className={`flex h-8 items-center gap-1 rounded-lg px-3 text-[10px] font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                  className={`flex h-8 items-center gap-1 rounded-lg px-3 text-[10px] font-black transition-all cursor-pointer uppercase ${
                     copiedModalLink 
                       ? 'bg-emerald-600 text-white' 
-                      : 'bg-white/10 hover:bg-white/15 text-white active:scale-95'
+                      : 'bg-[#39FF14]/10 text-[#39FF14] hover:bg-[#39FF14]/20 border border-[#39FF14]/20'
                   }`}
                 >
-                  {copiedModalLink ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  <span>{copiedModalLink ? 'Copiado' : 'Copiar'}</span>
+                  {copiedModalLink ? 'Copiado' : 'Copiar'}
                 </button>
               </div>
 
-              {/* Big social share quick launches */}
-              <div className="space-y-2 Pt-2">
+              <div className="space-y-2 pt-2">
                 <button
                   onClick={() => {
-                    const encoded = encodeURIComponent(`🔥 ¡Hermano, ya está activa nuestra plataforma TaAppMusic! Escucha el mejor flow urbano y beats aquí: ${sharedUrl}`);
+                    const encoded = encodeURIComponent(`🔥 ¡Hermano, ya está activa nuestra plataforma Tappmusic.com! Escucha el mejor flow dominicano, Reels VIP y gana regalías con tareas aquí: ${sharedUrl}`);
                     window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
                   }}
-                  className="w-full flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition-all cursor-pointer"
+                  className="w-full flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition-all cursor-pointer border-none"
                 >
-                  <MessageSquare className="h-4 w-4" />
-                  <span>Enviar por WhatsApp</span>
+                  <MessageSquare className="h-4 w-4 text-white" />
+                  <span>Compartir por WhatsApp</span>
                 </button>
                 <button
                   onClick={() => {
-                    window.open(`https://t.me/share/url?url=${encodeURIComponent(sharedUrl)}&text=${encodeURIComponent('🔥 ¡Ya está activa TaAppMusic! Escucha el mejor flow dominicano, reggaetón y trap aquí!')}`, '_blank');
+                    window.open(`https://t.me/share/url?url=${encodeURIComponent(sharedUrl)}&text=${encodeURIComponent('🔥 ¡Ya está activa Tappmusic.com! Reels latinos y tareas remuneradas en vivo.')}`, '_blank');
                   }}
-                  className="w-full flex h-10 items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-bold text-white transition-all cursor-pointer"
+                  className="w-full flex h-10 items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-bold text-white transition-all cursor-pointer border-none"
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-4 w-4 text-white" />
                   <span>Compartir por Telegram</span>
-                </button>
-              </div>
-
-              <div className="pt-3 border-t border-white/5 text-center">
-                <button 
-                  onClick={() => setIsShareModalOpen(false)}
-                  className="text-[11px] text-gray-500 hover:text-gray-300 font-semibold"
-                >
-                  Cerrar ventana
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* QUICK SELECTOR VIP DRAWER (For demo flexibility changing tiers instantly) */}
+      {isVipSelectorOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+          <div className="relative w-full max-w-sm rounded-3xl border border-purple-500/30 bg-zinc-950 p-6 shadow-2xl relative overflow-hidden text-center">
+            
+            <div className="absolute top-4 right-4">
+              <button 
+                onClick={() => setIsVipSelectorOpen(false)}
+                className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-all cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                <Trophy className="h-6 w-6" />
+              </div>
+
+              <div>
+                <h3 className="text-md font-black text-white uppercase tracking-wider">Cambiar Rango VIP</h3>
+                <p className="text-[11px] text-zinc-400">Prueba los diferentes niveles para ver tareas y Reels asociados.</p>
+              </div>
+
+              <div className="space-y-2 pt-2 text-left">
+                {[
+                  { lvl: 'VIP 1', desc: 'Tareas básicas de $5.5 y $8', bonus: 'Bono x1.0', col: 'text-zinc-300' },
+                  { lvl: 'VIP 2', desc: 'Tareas activas de $12 y $15', bonus: 'Bono x1.5', col: 'text-purple-400' },
+                  { lvl: 'VIP 3', desc: 'Video-anuncios de $24 y $35', bonus: 'Bono x2.2', col: 'text-amber-400' },
+                  { lvl: 'VIP 4', desc: 'Misiones supremas de $50 y $75', bonus: 'Bono x3.5', col: 'text-emerald-400' }
+                ].map((item) => (
+                  <button
+                    key={item.lvl}
+                    onClick={() => handleUpgradeVip(item.lvl as VipLevel)}
+                    className="w-full p-3 rounded-xl border border-white/5 bg-black hover:border-purple-500/50 transition-all flex items-center justify-between cursor-pointer"
+                  >
+                    <div>
+                      <p className={`text-xs font-black uppercase ${item.col}`}>{item.lvl}</p>
+                      <p className="text-[10px] text-zinc-500">{item.desc}</p>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold bg-white/5 px-2 py-0.5 rounded text-white shrink-0">
+                      {item.bonus}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              
+              <div className="pt-2">
+                <button 
+                  onClick={() => setIsVipSelectorOpen(false)}
+                  className="text-[11px] text-zinc-500 hover:text-zinc-300 font-bold"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
