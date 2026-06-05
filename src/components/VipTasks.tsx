@@ -108,13 +108,13 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
 
       utterance.onstart = () => {
         if (audioRef.current && !isAudioMuted) {
-          audioRef.current.volume = 0.03; // Duck general music sounds during vocal speech
+          audioRef.current.volume = 0.22; // Clear background music background beat alongside the voice
         }
       };
 
       utterance.onend = () => {
         if (audioRef.current && !isAudioMuted) {
-          audioRef.current.volume = 0.15; // Restore normal theme backing track
+          audioRef.current.volume = 0.55; // Majestic full music on narration end
         }
       };
 
@@ -198,16 +198,16 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
   // Audio stream control
   useEffect(() => {
     if (activeTask && activeReel) {
-      if (!audioRef.current) {
-        audioRef.current = new Audio();
+      if (audioRef.current) {
+        audioRef.current.src = activeReel.videoUrl;
+        audioRef.current.loop = true;
+        audioRef.current.muted = isAudioMuted;
+        audioRef.current.volume = isAudioMuted ? 0 : 0.22;
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(err => {
+          console.log("Reproducción automática esperando acción del usuario", err);
+        });
       }
-      audioRef.current.src = activeReel.videoUrl;
-      audioRef.current.loop = true;
-      audioRef.current.muted = isAudioMuted;
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(err => {
-        console.log("Reproducción automática esperando acción del usuario", err);
-      });
     } else {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -224,6 +224,7 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.muted = isAudioMuted;
+      audioRef.current.volume = isAudioMuted ? 0 : 0.22;
     }
     if (isAudioMuted) {
       stopVoiceover();
@@ -630,6 +631,9 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
           </div>
         </div>
       )}
+
+      {/* Hidden background music player */}
+      <audio ref={audioRef} className="hidden" />
 
     </div>
   );

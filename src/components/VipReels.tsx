@@ -71,10 +71,16 @@ export default function VipReels({ currentVip }: VipReelsProps) {
       utterance.rate = 0.85; // Deep, slow, reflective sermon tempo
       utterance.pitch = 0.95; // Noble and authoritative tone for motivation
 
+      utterance.onstart = () => {
+        if (audioRef.current && !isMuted) {
+          audioRef.current.volume = 0.22; // Clear background music background beat alongside the voice
+        }
+      };
+
       utterance.onend = () => {
         // Boost music volume a bit once voiceover completes
         if (audioRef.current && !isMuted) {
-          audioRef.current.volume = 0.5;
+          audioRef.current.volume = 0.55;
         }
       };
 
@@ -98,8 +104,8 @@ export default function VipReels({ currentVip }: VipReelsProps) {
       if (audioRef.current) {
         audioRef.current.src = reel.videoUrl;
         audioRef.current.loop = true;
-        // Keep background loop low so the voiceover shines
-        audioRef.current.volume = isMuted ? 0 : 0.15;
+        // Keep background loop clearly audible
+        audioRef.current.volume = isMuted ? 0 : 0.22;
         audioRef.current.play().catch(err => {
           console.warn("Autoplay block averted on reel:", err);
         });
@@ -112,7 +118,7 @@ export default function VipReels({ currentVip }: VipReelsProps) {
   // Keep volume/mute settings active on audio trigger change
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.volume = isMuted ? 0 : 0.15;
+      audioRef.current.volume = isMuted ? 0 : 0.22;
     }
     if (isMuted) {
       stopVoiceover();
