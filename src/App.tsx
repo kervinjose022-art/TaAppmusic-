@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import PromoShareCard from './components/PromoShareCard';
 import BrainLogo from './components/BrainLogo';
@@ -38,6 +38,11 @@ export default function App() {
       isRegistered: false // prompts registration card first
     };
   });
+
+  // Automated persistence whenever userProfile updates
+  useEffect(() => {
+    localStorage.setItem('tappmusic_profile', JSON.stringify(userProfile));
+  }, [userProfile]);
 
   // Save profile to local storage helper
   const saveProfile = (newProfile: UserProfile) => {

@@ -1,5 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
-import { Check, Flame, Trophy, Coins, ChevronRight, Lock, Play, Cpu, Sparkles, Volume2, VolumeX, X, Disc, Tv } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Check, Flame, Trophy, Coins, ChevronRight, Lock, Play, Cpu, 
+  Sparkles, Volume2, VolumeX, X, Disc, Tv, ArrowUpRight, Wallet, 
+  ArrowRight, History, RefreshCw, Loader2 
+} from 'lucide-react';
 import { UserTask, UserProfile, VipLevel } from '../types';
 import { TASKS_DATABASE, REELS_DATABASE } from '../data';
 
@@ -29,6 +33,108 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // --- WITHDRAWAL SYSTEM STATES ---
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [withdrawalAddress, setWithdrawalAddress] = useState('');
+  const [withdrawalNetwork, setWithdrawalNetwork] = useState<'TRC20' | 'BEP20'>('TRC20');
+  const [withdrawalAmount, setWithdrawalAmount] = useState<string>('150');
+  const [isSubmittingWithdrawal, setIsSubmittingWithdrawal] = useState(false);
+  const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
+  const [withdrawalError, setWithdrawalError] = useState('');
+  
+  const [withdrawHistory, setWithdrawHistory] = useState<any[]>(() => {
+    const saved = localStorage.getItem('tappmusic_withdrawals');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return [
+      {
+        id: 'TAPP-WD-8290',
+        amountCoins: 150,
+        amountUsdt: 5.0,
+        address: 'TY5aH2KsqN9pL8z1vE9m4bCwQaX7y1tB9p',
+        network: 'TRC20',
+        date: '03/06/2026 14:32',
+        status: 'Aprobado',
+        txid: '6fbf4ae7d75dfa312ba24dc1cba77d8a9df6de02b78631481cf1eef45c38c82f'
+      }
+    ];
+  });
+
+  const handleWithdrawalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setWithdrawalError('');
+
+    const amountVal = parseFloat(withdrawalAmount);
+    if (isNaN(amountVal) || amountVal < 150) {
+      setWithdrawalError('El retiro mínimo es de 150 monedas (5 USDT).');
+      return;
+    }
+
+    if (userProfile.earnings < amountVal) {
+      setWithdrawalError('Saldo de monedas insuficiente para retirar esta cantidad.');
+      return;
+    }
+
+    const trTrim = withdrawalAddress.trim();
+    if (!trTrim) {
+      setWithdrawalError('Introduce una dirección de destino USDT válida.');
+      return;
+    }
+
+    if (withdrawalNetwork === 'TRC20' && !trTrim.startsWith('T')) {
+      setWithdrawalError('La dirección de retiro TRC-20 (Tron) debe comenzar con la letra "T". Ej: TY5a...');
+      return;
+    }
+
+    if (withdrawalNetwork === 'BEP20' && !trTrim.startsWith('0x')) {
+      setWithdrawalError('La dirección de retiro BEP-20 (BNB Chain) debe comenzar con la firma "0x". Ej: 0x9f...');
+      return;
+    }
+
+    // Process simulation
+    setIsSubmittingWithdrawal(true);
+    
+    setTimeout(() => {
+      const generatedId = `TAPP-WD-${Math.floor(1000 + Math.random() * 9000)}`;
+      const randomTxid = Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
+      
+      const newWithdrawal = {
+        id: generatedId,
+        amountCoins: amountVal,
+        amountUsdt: Number((amountVal / 30).toFixed(2)),
+        address: trTrim,
+        network: withdrawalNetwork,
+        date: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'Pendiente', // starts as pending approval
+        txid: randomTxid
+      };
+
+      const updatedHistory = [newWithdrawal, ...withdrawHistory];
+      setWithdrawHistory(updatedHistory);
+      localStorage.setItem('tappmusic_withdrawals', JSON.stringify(updatedHistory));
+
+      // Deduct from profile
+      setUserProfile(prev => ({
+        ...prev,
+        earnings: Number((prev.earnings - amountVal).toFixed(2))
+      }));
+
+      setIsSubmittingWithdrawal(false);
+      setWithdrawalSuccess(true);
+      setWithdrawalAmount('150'); // reset placeholder
+      
+      setTimeout(() => {
+        setWithdrawalSuccess(false);
+      }, 3500);
+
+    }, 3000); // 3 sec delay
+  };
 
   const VOICE_THEMES = [
     {
@@ -293,24 +399,37 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
     <div className="rounded-2xl border border-[#39FF14]/20 bg-black p-6 shadow-xl relative overflow-hidden select-none">
       
       {/* Wallet / Balance Board */}
-      <div className="grid grid-cols-2 gap-4 mb-6 border-b border-[#39FF14]/10 pb-5">
-        <div className="text-left">
+      <div className="grid grid-cols-2 gap-4 mb-6 border-b border-[#39FF14]/10 pb-5 items-center">
+        <div className="text-left space-y-1.5">
           <p className="text-[10px] font-mono tracking-widest text-purple-400 uppercase">Billetera TaApp</p>
-          <div className="flex items-center gap-1.5 pt-1 uppercase">
+          <div className="flex items-center gap-1.5 uppercase">
             <Coins className="h-4.5 w-4.5 text-yellow-400 animate-pulse" />
             <span className="text-2xl font-black text-white font-mono tracking-tight glow-text text-neon-green">
               {userProfile.earnings.toLocaleString()}
             </span>
             <span className="text-[10px] font-mono text-[#39FF14] font-bold self-end mb-1">MONEDAS</span>
           </div>
+
+          <button
+            onClick={() => setIsWithdrawOpen(true)}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#39FF14]/10 hover:bg-[#39FF14]/20 border border-[#39FF14]/30 hover:border-[#39FF14] text-[#39FF14] text-[9px] font-extrabold font-mono uppercase tracking-wider transition-all cursor-pointer active:scale-95"
+          >
+            <ArrowUpRight className="h-3 w-3 text-[#39FF14]" />
+            <span>Retirar USDT</span>
+          </button>
         </div>
 
-        <div className="text-left border-l border-white/5 pl-4">
-          <p className="text-[10px] font-mono tracking-widest text-[#39FF14] uppercase">Rango Activo</p>
-          <div className="flex items-center gap-1 pt-1.5 font-bold text-white uppercase text-xs">
-            <Trophy className="h-4 w-4 text-yellow-500" />
-            <span>Nivel {userProfile.vipLevel}</span>
+        <div className="text-left border-l border-white/5 pl-4 flex flex-col justify-between py-1">
+          <div>
+            <p className="text-[10px] font-mono tracking-widest text-[#39FF14] uppercase">Rango Activo</p>
+            <div className="flex items-center gap-1 pt-1 font-bold text-white uppercase text-[11px] sm:text-xs">
+              <Trophy className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
+              <span className="truncate">{userProfile.vipLevel}</span>
+            </div>
           </div>
+          <p className="text-[9px] text-zinc-500 font-mono leading-none mt-2">
+            Mínimo: 5 USDT (150 monedas)
+          </p>
         </div>
       </div>
 
@@ -628,6 +747,255 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
               )}
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* WITHDRAW MONEDAS / USDT MODAL DIALOG */}
+      {isWithdrawOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md overflow-y-auto animate-fade-in">
+          <div className="relative w-full max-w-lg rounded-3xl border border-[#39FF14]/30 bg-black p-6 shadow-[0_0_50px_rgba(57,255,20,0.15)] text-center my-8">
+            
+            <div className="absolute top-5 right-5">
+              <button 
+                onClick={() => {
+                  if (!isSubmittingWithdrawal) {
+                    setIsWithdrawOpen(false);
+                    setWithdrawalError('');
+                  }
+                }}
+                disabled={isSubmittingWithdrawal}
+                className="h-8 w-8 rounded-lg bg-zinc-900 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              
+              {/* Header inside Modal */}
+              <div className="flex flex-col items-center">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#39FF14]/10 border border-[#39FF14]/30 text-[#39FF14] mb-3">
+                  <Wallet className="h-6 w-6 text-[#39FF14]" />
+                </div>
+                <h3 className="text-lg font-black tracking-widest text-white uppercase">Retirar Fondos VIP</h3>
+                <p className="text-[11px] text-zinc-400 max-w-sm mt-1">
+                  Convierte tus regalías acumuladas en USDT estables. El tiempo promedio de acreditación es de 5 a 15 minutos.
+                </p>
+              </div>
+
+              {/* Stats boxes */}
+              <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-zinc-950/80 border border-white/5 text-left font-mono">
+                <div>
+                  <span className="text-[9px] text-zinc-500 uppercase block tracking-wider">Saldo Disponible</span>
+                  <span className="text-xl font-black text-white glow-text text-neon-green">
+                    {userProfile.earnings.toLocaleString()}
+                  </span>
+                  <span className="text-[9px] text-[#39FF14] font-bold ml-1.5 font-sans">Monedas</span>
+                </div>
+                <div className="border-l border-white/5 pl-4">
+                  <span className="text-[9px] text-zinc-500 uppercase block tracking-wider">Equivalente USDT</span>
+                  <span className="text-xl font-black text-[#39FF14]">
+                    ${(userProfile.earnings / 30).toFixed(2)}
+                  </span>
+                  <span className="text-[9px] text-zinc-400 ml-1.5 uppercase font-sans">USDT</span>
+                </div>
+              </div>
+
+              {/* Submitting step */}
+              {isSubmittingWithdrawal ? (
+                <div className="py-12 flex flex-col items-center justify-center space-y-4">
+                  <Loader2 className="h-10 w-10 text-[#39FF14] animate-spin" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-white uppercase tracking-wider font-mono">Firmando Retiro en Blockchain...</p>
+                    <p className="text-xs text-zinc-550 font-mono animate-pulse">Sincronizando con redes descentralizadas. Por favor no cierres esta ventana.</p>
+                  </div>
+                </div>
+              ) : withdrawalSuccess ? (
+                <div className="py-8 p-4 rounded-2xl border border-emerald-500/25 bg-emerald-950/10 text-center space-y-3">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 animate-bounce">
+                    <Check className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-white uppercase tracking-wider">¡Solicitud Enviada con Éxito!</h4>
+                    <p className="text-xs text-zinc-400 font-mono mt-1 leading-relaxed">
+                      Se han deducido las monedas correctas. Nuestra plataforma enviará tus fondos una vez aprobada la transacción automáticamente de 5 a 15 min. Consérvala en la lista inferior de retiros.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleWithdrawalSubmit} className="space-y-4 text-left">
+                  
+                  {/* Select Network */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-bold block">
+                      Red de Criptoactivos (USDT)
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setWithdrawalNetwork('TRC20')}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold font-mono border flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
+                          withdrawalNetwork === 'TRC20'
+                            ? 'bg-[#39FF14]/10 text-[#39FF14] border-[#39FF14]/50'
+                            : 'bg-zinc-950 border-zinc-805 text-zinc-500 hover:text-zinc-300'
+                        }`}
+                      >
+                        <span className="font-sans font-black">TRON (TRC-20)</span>
+                        <span className="text-[8px] opacity-80 font-mono text-center">Recomendado - Baja Comisión</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setWithdrawalNetwork('BEP20')}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold font-mono border flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
+                          withdrawalNetwork === 'BEP20'
+                            ? 'bg-purple-950/40 text-purple-400 border-purple-500/50'
+                            : 'bg-zinc-950 border-zinc-805 text-zinc-500 hover:text-zinc-300'
+                        }`}
+                      >
+                        <span className="font-sans font-black">BNB CHAIN (BEP-20)</span>
+                        <span className="text-[8px] opacity-80 font-mono text-center">Ecológico y Seguro</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Input Address */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 block font-bold">
+                        Tu Dirección de Retiro USDT ({withdrawalNetwork})
+                      </label>
+                      <span className="text-[8px] text-zinc-500 font-mono">
+                        {withdrawalNetwork === 'TRC20' ? 'Comienza con "T"' : 'Comienza con "0x"'}
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      placeholder={withdrawalNetwork === 'TRC20' ? 'Ej. TY5aH2KsqN9pL8z1vE9m4...' : 'Ej. 0x9f323aCDa84db3...'}
+                      value={withdrawalAddress}
+                      onChange={(e) => setWithdrawalAddress(e.target.value)}
+                      className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                    />
+                  </div>
+
+                  {/* Amount of coins */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 block font-bold">
+                        Cantidad de Monedas a Retirar
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const maxRounded = Math.floor(userProfile.earnings);
+                          setWithdrawalAmount(String(maxRounded >= 150 ? maxRounded : 150));
+                        }}
+                        className="text-[9px] font-mono text-[#39FF14] hover:underline uppercase cursor-pointer"
+                      >
+                        Retirar Todo
+                      </button>
+                    </div>
+                    
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="150"
+                        required
+                        value={withdrawalAmount}
+                        onChange={(e) => setWithdrawalAmount(e.target.value)}
+                        className="w-full text-xs font-mono bg-zinc-950 border border-white/10 rounded-xl pl-4 pr-24 py-2.5 text-white placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-900 border border-white/5 text-[9px] text-[#39FF14] px-2 py-1 rounded font-bold font-mono">
+                        ≈ {isNaN(parseFloat(withdrawalAmount)) ? '0.00' : (parseFloat(withdrawalAmount) / 30).toFixed(2)} USDT
+                      </div>
+                    </div>
+                    
+                    <p className="text-[9px] text-zinc-500 font-mono mt-1">
+                      * Mínimo de retiro: 150 monedas (5.00 USDT). Tasa de Conversión: 30 Monedas = 1 USDT.
+                    </p>
+                  </div>
+
+                  {/* Error display */}
+                  {withdrawalError && (
+                    <div className="p-3 rounded-xl border border-red-500/20 bg-red-950/10 text-red-400 font-mono text-[10px] text-center leading-relaxed antialiased">
+                      ⚠️ {withdrawalError}
+                    </div>
+                  )}
+
+                  {/* Withdraw Submit buttons */}
+                  <div className="flex gap-2.5 pt-2">
+                    <button
+                      type="submit"
+                      disabled={userProfile.earnings < 150}
+                      className="flex-1 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#39FF14] to-emerald-400 hover:from-emerald-400 hover:to-[#39FF14] text-xs font-black uppercase text-black font-sans tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed text-shadow-none cursor-pointer"
+                    >
+                      <ArrowUpRight className="h-4 w-4 text-black" />
+                      <span>Someter Solicitud de Retiro</span>
+                    </button>
+                  </div>
+
+                </form>
+              )}
+
+              {/* Withdrawal History Area */}
+              <div className="border-t border-white/5 pt-4 text-left">
+                <div className="flex items-center gap-1.5 mb-2.5">
+                  <History className="h-3.5 w-3.5 text-zinc-400" />
+                  <h4 className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase font-black">Historial de Retiros</h4>
+                </div>
+                
+                <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                  {withdrawHistory.length === 0 ? (
+                    <p className="text-[9px] font-mono text-zinc-650 text-center py-4">No posees retiros anteriores realizados.</p>
+                  ) : (
+                    withdrawHistory.map((item: any) => (
+                      <div 
+                        key={item.id} 
+                        className="p-3 rounded-xl border border-white/5 bg-zinc-950/40 hover:bg-zinc-950/80 transition-all flex items-center justify-between font-mono gap-4"
+                      >
+                        <div className="space-y-1 font-mono min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] text-white font-extrabold">{item.amountCoins} MONEDAS</span>
+                            <span className="text-[9px] text-zinc-500">({item.amountUsdt} USDT)</span>
+                            <span className="text-[8px] bg-[#39FF14]/10 text-[#39FF14] px-1 rounded font-black">{item.network}</span>
+                          </div>
+                          <div className="text-[8px] text-zinc-500 truncate select-all" title={item.address}>
+                            Dir: {item.address.slice(0, 8)}...{item.address.slice(-6)}
+                          </div>
+                          <p className="text-[8px] text-zinc-600 leading-none">{item.date} • ID: {item.id}</p>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className={`inline-flex px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
+                            item.status === 'Aprobado'
+                              ? 'bg-emerald-950/40 text-[#39FF14] border border-[#39FF14]/25'
+                              : item.status === 'Pendiente'
+                              ? 'bg-yellow-950/40 text-yellow-400 border border-yellow-500/25 animate-pulse'
+                              : 'bg-zinc-900 text-zinc-500'
+                          }`}>
+                            {item.status}
+                          </span>
+                          {item.status === 'Aprobado' && item.txid && (
+                            <p 
+                              className="text-[7px] text-zinc-500 mt-1 cursor-pointer hover:underline underline-offset-2 truncate max-w-[80px]"
+                              onClick={() => {
+                                navigator.clipboard.writeText(item.txid);
+                              }}
+                              title="Copiar hash de la transacción"
+                            >
+                              TxID: {item.txid.slice(0, 6)}...
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
       )}
