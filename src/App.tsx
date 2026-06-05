@@ -81,11 +81,22 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    // Reset all form inputs to clean blank fields for registration
+    setInputUsername('');
+    setInputEmail('');
+    setInputPassword('');
+    
     const updated: UserProfile = {
-      ...userProfile,
+      username: 'usuario_vip',
+      email: '',
+      password: '',
+      vipLevel: 'VIP ORO 10$',
+      earnings: 25.50,
+      completedTaskIds: [],
       isRegistered: false
     };
     saveProfile(updated);
+    localStorage.removeItem('tappmusic_profile');
   };
 
   const copyModalLink = async () => {

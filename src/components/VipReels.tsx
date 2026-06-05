@@ -203,11 +203,29 @@ export default function VipReels({ currentVip }: VipReelsProps) {
         {/* Mute button container */}
         <button
           onClick={() => setIsMuted(!isMuted)}
-          className="self-start sm:self-auto flex items-center gap-1.5 rounded-lg bg-[#302138] hover:bg-[#402e4d] px-3 py-1.5 text-xs text-purple-300 font-bold font-mono transition-all uppercase cursor-pointer"
+          className={`self-start sm:self-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold font-mono transition-all uppercase cursor-pointer border ${
+            !isMuted 
+              ? 'bg-[#39FF14]/10 text-[#39FF14] border-[#39FF14]/30 shadow-[0_0_12px_rgba(57,255,20,0.25)]' 
+              : 'bg-[#302138] border-purple-500/10 text-purple-300'
+          }`}
         >
           {isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
-          <span>{isMuted ? 'Silenciado' : 'Sonido Activado'}</span>
+          <span>{isMuted ? 'Mudo (Haz clic para activar voz)' : 'Voz Real Activa'}</span>
         </button>
+      </div>
+
+      {/* Guide Banner for voiceover and register option */}
+      <div className="mb-6 rounded-xl border border-[#39FF14]/20 bg-emerald-950/20 p-4 text-left space-y-2">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-yellow-500 animate-bounce" />
+          <h4 className="text-xs font-bold uppercase tracking-wider text-white">Guía de Voces y Acceso VIP:</h4>
+        </div>
+        <p className="text-[11px] leading-relaxed text-gray-300">
+          Para cantar y proclamar en voz alta los versículos, testimonios y afirmaciones de <strong className="text-[#39FF14]">DIOS, FAMILIA Y MENTALIDAD MILLONARIA</strong>, haz clic arriba en <strong className="text-white">Voz Real Activa</strong> y luego dale al botón <strong className="text-purple-400">Play (▶)</strong> de cualquiera de las Reels. Escucharás una narración solemne en vivo.
+        </p>
+        <p className="text-[11px] leading-relaxed text-gray-400 pt-1 border-t border-white/5">
+          🔑 <strong className="text-white">¿Quieres crear otro usuario o ver la pantalla de Registro vacía?</strong> Simplemente haz clic en el botón <strong className="text-red-500 font-black uppercase">Salir</strong> ubicado en la esquina superior derecha para cerrar sesión y volver al formulario de registro limpio en cualquier enlace.
+        </p>
       </div>
 
       {/* Selector VIP Tabs */}
