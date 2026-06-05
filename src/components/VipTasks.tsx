@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Check, Flame, Trophy, Coins, ChevronRight, Lock, Play, Cpu, Sparkles } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Check, Flame, Trophy, Coins, ChevronRight, Lock, Play, Cpu, Sparkles, Volume2, VolumeX, X, Disc, Tv } from 'lucide-react';
 import { UserTask, UserProfile, VipLevel } from '../types';
-import { TASKS_DATABASE } from '../data';
+import { TASKS_DATABASE, REELS_DATABASE } from '../data';
 
 interface VipTasksProps {
   userProfile: UserProfile;
@@ -18,9 +18,15 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
   });
 
   const [activeTab, setActiveTab] = useState<'disponibles' | 'completadas'>('disponibles');
-  const [runningTaskId, setRunningTaskId] = useState<string | null>(null);
-  const [taskProgress, setTaskProgress] = useState(0);
-  const [statusMessage, setStatusMessage] = useState('');
+  
+  // Custom interactive countdown player states
+  const [activeTask, setActiveTask] = useState<UserTask | null>(null);
+  const [activeReel, setActiveReel] = useState<any | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(25);
+  const [isAudioMuted, setIsAudioMuted] = useState(false);
+  const [rewardClaimable, setRewardClaimable] = useState(false);
+  
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Filter tasks based on selected tab & matching user's exact VIP requirement
   const currentFilteredTasks = tasks.filter(task => {
@@ -51,47 +57,78 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
       return;
     }
 
-    if (runningTaskId) return; // one task at a time
+    // Direct interactive video correspondientes lookup based on task's required level
+    const matchedReel = REELS_DATABASE.find(r => r.vipLevel === task.vipRequired) || REELS_DATABASE[0];
 
-    setRunningTaskId(task.id);
-    setTaskProgress(0);
-
-    const statuses = [
-      'Cargando video de fe...',
-      'Verificando mensaje de fe y éxito...',
-      'Analizando testimonio de abundancia...',
-      'Procesando regalía de tarea...'
-    ];
-
-    let currentStep = 0;
-    setStatusMessage(statuses[0]);
-
-    const interval = setInterval(() => {
-      setTaskProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          completeTask(task);
-          return 100;
-        }
-
-        // Cycle messages
-        if (prev > 0 && prev % 25 === 0 && currentStep < statuses.length - 1) {
-          currentStep++;
-          setStatusMessage(statuses[currentStep]);
-        }
-
-        return prev + 5;
-      });
-    }, 150);
+    setActiveTask(task);
+    setActiveReel(matchedReel);
+    setSecondsLeft(25);
+    setRewardClaimable(false);
+    setIsAudioMuted(false);
   };
 
-  const completeTask = (task: UserTask) => {
-    // Add task ID to user profile list, add payout balance
+  // Timer countdown count
+  useEffect(() => {
+    let timer: any = null;
+    if (activeTask && secondsLeft > 0) {
+      timer = setInterval(() => {
+        setSecondsLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setRewardClaimable(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [activeTask, secondsLeft]);
+
+  // Audio stream control
+  useEffect(() => {
+    if (activeTask && activeReel) {
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+      }
+      audioRef.current.src = activeReel.videoUrl;
+      audioRef.current.loop = true;
+      audioRef.current.muted = isAudioMuted;
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(err => {
+        console.log("Reproducción automática esperando acción del usuario", err);
+      });
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    }
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, [activeTask, activeReel]);
+
+  // Sync mute
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = isAudioMuted;
+    }
+  }, [isAudioMuted]);
+
+  const handleClaimReward = () => {
+    if (!activeTask) return;
+    
+    const payout = activeTask.rewardValue;
+    
     setUserProfile(prev => {
-      if (prev.completedTaskIds.includes(task.id)) return prev;
+      if (prev.completedTaskIds.includes(activeTask.id)) return prev;
       
-      const updatedIds = [...prev.completedTaskIds, task.id];
-      const updatedEarnings = prev.earnings + task.rewardValue;
+      const updatedIds = [...prev.completedTaskIds, activeTask.id];
+      const updatedEarnings = prev.earnings + payout;
 
       return {
         ...prev,
@@ -100,10 +137,28 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
       };
     });
 
-    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, isCompleted: true } : t));
-    setRunningTaskId(null);
-    setTaskProgress(0);
-    setStatusMessage('');
+    setTasks(prev => prev.map(t => t.id === activeTask.id ? { ...t, isCompleted: true } : t));
+    
+    // Stop and cleanup
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setActiveTask(null);
+    setActiveReel(null);
+    setSecondsLeft(25);
+    setRewardClaimable(false);
+  };
+
+  const handleCancelTask = () => {
+    if (confirm("¿Estás seguro de cancelar? Se perderá el avance actual de esta tarea.")) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setActiveTask(null);
+      setActiveReel(null);
+      setSecondsLeft(25);
+      setRewardClaimable(false);
+    }
   };
 
   return (
@@ -154,24 +209,6 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
           Completadas ({userProfile.completedTaskIds.length})
         </button>
       </div>
-
-      {/* Doing task loader simulation bar */}
-      {runningTaskId && (
-        <div className="mb-5 p-4 rounded-xl border border-purple-500/30 bg-purple-950/10 text-left space-y-2 animate-pulse">
-          <div className="flex items-center justify-between text-xs font-bold text-purple-300">
-            <span className="flex items-center gap-1.5">
-              <Cpu className="h-3.5 w-3.5 animate-spin" /> {statusMessage}
-            </span>
-            <span>{taskProgress}%</span>
-          </div>
-          <div className="w-full h-2 bg-black/50 rounded-full overflow-hidden border border-purple-500/20">
-            <div 
-              className="h-full bg-gradient-to-r from-purple-500 to-yellow-500 transition-all duration-150"
-              style={{ width: `${taskProgress}%` }}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Tasks Render lists */}
       {currentFilteredTasks.length === 0 ? (
@@ -240,7 +277,7 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
                   ) : (
                     <button
                       onClick={() => handlePerformTask(task)}
-                      disabled={!!runningTaskId}
+                      disabled={!!activeTask}
                       className="flex h-9 items-center gap-1.5 rounded-lg border border-[#39FF14] bg-[#39FF14]/5 hover:bg-[#39FF14]/20 text-[10px] font-bold font-mono text-[#39FF14] px-4 transition-all uppercase cursor-pointer disabled:opacity-50 active:scale-95 shadow-[0_0_8px_rgba(57,255,20,0.15)]"
                     >
                       <Play className="h-3.5 w-3.5 fill-current" />
@@ -258,6 +295,147 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
       <div className="mt-5 p-3.5 rounded-xl border border-[#39FF14]/10 bg-[#39FF14]/5 text-left text-[11px] text-[#39FF14]/90 leading-relaxed font-mono">
         💎 <span className="font-bold">CONSEJO VIP:</span> Desbloquea niveles superiores usando el panel de registro superior para multiplicar tu balance y acceder a tareas de hasta $75.00 dólares cada una.
       </div>
+
+      {/* NEW INTERACTIVE FULLSCREEN COUNTDOWN TASK PLAYER DIALOG */}
+      {activeTask && activeReel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md rounded-3xl border-2 border-[#39FF14] bg-zinc-950 p-6 flex flex-col space-y-4 shadow-[0_0_50px_rgba(57,255,20,0.25)] text-center relative overflow-hidden">
+            
+            {/* Ambient gold glow in player */}
+            <div className="absolute -top-16 left-1/2 -translate-x-1/2 h-32 w-32 rounded-full bg-yellow-500/10 blur-xl pointer-events-none" />
+
+            {/* Header / Badges */}
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <span className="text-[10px] font-mono font-bold text-[#39FF14] tracking-widest uppercase flex items-center gap-1 animate-pulse">
+                <Cpu className="h-3.5 w-3.5 animate-spin" /> Tarea Activa {activeTask.vipRequired}
+              </span>
+              <button 
+                onClick={handleCancelTask}
+                className="h-8 w-8 rounded-lg bg-zinc-900 border border-white/5 hover:bg-zinc-800 transition-all flex items-center justify-center text-gray-400 hover:text-white cursor-pointer"
+                title="Cancelar Tarea"
+              >
+                <X className="h-4.5 w-4.5" />
+              </button>
+            </div>
+
+            {/* Active Video/Reel representation Cover */}
+            <div className="relative aspect-[3/4] w-full rounded-2xl bg-black border border-white/10 overflow-hidden shadow-2xl flex flex-col justify-between p-4 bg-cover bg-center"
+                 style={{ backgroundImage: `url(${activeReel.coverUrl})` }}>
+              
+              {/* Dark film tint */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-black/60 z-0" />
+
+              {/* Top Bar inside the Player */}
+              <div className="relative z-10 flex items-center justify-between w-full">
+                <span className="px-2.5 py-0.5 rounded bg-black/65 border border-purple-550/30 text-[9px] font-mono text-purple-300 font-extrabold uppercase">
+                  @{activeReel.artist}
+                </span>
+
+                {/* Styled Mute Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsAudioMuted(!isAudioMuted)}
+                  className="h-8 w-8 rounded-full bg-black/75 border border-white/15 text-white hover:bg-black flex items-center justify-center cursor-pointer transition-all active:scale-90"
+                >
+                  {isAudioMuted ? <VolumeX className="h-4.5 w-4.5 text-zinc-400" /> : <Volume2 className="h-4.5 w-4.5 text-[#39FF14] animate-pulse" />}
+                </button>
+              </div>
+
+              {/* Spinning Disc visual centerpiece */}
+              <div className="relative z-10 flex flex-col items-center justify-center py-6">
+                <div className="relative">
+                  <div className="h-28 w-28 rounded-full ring-4 ring-[#39FF14]/20 bg-cover bg-center animate-spin"
+                       style={{ 
+                         backgroundImage: `url(${activeReel.coverUrl})`,
+                         animationDuration: '6s' 
+                       }} />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-full bg-black border border-white/15 flex items-center justify-center">
+                      <Disc className="h-5 w-5 text-purple-400 animate-spin" style={{ animationDuration: '3s' }} />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Visual Audio Wave beats representation */}
+                <div className="flex items-center gap-1 mt-5 h-6">
+                  {[...Array(8)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-1 bg-[#39FF14] rounded-full animate-bounce"
+                      style={{
+                        height: `${Math.floor(Math.random() * 16) + 6}px`,
+                        animationDelay: `${i * 0.1}s`,
+                        animationDuration: `${0.4 + Math.random() * 0.5}s`
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottom Quote inside the Player */}
+              <div className="relative z-10 text-left space-y-1.5 bg-black/60 p-3 rounded-xl border border-white/5 backdrop-blur-xs">
+                <h5 className="text-white text-xs font-black truncate">{activeReel.title}</h5>
+                <p className="text-[10px] text-zinc-300 leading-normal line-clamp-2 italic">
+                  "{activeReel.caption}"
+                </p>
+              </div>
+            </div>
+
+            {/* Countdown and progress bar indicators */}
+            <div className="space-y-2 border-t border-white/5 pt-4">
+              <div className="flex items-center justify-between text-xs font-mono font-bold px-1">
+                <span className="text-zinc-400 flex items-center gap-1">
+                  <Tv className="h-3.5 w-3.5 text-purple-400" /> Reproducción del Evangelio
+                </span>
+                <span className="text-[#39FF14] font-black">
+                  {secondsLeft > 0 ? `0:${secondsLeft < 10 ? '0' : ''}${secondsLeft}` : "¡Completado!"}
+                </span>
+              </div>
+
+              {/* Timer Progress Bar */}
+              <div className="w-full h-2.5 bg-black rounded-full overflow-hidden border border-white/10 relative">
+                <div 
+                  className={`h-full transition-all duration-1000 ${
+                    rewardClaimable 
+                      ? 'bg-gradient-to-r from-[#39FF14] to-emerald-400' 
+                      : 'bg-gradient-to-r from-purple-600 to-yellow-500'
+                  }`}
+                  style={{ width: `${((25 - secondsLeft) / 25) * 100}%` }}
+                />
+              </div>
+
+              {/* Help message status */}
+              <p className="text-[10px] font-mono text-zinc-500">
+                {secondsLeft > 0 
+                  ? `Sintoniza tu fe. Por favor espera ${secondsLeft} segundos para validar la recompensa.`
+                  : "¡Vídeo contemplado correctamente! Las regalías están listas para cosechar."}
+              </p>
+            </div>
+
+            {/* Claim Reward Buttons row */}
+            <div className="pt-2">
+              {rewardClaimable ? (
+                <button
+                  onClick={handleClaimReward}
+                  className="w-full flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#39FF14] to-emerald-400 hover:from-emerald-400 hover:to-[#39FF14] text-xs font-black uppercase text-black font-sans tracking-wider transition-all cursor-pointer active:scale-95 shadow-[0_0_20px_rgba(57,255,20,0.45)] hover:shadow-[0_0_25px_rgba(57,255,20,0.6)] animate-pulse"
+                >
+                  <Sparkles className="h-4.5 w-4.5 text-black" />
+                  <span>RECIBIR RECOMPENSA DE +${activeTask.rewardValue.toFixed(2)} USD</span>
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="w-full flex h-11 items-center justify-center gap-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-mono font-bold text-zinc-500 uppercase tracking-wide cursor-not-allowed"
+                >
+                  <Lock className="h-4 w-4 text-zinc-600 animate-pulse" />
+                  <span>Espera {secondsLeft}s segs para reclamar</span>
+                </button>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

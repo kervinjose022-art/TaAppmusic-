@@ -319,30 +319,16 @@ export default function App() {
               </div>
             </div>
 
-            {/* TWO COLUMN BENTO GRID OF FEED AND TASKS */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start max-w-5xl mx-auto">
-              
-              {/* Column 1: VIP Tasks Board (Hacer Tareas) */}
-              <div className="space-y-4">
-                <div className="text-left pl-1">
-                  <h3 className="text-sm font-black tracking-widest text-purple-400 uppercase">💼 Hacer Tareas Diarias</h3>
-                  <p className="text-zinc-500 text-[11px]">Completa misiones inspiradoras para acumular regalías.</p>
-                </div>
-                <VipTasks 
-                  userProfile={userProfile} 
-                  setUserProfile={setUserProfile} 
-                />
+            {/* SINGLE COLUMN FOCUSED TASK BOARD */}
+            <div className="max-w-xl mx-auto space-y-4">
+              <div className="text-left pl-1">
+                <h3 className="text-sm font-black tracking-widest text-purple-400 uppercase">💼 Hacer Tareas Diarias</h3>
+                <p className="text-zinc-500 text-[11px]">Completa misiones inspiradoras de fe para recibir regalías automáticas en tu billetera.</p>
               </div>
-
-              {/* Column 2: Instagram/TikTok Style Reels Filtered by VIP Levels */}
-              <div className="space-y-4">
-                <div className="text-left pl-1">
-                  <h3 className="text-sm font-black tracking-widest text-yellow-400 uppercase">📱 Reels de Fe y Éxito</h3>
-                  <p className="text-zinc-500 text-[11px]">Mira loops, videos cortos de fe y deja comentarios VIP.</p>
-                </div>
-                <VipReels currentVip={userProfile.vipLevel} />
-              </div>
-
+              <VipTasks 
+                userProfile={userProfile} 
+                setUserProfile={setUserProfile} 
+              />
             </div>
 
             {/* Support instructions container */}
