@@ -25,9 +25,61 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
   const [secondsLeft, setSecondsLeft] = useState(25);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [rewardClaimable, setRewardClaimable] = useState(false);
+  const [activeVoiceKey, setActiveVoiceKey] = useState<string>('dios');
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const VOICE_THEMES = [
+    {
+      key: 'jesus',
+      speaker: 'Jesucristo Salvador',
+      avatar: '✝️',
+      description: 'Voz Sagrada de Redención y Amor',
+      intro: 'Hijo mío, recibe mi paz protectora. Anda, contempla esta promesa y compártela: ',
+      color: 'border-purple-500/30 text-purple-300 bg-purple-500/5',
+      badgeColor: 'bg-purple-950/40 text-purple-300 border-purple-500/30',
+      shadow: 'shadow-[0_0_15px_rgba(168,85,247,0.3)]',
+      pitch: 1.02,
+      rate: 0.82
+    },
+    {
+      key: 'dios',
+      speaker: 'Dios Padre Celestial',
+      avatar: '🌿',
+      description: 'Voz Omnipotente, Calma y Solemne',
+      intro: 'Yo soy tu refugio en la tormenta. Escucha con reverencia mi mensaje sagrado para ti: ',
+      color: 'border-amber-500/30 text-amber-300 bg-amber-500/5',
+      badgeColor: 'bg-amber-950/40 text-amber-300 border-amber-500/30',
+      shadow: 'shadow-[0_0_15px_rgba(245,158,11,0.3)]',
+      pitch: 0.84,
+      rate: 0.75
+    },
+    {
+      key: 'familia',
+      speaker: 'La Voz de la Familia',
+      avatar: '🏠',
+      description: 'Voz de Unión, Pureza y Valores',
+      intro: 'Edifica tu bendito hogar sobre la roca del amor. Este es el consejo protector para tu mesa: ',
+      color: 'border-pink-500/30 text-pink-300 bg-pink-500/5',
+      badgeColor: 'bg-pink-950/40 text-pink-300 border-pink-500/30',
+      shadow: 'shadow-[0_0_15px_rgba(236,72,153,0.3)]',
+      pitch: 1.14,
+      rate: 0.88
+    },
+    {
+      key: 'mentalidad',
+      speaker: 'Mentalidad Millonaria de Reino',
+      avatar: '💎',
+      description: 'Voz Inspiradora de Éxito y Provisión',
+      intro: '¡Declara abundancia en el nombre del Creador! Rompe la escasez y recibe tu prosperidad: ',
+      color: 'border-[#39FF14]/30 text-[#39FF14] bg-[#39FF14]/5',
+      badgeColor: 'bg-zinc-900 text-[#39FF14] border-[#39FF14]/40',
+      shadow: 'shadow-[0_0_15px_rgba(57,255,20,0.3)]',
+      pitch: 1.0,
+      rate: 0.94
+    }
+  ];
 
   const stopVoiceover = () => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -35,7 +87,7 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
     }
   };
 
-  const startVoiceover = (text: string) => {
+  const startVoiceover = (text: string, voiceTheme: typeof VOICE_THEMES[0]) => {
     stopVoiceover();
     if (typeof window !== 'undefined' && window.speechSynthesis && !isAudioMuted) {
       const cleaned = text
@@ -51,8 +103,20 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
         utterance.voice = spanishVoice;
       }
 
-      utterance.rate = 0.85;
-      utterance.pitch = 0.95;
+      utterance.rate = voiceTheme.rate;
+      utterance.pitch = voiceTheme.pitch;
+
+      utterance.onstart = () => {
+        if (audioRef.current && !isAudioMuted) {
+          audioRef.current.volume = 0.03; // Duck general music sounds during vocal speech
+        }
+      };
+
+      utterance.onend = () => {
+        if (audioRef.current && !isAudioMuted) {
+          audioRef.current.volume = 0.15; // Restore normal theme backing track
+        }
+      };
 
       speechUtteranceRef.current = utterance;
       window.speechSynthesis.speak(utterance);
@@ -91,6 +155,19 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
     // Direct interactive video correspondientes lookup based on task's required level
     const matchedReel = REELS_DATABASE.find(r => r.vipLevel === task.vipRequired) || REELS_DATABASE[0];
 
+    // Detect ideal default voice thematic category
+    const titleLower = task.title.toLowerCase();
+    const descLower = task.description.toLowerCase();
+    const isJesus = titleLower.includes('jesús') || titleLower.includes('cristo') || descLower.includes('jesús') || descLower.includes('cristo');
+    const isMentalidad = task.category === 'Mentalidad' || titleLower.includes('millonaria') || titleLower.includes('disciplina') || descLower.includes('millonaria') || titleLower.includes('riqueza') || titleLower.includes('finanzas');
+    const isFamilia = task.category === 'Familia' || titleLower.includes('familia') || descLower.includes('familia') || titleLower.includes('padre') || titleLower.includes('hogar');
+    
+    let defaultVoice = 'dios';
+    if (isJesus) defaultVoice = 'jesus';
+    else if (isMentalidad) defaultVoice = 'mentalidad';
+    else if (isFamilia) defaultVoice = 'familia';
+
+    setActiveVoiceKey(defaultVoice);
     setActiveTask(task);
     setActiveReel(matchedReel);
     setSecondsLeft(25);
@@ -143,7 +220,7 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
     };
   }, [activeTask, activeReel]);
 
-  // Sync mute and voiceover speaker trigger
+  // Sync mute and voiceover speaker trigger based on selected vocal theme
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.muted = isAudioMuted;
@@ -151,13 +228,13 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
     if (isAudioMuted) {
       stopVoiceover();
     } else if (activeTask && activeReel) {
-      // Direct noble preaching/motivation speech synthesis voice trigger
-      const narrativeText = `${activeTask.title}. Sermón y reflexión: ${activeReel.title}. Mensaje de fe: ${activeReel.caption}`;
-      startVoiceover(narrativeText);
+      const theme = VOICE_THEMES.find(t => t.key === activeVoiceKey) || VOICE_THEMES[0];
+      const narrativeText = `${theme.intro} ${activeTask.title}. Mensaje de fe: ${activeReel.title}. Revelación: ${activeReel.caption}`;
+      startVoiceover(narrativeText, theme);
     } else {
       stopVoiceover();
     }
-  }, [isAudioMuted, activeTask, activeReel]);
+  }, [isAudioMuted, activeTask, activeReel, activeVoiceKey]);
 
   // Stop sounds and voiceovers on unmount
   useEffect(() => {
@@ -429,6 +506,72 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
                   "{activeReel.caption}"
                 </p>
               </div>
+            </div>
+
+            {/* THEMATIC NARRATOR VOICE SELECTION TABS */}
+            <div className="bg-black/40 border border-white/5 rounded-2xl p-3 space-y-2 text-left relative z-10">
+              <span className="text-[9px] font-mono font-bold text-gray-500 tracking-wider uppercase">
+                🎙️ Voces Reales de Fe (Sermones y Éxito)
+              </span>
+              
+              {/* Speaker selection cards */}
+              <div className="grid grid-cols-4 gap-1">
+                {VOICE_THEMES.map((theme) => {
+                  const isSelected = activeVoiceKey === theme.key;
+                  return (
+                    <button
+                      key={theme.key}
+                      onClick={() => {
+                        setActiveVoiceKey(theme.key);
+                        // Trigger immediate speak upon select gesture
+                        const narrativeText = `${theme.intro} ${activeTask.title}. Mensaje del maestro: ${activeReel.title}. Revelación: ${activeReel.caption}`;
+                        setIsAudioMuted(false);
+                        startVoiceover(narrativeText, theme);
+                      }}
+                      className={`flex flex-col items-center justify-center p-1.5 rounded-xl border text-[10px] font-bold font-mono transition-all cursor-pointer ${
+                        isSelected 
+                          ? `${theme.color} ring-1 ring-white/10 ${theme.shadow}`
+                          : 'border-zinc-850 text-zinc-500 bg-zinc-950/20 hover:text-white'
+                      }`}
+                      title={theme.description}
+                    >
+                      <span className="text-sm mb-1">{theme.avatar}</span>
+                      <span className="text-[8px] truncate max-w-full text-center">
+                        {theme.key === 'mentalidad' ? 'Millonaria' : theme.key === 'familia' ? 'Familia' : theme.key === 'jesus' ? 'Jesús' : 'Dios'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Speaker Status Card & Manual Speech Reproducer */}
+              {(() => {
+                const currentTheme = VOICE_THEMES.find(t => t.key === activeVoiceKey) || VOICE_THEMES[0];
+                return (
+                  <div className="flex items-center justify-between gap-2.5 pt-1.5 border-t border-white/5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[9px] font-mono text-zinc-400 font-bold truncate">
+                        Púlpito: <span className="text-white">{currentTheme.speaker}</span>
+                      </p>
+                      <p className="text-[8px] font-mono text-zinc-500 truncate leading-tight">
+                        {currentTheme.description}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const narrativeText = `${currentTheme.intro} ${activeTask.title}. Mensaje de fe: ${activeReel.title}. Revelación: ${activeReel.caption}`;
+                        setIsAudioMuted(false);
+                        startVoiceover(narrativeText, currentTheme);
+                      }}
+                      className="px-2.5 py-1 rounded bg-[#39FF14]/10 hover:bg-[#39FF14]/20 border border-[#39FF14]/20 text-[9px] font-black text-[#39FF14] font-mono uppercase tracking-wide cursor-pointer transition-all active:scale-95 shrink-0 flex items-center gap-1"
+                    >
+                      <span>🔊 Repetir Prédica</span>
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Countdown and progress bar indicators */}

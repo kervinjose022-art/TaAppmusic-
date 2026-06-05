@@ -1,4 +1,4 @@
-import { Track, VipFeature, UserTask, Reel } from './types';
+import { Track, VipFeature, UserTask, Reel, VipLevel } from './types';
 
 export const TRACKS: Track[] = [
   {

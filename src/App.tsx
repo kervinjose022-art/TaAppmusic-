@@ -438,12 +438,12 @@ export default function App() {
 
               <div className="space-y-2 pt-2 text-left max-h-[350px] overflow-y-auto pr-1">
                 {[
-                  { lvl: 'VIP PLATA 10$', desc: '5 Tareas de $2.45 (Total: $12.25/día)', bonus: 'Bono x1.0', col: 'text-zinc-400' },
-                  { lvl: 'VIP ORO 20$', desc: '7 Tareas de $3.50 (Total: $24.50/día)', bonus: 'Bono x1.5', col: 'text-yellow-400' },
-                  { lvl: 'VIP RUBÍ 40$', desc: '10 Tareas de $4.90 (Total: $49.00/día)', bonus: 'Bono x2.2', col: 'text-red-400' },
-                  { lvl: 'VIP DIAMANTE 120$', desc: '15 Tareas de $9.79 (Total: $146.85/día)', bonus: 'Bono x3.5', col: 'text-sky-400 border border-sky-500/20 px-1 rounded' },
-                  { lvl: 'VIP PLATINO 420$', desc: '17 Tareas de $30.22 (Total: $513.74/día)', bonus: 'Bono x5.0', col: 'text-purple-400 border border-purple-500/20 px-1 rounded' },
-                  { lvl: 'VIP CORONA IMPERIAL 1000$', desc: '20 Tareas de $61.16 (Total: $1,223.20/día)', bonus: 'Bono x8.0', col: 'text-emerald-400 font-extrabold border border-emerald-500/35 px-1 rounded' }
+                  { lvl: 'VIP PLATA 10$', desc: '5 Tareas de $2.45 | $12.25 diarios ($367 USD mensual)', bonus: 'Bono x1.0', col: 'text-zinc-400' },
+                  { lvl: 'VIP ORO 20$', desc: '7 Tareas de $3.50 | $24.50 diarios ($734 USD mensual)', bonus: 'Bono x1.5', col: 'text-yellow-400' },
+                  { lvl: 'VIP RUBÍ 40$', desc: '10 Tareas de $4.90 | $49.00 diarios ($1,468 USD mensual)', bonus: 'Bono x2.2', col: 'text-red-400' },
+                  { lvl: 'VIP DIAMANTE 120$', desc: '15 Tareas de $9.79 | $146.85 diarios ($4,404 USD mensual)', bonus: 'Bono x3.5', col: 'text-sky-400 border border-sky-500/20 px-1 rounded' },
+                  { lvl: 'VIP PLATINO 420$', desc: '17 Tareas de $30.22 | $513.74 diarios ($15,414 USD mensual)', bonus: 'Bono x5.0', col: 'text-purple-400 border border-purple-500/20 px-1 rounded' },
+                  { lvl: 'VIP CORONA IMPERIAL 1000$', desc: '20 Tareas de $61.16 | $1,223.20 diarios ($36,700 USD mensual)', bonus: 'Bono x8.0', col: 'text-emerald-400 font-extrabold border border-emerald-500/35 px-1 rounded' }
                 ].map((item) => (
                   <button
                     key={item.lvl}
