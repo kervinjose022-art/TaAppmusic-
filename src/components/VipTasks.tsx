@@ -298,8 +298,9 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
           <div className="flex items-center gap-1.5 pt-1 uppercase">
             <Coins className="h-4.5 w-4.5 text-yellow-400 animate-pulse" />
             <span className="text-2xl font-black text-white font-mono tracking-tight glow-text text-neon-green">
-              ${userProfile.earnings.toFixed(2)}
+              {userProfile.earnings.toLocaleString()}
             </span>
+            <span className="text-[10px] font-mono text-[#39FF14] font-bold self-end mb-1">MONEDAS</span>
           </div>
         </div>
 
@@ -389,7 +390,7 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
                 <div className="mt-3.5 sm:mt-0 w-full sm:w-auto shrink-0 flex items-center justify-between sm:justify-start gap-4 border-t sm:border-t-0 border-white/5 pt-2 sm:pt-0">
                   <div className="text-left sm:text-right">
                     <p className="text-[10px] text-gray-500 font-mono leading-none">RECOMPENSA</p>
-                    <p className="text-md font-extrabold text-[#39FF14] font-mono mt-1">+${task.rewardValue.toFixed(2)}</p>
+                    <p className="text-md font-extrabold text-[#39FF14] font-mono mt-1">+{task.rewardValue.toLocaleString()} monedas</p>
                   </div>
 
                   {task.isCompleted ? (
@@ -420,7 +421,7 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
 
       {/* Tip Box */}
       <div className="mt-5 p-3.5 rounded-xl border border-[#39FF14]/10 bg-[#39FF14]/5 text-left text-[11px] text-[#39FF14]/90 leading-relaxed font-mono">
-        💎 <span className="font-bold">CONSEJO VIP:</span> Desbloquea niveles superiores usando el panel de registro superior para multiplicar tu balance y acceder a tareas de hasta $75.00 dólares cada una.
+        💎 <span className="font-bold">CONSEJO VIP:</span> Desbloquea niveles superiores usando el panel de registro superior para multiplicar tu balance y sintonizar tareas de hasta 1,835 monedas cada una.
       </div>
 
       {/* NEW INTERACTIVE FULLSCREEN COUNTDOWN TASK PLAYER DIALOG */}
@@ -613,7 +614,7 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
                   className="w-full flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#39FF14] to-emerald-400 hover:from-emerald-400 hover:to-[#39FF14] text-xs font-black uppercase text-black font-sans tracking-wider transition-all cursor-pointer active:scale-95 shadow-[0_0_20px_rgba(57,255,20,0.45)] hover:shadow-[0_0_25px_rgba(57,255,20,0.6)] animate-pulse"
                 >
                   <Sparkles className="h-4.5 w-4.5 text-black" />
-                  <span>RECIBIR RECOMPENSA DE +${activeTask.rewardValue.toFixed(2)} USD</span>
+                  <span>RECIBIR RECOMPENSA DE +{activeTask.rewardValue.toLocaleString()} MONEDAS</span>
                 </button>
               ) : (
                 <button
