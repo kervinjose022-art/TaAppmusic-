@@ -471,13 +471,13 @@ export default function App() {
         return u;
       });
 
-      localStorage.setItem('tappmusic_all_users', JSON.stringify(nextUsers));
+      localStorage.setItem('tappmusic_users', JSON.stringify(nextUsers));
       return nextUsers;
     });
 
     // Instantly synchronize current active session if we are the user or the referrer
     setTimeout(() => {
-      const rawAll = localStorage.getItem('tappmusic_all_users');
+      const rawAll = localStorage.getItem('tappmusic_users');
       const rawSelf = localStorage.getItem('tappmusic_profile');
       if (rawAll && rawSelf) {
         const parsedAll = JSON.parse(rawAll) as UserProfile[];
@@ -723,6 +723,28 @@ export default function App() {
                   <p className="text-xs text-zinc-400 max-w-md">
                     Regístrate y envía tu comprobante de activación para recibir acceso inmediato al panel remunerado y los Reels VIP de Tappmusic.com
                   </p>
+                </div>
+
+                {/* HIGH-VISIBILITY TOGGLE SWITCHER AT THE TOP */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/50 to-zinc-950 border border-purple-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 animate-pulse-subtle">
+                  <div className="text-left space-y-0.5">
+                    <p className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                      <span>🔑 ¿Ya tienes una cuenta VIP?</span>
+                    </p>
+                    <p className="text-[10px] text-zinc-400 font-mono">
+                      Inicia sesión para entrar a tu cuenta y empezar a realizar tus tareas.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLoginMode(true);
+                      setLoginError('');
+                    }}
+                    className="w-full sm:w-auto h-9 px-4 rounded-xl bg-[#39FF14] text-black font-black text-xs uppercase hover:bg-white transition-all cursor-pointer flex items-center justify-center gap-1 active:scale-95 shrink-0 shadow-[0_0_15px_rgba(57,255,20,0.3)]"
+                  >
+                    <span>Iniciar Sesión / Entrar</span>
+                  </button>
                 </div>
 
                 <form onSubmit={handleRegister} className="space-y-5">
@@ -1545,7 +1567,7 @@ export default function App() {
                                       }
                                       return u;
                                     });
-                                    localStorage.setItem('tappmusic_all_users', JSON.stringify(nextUsers));
+                                    localStorage.setItem('tappmusic_users', JSON.stringify(nextUsers));
                                     return nextUsers;
                                   });
 
