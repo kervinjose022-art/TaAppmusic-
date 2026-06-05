@@ -75,4 +75,7 @@ export interface UserProfile {
   proofFileName?: string;
   proofFileBlob?: string; // base64 or placeholder preview link
   referenceNo?: string;
+  invitedBy?: string;
+  inviteCommissionsEarned?: number;
+  inviteCount?: number;
 }

@@ -7,7 +7,7 @@ import VipReels from './components/VipReels';
 import { UserProfile, VipLevel } from './types';
 import { 
   Sparkles, ShieldCheck, Share2, CircleAlert, Globe, X, 
-  Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock, Eye, EyeOff
+  Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock, Eye, EyeOff, Users
 } from 'lucide-react';
 
 export default function App() {
@@ -39,15 +39,152 @@ export default function App() {
     };
   });
 
+  // Master users list for login & referral commission routing
+  const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
+    const saved = localStorage.getItem('tappmusic_users');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [
+      {
+        username: 'kervin',
+        email: 'kervinjose022@gmail.com',
+        password: '7340',
+        vipLevel: 'VIP CORONA IMPERIAL 1000$',
+        earnings: 1545.00,
+        completedTaskIds: ['task_1', 'task_2'],
+        isRegistered: true,
+        status: 'active',
+        inviteCount: 4,
+        inviteCommissionsEarned: 247.50
+      },
+      {
+        username: 'cristiano_vip',
+        email: 'cristiano@reino.com',
+        password: 'cristiano77',
+        vipLevel: 'VIP ORO 20$',
+        earnings: 30.00,
+        completedTaskIds: [],
+        isRegistered: true,
+        status: 'pending',
+        invitedBy: 'kervin'
+      },
+      {
+        username: 'fe_y_abundancia',
+        email: 'abundancia@fe.net',
+        password: 'fe123',
+        vipLevel: 'VIP PLATA 10$',
+        earnings: 15.00,
+        completedTaskIds: [],
+        isRegistered: true,
+        status: 'pending',
+        invitedBy: 'kervin'
+      },
+      {
+        username: 'mentalidad_oro',
+        email: 'oro@tapp.com',
+        password: 'oro123',
+        vipLevel: 'VIP DIAMANTE 120$',
+        earnings: 120.00,
+        completedTaskIds: ['task_1'],
+        isRegistered: true,
+        status: 'active',
+        invitedBy: 'fe_y_abundancia'
+      }
+    ];
+  });
+
+  // Persist master users pool
+  useEffect(() => {
+    localStorage.setItem('tappmusic_users', JSON.stringify(allUsers));
+  }, [allUsers]);
+
+  // Referral hook: detects ?ref=username in address bar
+  const [referredBy, setReferredBy] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('ref') || '';
+    }
+    return '';
+  });
+
+  // Login Mode and Secure Admin Protection States
+  const [isLoginMode, setIsLoginMode] = useState(false);
+  const [isAdminVerified, setIsAdminVerified] = useState(() => {
+    // If they already have Kervin's email loaded, auto-verify
+    const cur = localStorage.getItem('tappmusic_profile');
+    if (cur) {
+      try {
+        const u = JSON.parse(cur);
+        if (u.email === 'kervinjose022@gmail.com' || u.username === 'kervin') return true;
+      } catch (e) {}
+    }
+    return false;
+  });
+  const [showAdminCodePrompt, setShowAdminCodePrompt] = useState(false);
+  const [adminUnlockCode, setAdminUnlockCode] = useState('');
+
+  // Login Fields
+  const [loginInput, setLoginInput] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+
   // Automated persistence whenever userProfile updates
   useEffect(() => {
     localStorage.setItem('tappmusic_profile', JSON.stringify(userProfile));
+    
+    // Also sync the changed userProfile back into the master users pool
+    if (userProfile && userProfile.isRegistered) {
+      setAllUsers(prev => {
+        const exists = prev.some(u => u.username.toLowerCase() === userProfile.username.toLowerCase());
+        let updatedList;
+        if (exists) {
+          updatedList = prev.map(u => u.username.toLowerCase() === userProfile.username.toLowerCase() ? userProfile : u);
+        } else {
+          updatedList = [...prev, userProfile];
+        }
+        return updatedList;
+      });
+    }
   }, [userProfile]);
 
   // Save profile to local storage helper
   const saveProfile = (newProfile: UserProfile) => {
     setUserProfile(newProfile);
     localStorage.setItem('tappmusic_profile', JSON.stringify(newProfile));
+  };
+
+  // 15% VIP Commission Payout engine
+  const addCommissionToReferrer = (referrerUsername: string, level: VipLevel) => {
+    const priceUsd = getLevelPriceInUsd(level);
+    const commissionUsd = priceUsd * 0.15;
+    
+    setAllUsers(prev => {
+      const updatedList = prev.map(u => {
+        if (u.username.toLowerCase() === referrerUsername.toLowerCase()) {
+          const currentCommissions = u.inviteCommissionsEarned || 0;
+          const currentCount = u.inviteCount || 0;
+          const updatedUser = {
+            ...u,
+            earnings: u.earnings + commissionUsd,
+            inviteCommissionsEarned: currentCommissions + commissionUsd,
+            inviteCount: currentCount + 1
+          };
+          
+          // Live update active session if the referrer is currently logged in!
+          if (userProfile.username.toLowerCase() === referrerUsername.toLowerCase()) {
+            setTimeout(() => {
+              setUserProfile(updatedUser);
+            }, 60);
+          }
+          return updatedUser;
+        }
+        return u;
+      });
+      return updatedList;
+    });
   };
 
   // Simulated registration fields
@@ -191,6 +328,17 @@ export default function App() {
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     const name = inputUsername.trim().toLowerCase() || 'invitado_vip';
+    const emailLower = inputEmail.trim().toLowerCase();
+
+    // Prevent overwriting existing user data by checking duplicate username or email
+    const nameExists = allUsers.some(u => u.username.toLowerCase() === name);
+    const emailExists = allUsers.some(u => u.email && u.email.toLowerCase() === emailLower);
+
+    if (nameExists || emailExists) {
+      alert("❌ Este nombre de usuario o correo ya está registrado en Tappmusic.com. Por favor, inicia sesión con tu cuenta actual usando la opción de abajo.");
+      return;
+    }
+
     let startEarnings = 10.00;
     if (selectedInitialVip === 'VIP ORO 20$') startEarnings = 20.00;
     else if (selectedInitialVip === 'VIP RUBÍ 40$') startEarnings = 40.00;
@@ -205,7 +353,7 @@ export default function App() {
     const newReg = {
       id: regId,
       username: name,
-      email: inputEmail,
+      email: emailLower,
       vipLevel: selectedInitialVip,
       paymentMethodUsed: registrationPayMethod,
       amountUsd: usdPrice,
@@ -214,7 +362,8 @@ export default function App() {
       proofFileName: attachedFileName || 'boceto_captura.png',
       proofFileBlob: previewBlob || '',
       date: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'pending'
+      status: 'pending',
+      invitedBy: referredBy || undefined
     };
 
     // Store in admin queue
@@ -222,7 +371,7 @@ export default function App() {
 
     const updated: UserProfile = {
       username: name,
-      email: inputEmail,
+      email: emailLower,
       password: inputPassword,
       vipLevel: selectedInitialVip,
       earnings: startEarnings,
@@ -232,9 +381,113 @@ export default function App() {
       paymentMethodUsed: registrationPayMethod,
       proofFileName: newReg.proofFileName,
       proofFileBlob: newReg.proofFileBlob,
-      referenceNo: newReg.referenceNo
+      referenceNo: newReg.referenceNo,
+      invitedBy: referredBy || undefined,
+      inviteCommissionsEarned: 0,
+      inviteCount: 0
     };
+    
+    // Push directly to master user list for local synchronization
+    setAllUsers(prev => [...prev, updated]);
     saveProfile(updated);
+  };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    const inputVal = loginInput.trim().toLowerCase();
+    const passVal = loginPassword.trim();
+
+    if (!inputVal || !passVal) {
+      setLoginError('❌ Por favor, llena todos los campos.');
+      return;
+    }
+
+    const foundUser = allUsers.find(
+      u => u.username.toLowerCase() === inputVal || (u.email && u.email.toLowerCase() === inputVal)
+    );
+
+    if (!foundUser) {
+      if (inputVal === 'kervin' || inputVal === 'kervinjose022@gmail.com') {
+        const adminSeed: UserProfile = {
+          username: 'kervin',
+          email: 'kervinjose022@gmail.com',
+          password: passVal || '7340',
+          vipLevel: 'VIP CORONA IMPERIAL 1000$',
+          earnings: 1545.00,
+          completedTaskIds: [],
+          isRegistered: true,
+          status: 'active',
+          inviteCount: 0,
+          inviteCommissionsEarned: 0
+        };
+        setAllUsers(prev => [...prev, adminSeed]);
+        saveProfile(adminSeed);
+        setIsAdminVerified(true);
+        setIsLoginMode(false);
+        return;
+      }
+      setLoginError('❌ Usuario o Correo electrónico no encontrado.');
+      return;
+    }
+
+    if (foundUser.password !== passVal) {
+      setLoginError('❌ Contraseña incorrecta.');
+      return;
+    }
+
+    saveProfile(foundUser);
+    setLoginInput('');
+    setLoginPassword('');
+    
+    if (foundUser.email === 'kervinjose022@gmail.com' || foundUser.username === 'kervin') {
+      setIsAdminVerified(true);
+    }
+  };
+
+  const handleApproveUser = (regUsername: string, regAmountUsd: number) => {
+    const targetName = regUsername.toLowerCase().trim();
+    let referrerName: string | undefined = undefined;
+
+    setAllUsers(prevUsers => {
+      const found = prevUsers.find(u => u.username.toLowerCase() === targetName);
+      if (found && found.invitedBy) {
+        referrerName = found.invitedBy.toLowerCase().trim();
+      }
+
+      const nextUsers = prevUsers.map(u => {
+        if (u.username.toLowerCase() === targetName) {
+          return { ...u, status: 'active' as const };
+        }
+        if (referrerName && u.username.toLowerCase() === referrerName) {
+          const commissionEarned = Number((regAmountUsd * 0.15).toFixed(2));
+          return {
+            ...u,
+            earnings: Number((u.earnings + commissionEarned).toFixed(2)),
+            inviteCommissionsEarned: Number(((u.inviteCommissionsEarned || 0) + commissionEarned).toFixed(2)),
+            inviteCount: (u.inviteCount || 0) + 1
+          };
+        }
+        return u;
+      });
+
+      localStorage.setItem('tappmusic_all_users', JSON.stringify(nextUsers));
+      return nextUsers;
+    });
+
+    // Instantly synchronize current active session if we are the user or the referrer
+    setTimeout(() => {
+      const rawAll = localStorage.getItem('tappmusic_all_users');
+      const rawSelf = localStorage.getItem('tappmusic_profile');
+      if (rawAll && rawSelf) {
+        const parsedAll = JSON.parse(rawAll) as UserProfile[];
+        const parsedSelf = JSON.parse(rawSelf) as UserProfile;
+        const matchedSelf = parsedAll.find(au => au.username.toLowerCase().trim() === parsedSelf.username.toLowerCase().trim());
+        if (matchedSelf) {
+          saveProfile(matchedSelf);
+        }
+      }
+    }, 60);
   };
 
   const handleUpgradeVip = (lvl: VipLevel) => {
@@ -251,6 +504,8 @@ export default function App() {
     setInputReferenceNo('');
     setAttachedFileName('');
     setPreviewBlob('');
+    setIsAdminVerified(false);
+    setIsLoginMode(false);
     
     const updated: UserProfile = {
       username: 'usuario_vip',
@@ -267,7 +522,10 @@ export default function App() {
 
   const copyModalLink = async () => {
     try {
-      await navigator.clipboard.writeText(sharedUrl);
+      const inviteLink = userProfile.isRegistered && userProfile.username !== 'usuario_vip'
+        ? `${sharedUrl}/?ref=${userProfile.username}`
+        : sharedUrl;
+      await navigator.clipboard.writeText(inviteLink);
       setCopiedModalLink(true);
       setTimeout(() => setCopiedModalLink(false), 2000);
     } catch (err) {
@@ -278,27 +536,38 @@ export default function App() {
   return (
     <div className="min-h-screen bg-black text-[#39FF14] pb-16 antialiased selection:bg-[#39FF14] selection:text-black">
       {/* Dynamic Administrator floating check bar */}
-      <div className="sticky top-0 z-50 bg-[#121214] border-b border-purple-500/20 py-2.5 px-6 flex flex-col sm:flex-row gap-2 justify-between items-center text-xs font-mono">
-        <div className="flex items-center gap-2 text-zinc-400 text-center sm:text-left">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
-          </span>
-          <span className="text-[10px] leading-tight select-none text-zinc-350">
-            HERMANITO: Usa este botón para abrir el <strong className="text-purple-400 font-bold">ADMIN PANEL</strong> y aprobar cuentas o retiros.
-          </span>
+      {isAdminVerified && (
+        <div className="sticky top-0 z-50 bg-[#121214] border-b border-[#39FF14]/30 py-2.5 px-6 flex flex-col sm:flex-row gap-2 justify-between items-center text-xs font-mono animate-fade-in shadow-[0_0_15px_rgba(57,255,20,0.1)]">
+          <div className="flex items-center gap-2 text-zinc-400 text-center sm:text-left">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-[10px] leading-tight select-none text-zinc-355 text-zinc-300">
+              SESIÓN DE HERMANITO ACTIVA • <strong className="text-emerald-400 font-bold uppercase tracking-widest">PROPIETARIO ORIGINAL</strong>
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setActiveAdminTab('activaciones');
+                setIsAdminOpen(true);
+              }}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-900 to-zinc-950 border border-emerald-500/50 hover:border-emerald-400 hover:text-white px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wider cursor-pointer text-emerald-300 transition-all active:scale-95 whitespace-nowrap uppercase"
+              title="Abrir Panel del Dueño para aprobar activaciones y retiros"
+            >
+              ⚙️ panel de control admin ({registrations.filter(r => r.status === 'pending').length} pend)
+            </button>
+            <button
+              onClick={() => setIsAdminVerified(false)}
+              className="text-[9px] text-zinc-500 hover:text-red-400 transition-all font-mono uppercase bg-zinc-900 hover:bg-black border border-white/5 px-2 py-1 rounded-lg"
+              title="Cerrar panel de control"
+            >
+              Ocultar Panel ✕
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => {
-            setActiveAdminTab('activaciones');
-            setIsAdminOpen(true);
-          }}
-          className="flex items-center gap-1.5 bg-gradient-to-r from-purple-800 to-indigo-950 border border-purple-500/50 hover:border-purple-400 hover:text-white px-3 py-1 rounded-xl text-[10px] font-black tracking-wider cursor-pointer text-purple-300 transition-all active:scale-95 whitespace-nowrap uppercase"
-          title="Abrir Panel del Dueño para aprobar activaciones y retiros"
-        >
-          ⚙️ panel de control admin ({registrations.filter(r => r.status === 'pending').length} pend)
-        </button>
-      </div>
+      )}
 
       {/* Visual background ambient LED glows of Violet & Gold */}
       <div className="fixed top-12 left-1/2 -translate-x-1/2 h-[450px] w-[450px] rounded-full bg-purple-600/10 blur-[140px] pointer-events-none" />
@@ -331,23 +600,132 @@ export default function App() {
 
         {/* REGISTRATION GUARDIAN CARD (If unregistered, users register to unlock full board) */}
         {!userProfile.isRegistered ? (
-          <div className="max-w-xl mx-auto rounded-3xl border-2 border-dashed border-[#39FF14]/30 bg-black p-6 sm:p-8 shadow-[0_0_50px_rgba(57,255,20,0.12)] relative text-left">
-            <div className="absolute top-4 right-4 flex items-center gap-1 bg-purple-950/40 text-purple-300 border border-purple-500/35 font-mono text-[9px] px-2.5 py-0.5 rounded-full uppercase font-black animate-pulse">
-              Activación Requerida 🔐
-            </div>
-
-            <div className="space-y-6">
-              <div className="flex flex-col items-center text-center space-y-2">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-950/40 border border-purple-500/30 text-purple-400">
-                  <UserCheck className="h-6 w-6" />
-                </div>
-                <h3 className="text-xl font-black text-white uppercase tracking-wider">Registro de Miembros VIP</h3>
-                <p className="text-xs text-zinc-400 max-w-md">
-                  Regístrate y envía tu comprobante de activación para recibir acceso inmediato al panel remunerado y los Reels VIP de Tappmusic.com
-                </p>
+          isLoginMode ? (
+            /* LOGIN CARD */
+            <div className="max-w-xl mx-auto rounded-3xl border-2 border-dashed border-purple-500/40 bg-zinc-950 p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.15)] relative text-left animate-fade-in">
+              <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-purple-950/45 text-purple-300 border border-purple-500/35 font-mono text-[9px] px-2.5 py-0.5 rounded-full uppercase font-black animate-pulse">
+                Acceso Miembros 🔑
               </div>
 
-              <form onSubmit={handleRegister} className="space-y-5">
+              <div className="space-y-6">
+                <div className="flex flex-col items-center text-center space-y-2">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-950/40 border border-purple-500/30 text-purple-400">
+                    <Lock className="h-6 w-6 text-purple-400" />
+                  </div>
+                  <h3 className="text-xl font-black text-white uppercase tracking-wider">Iniciar Sesión</h3>
+                  <p className="text-xs text-zinc-400 max-w-sm">
+                    Ingresa tu usuario o correo electrónico registrado y contraseña para ingresar a tu portal de tareas.
+                  </p>
+                </div>
+
+                <form onSubmit={handleLogin} className="space-y-5">
+                  {/* Login Account Input */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-black block">
+                      Usuario o Correo Electrónico *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej. melodia_tapp o kervin"
+                      value={loginInput}
+                      onChange={(e) => setLoginInput(e.target.value)}
+                      className="w-full text-xs font-semibold bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                    />
+                  </div>
+
+                  {/* Password Input */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 font-black block">
+                      Contraseña de Acceso *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        placeholder="••••••••"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        className="w-full text-xs font-semibold bg-black border border-white/10 rounded-xl pl-4 pr-10 py-2.5 text-white placeholder-zinc-805 focus:outline-none focus:border-[#39FF14]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-[#39FF14] transition-all cursor-pointer focus:outline-none"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {loginError && (
+                    <div className="text-xs text-red-400 font-mono text-center font-bold bg-red-950/20 border border-red-500/20 p-2.5 rounded-lg">
+                      {loginError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="w-full flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-xs font-black uppercase text-white font-sans tracking-widest transition-all cursor-pointer active:scale-95 shadow-[0_0_15px_rgba(168,85,247,0.3)] border-none"
+                  >
+                    <Lock className="h-4 w-4 text-white" />
+                    <span>Entrar y Hacer Tareas</span>
+                  </button>
+                </form>
+
+                {/* Back to registration toggle */}
+                <div className="pt-5 text-center border-t border-white/5 mt-4 space-y-3.5">
+                  <p className="text-xs text-zinc-400 font-sans leading-relaxed">
+                    ¿Aún no tienes una membresía VIP en Tappmusic? <br />
+                    <button 
+                      type="button"
+                      onClick={() => setIsLoginMode(false)}
+                      className="text-[#39FF14] hover:underline font-extrabold uppercase tracking-widest text-xs mt-1 cursor-pointer bg-transparent border-none"
+                    >
+                      REGISTRARME Y ACTIVAR CASILLA VIP ⚡
+                    </button>
+                  </p>
+                  
+                  {/* Subtle Concealed Owner Access Link */}
+                  <div className="pt-1.5">
+                    <button
+                      onClick={() => setShowAdminCodePrompt(true)}
+                      className="text-[10px] text-zinc-650 hover:text-purple-400 transition-all uppercase font-mono font-bold tracking-tight bg-transparent border-none pointer-events-auto"
+                    >
+                      🛠️ Acceso Propietario (Hermanito Kervin)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* REGISTRATION CARD */
+            <div className="max-w-xl mx-auto rounded-3xl border-2 border-dashed border-[#39FF14]/30 bg-black p-6 sm:p-8 shadow-[0_0_50px_rgba(57,255,20,0.12)] relative text-left animate-fade-in animate-duration-300">
+              {referredBy && (
+                <div className="mb-5 p-3 rounded-2xl bg-purple-950/40 border border-purple-500/40 flex items-center justify-center gap-2 text-xs text-purple-300">
+                  <Sparkles className="h-4 w-4 text-yellow-400 animate-pulse" />
+                  <span className="font-sans leading-tight">
+                    Has sido invitado de honor por <strong className="text-white">@{referredBy}</strong> a Tappmusic.com. ¡Recibes comisión del 15% por invitación!
+                  </span>
+                </div>
+              )}
+
+              <div className="absolute top-4 right-4 flex items-center gap-1 bg-purple-950/40 text-purple-300 border border-purple-500/35 font-mono text-[9px] px-2.5 py-0.5 rounded-full uppercase font-black animate-pulse">
+                Activación Requerida 🔐
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex flex-col items-center text-center space-y-2">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-950/40 border border-purple-500/30 text-purple-400">
+                    <UserCheck className="h-6 w-6 text-[#39FF14]" />
+                  </div>
+                  <h3 className="text-xl font-black text-white uppercase tracking-wider">Registro de Miembros VIP</h3>
+                  <p className="text-xs text-zinc-400 max-w-md">
+                    Regístrate y envía tu comprobante de activación para recibir acceso inmediato al panel remunerado y los Reels VIP de Tappmusic.com
+                  </p>
+                </div>
+
+                <form onSubmit={handleRegister} className="space-y-5">
                 {/* Nickname Field */}
                 <div className="space-y-1.5">
                   <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-black block">
@@ -598,9 +976,26 @@ export default function App() {
                   <span>Enviar Pago y Registrarme</span>
                 </button>
               </form>
+
+              {/* Already registered toggle switcher */}
+              <div className="pt-5 text-center border-t border-white/5 mt-4">
+                <p className="text-xs text-zinc-450 text-zinc-400 font-sans">
+                  ¿Ya tienes una cuenta VIP registrada?{' '}
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setIsLoginMode(true);
+                      setLoginError('');
+                    }}
+                    className="text-[#39FF14] hover:underline font-extrabold uppercase tracking-widest text-xs ml-1 cursor-pointer bg-transparent border-none"
+                  >
+                    Iniciar Sesión / Entrar 🔑
+                  </button>
+                </p>
+              </div>
             </div>
           </div>
-        ) : userProfile.status === 'pending' ? (
+        )) : userProfile.status === 'pending' ? (
           /* PENDING VERIFICATION STATUS DASHBOARD */
           <div className="max-w-xl mx-auto rounded-3xl border border-purple-500/25 bg-zinc-950/80 p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.12)] relative text-left space-y-6 animate-fade-in">
             <div className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-yellow-950/40 text-yellow-400 border border-yellow-500/35 font-mono text-[9px] px-2.5 py-0.5 uppercase font-black tracking-wider progress-wave">
@@ -766,6 +1161,74 @@ export default function App() {
                       <Share2 className="h-4 w-4" />
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* STUNNING BENTO REFERRAL PANEL WIDGET */}
+            <div className="max-w-xl mx-auto rounded-3xl border border-dashed border-purple-500/30 bg-[#0c0c0e] p-5 text-left space-y-4 shadow-xl">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                  <Sparkles className="h-4 w-4 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black tracking-wider text-white uppercase font-sans">🔗 Sistema de Comisión por Invitación (15%)</h3>
+                  <p className="text-[10px] text-zinc-500 font-mono">¡Gana el 15% del valor de activación de cada amigo que invites!</p>
+                </div>
+              </div>
+
+              {/* Stats bento layout */}
+              <div className="grid grid-cols-2 gap-3.5 pt-1">
+                {/* Stat 1: Total invites */}
+                <div className="p-3.5 rounded-2xl bg-black border border-white/5 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
+                    <Users className="h-5 w-5 text-purple-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] uppercase tracking-wider text-zinc-550 block font-bold">Invitados Registrados</p>
+                    <p className="text-lg font-black text-[#39FF14] leading-none mt-0.5 font-sans">
+                      {userProfile.inviteCount || 0} <span className="text-xs text-zinc-500 font-normal">personas</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stat 2: Referral Commissions */}
+                <div className="p-3.5 rounded-2xl bg-black border border-white/5 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-yellow-500/10 border border-yellow-500/25 flex items-center justify-center shrink-0">
+                    <Trophy className="h-5 w-5 text-yellow-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[9px] uppercase tracking-wider text-zinc-550 block font-bold">Comisiones Ganadas</p>
+                    <p className="text-lg font-black text-yellow-400 leading-none mt-0.5 font-sans">
+                      ${(userProfile.inviteCommissionsEarned || 0).toFixed(2)} <span className="text-[10px] text-zinc-500 font-normal select-none uppercase">USDT</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Personalized Link display box */}
+              <div className="p-3 rounded-2xl bg-zinc-950 border border-white/5 font-mono text-[11px] space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-[9px] font-bold text-purple-400 uppercase tracking-widest block">Tu Enlace Personal De Invitación:</span>
+                  <span className="text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded uppercase font-black">Activo • 15% Comisión</span>
+                </div>
+                <div className="flex items-center gap-2 bg-black border border-white/5 rounded-xl px-3 py-2">
+                  <span className="text-zinc-400 truncate flex-1 leading-tight lowercase font-medium">
+                    {sharedUrl}/?ref={userProfile.username}
+                  </span>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(`${sharedUrl}/?ref=${userProfile.username}`);
+                        alert("✅ ¡Enlace de invitación personalizado copiado con éxito! Compártelo para ganar 15% de comisión.");
+                      } catch (err) {
+                        console.error(err);
+                      }
+                    }}
+                    className="h-7 px-2.5 rounded-lg bg-purple-950 text-purple-300 border border-purple-500/30 hover:border-purple-400 hover:text-white transition-all text-[9.5px] uppercase font-black shrink-0 tracking-wide cursor-pointer active:scale-95"
+                  >
+                    Copiar Enlace
+                  </button>
                 </div>
               </div>
             </div>
@@ -1049,7 +1512,7 @@ export default function App() {
                             <div className="pt-2 whitespace-nowrap">
                               <span className="text-zinc-600 text-[10px] block mb-1">Capture Adjunto:</span>
                               <span className="inline-flex items-center gap-1 bg-zinc-900 border border-white/5 px-2 py-1 rounded text-zinc-500 text-[10px]">
-                                📁 {reg.proofFileName || 'comprobante_banco.png'} (Mock)
+                                📁 {reg.proofFileName || 'comprobante_banco.png'}
                               </span>
                             </div>
                           )}
@@ -1063,13 +1526,8 @@ export default function App() {
                                 onClick={() => {
                                   // Update status in local registrations list
                                   setRegistrations(prev => prev.map(r => r.id === reg.id ? { ...r, status: 'approved' } : r));
-                                  // If the registration matches the current logged in user, unlock them!
-                                  if (reg.username === userProfile.username) {
-                                    saveProfile({
-                                      ...userProfile,
-                                      status: 'active'
-                                    });
-                                  }
+                                  // Call master approve solver for database-wide activation + commissions
+                                  handleApproveUser(reg.username, reg.amountUsd);
                                 }}
                                 className="flex-1 md:flex-initial h-9 px-3.5 rounded-xl bg-[#39FF14] text-black font-black text-xs uppercase hover:bg-[#34e512] transition-all cursor-pointer flex items-center justify-center gap-1"
                               >
@@ -1080,6 +1538,17 @@ export default function App() {
                                 onClick={() => {
                                   // Remove or reject registration
                                   setRegistrations(prev => prev.filter(r => r.id !== reg.id));
+                                  setAllUsers(prevUsers => {
+                                    const nextUsers = prevUsers.map(u => {
+                                      if (u.username.toLowerCase() === reg.username.toLowerCase()) {
+                                        return { ...u, isRegistered: false, status: 'pending' as const };
+                                      }
+                                      return u;
+                                    });
+                                    localStorage.setItem('tappmusic_all_users', JSON.stringify(nextUsers));
+                                    return nextUsers;
+                                  });
+
                                   if (reg.username === userProfile.username) {
                                     saveProfile({
                                       ...userProfile,
