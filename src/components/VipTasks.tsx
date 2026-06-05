@@ -10,9 +10,16 @@ import { TASKS_DATABASE, REELS_DATABASE } from '../data';
 interface VipTasksProps {
   userProfile: UserProfile;
   setUserProfile: (profile: UserProfile | ((prev: UserProfile) => UserProfile)) => void;
+  withdrawHistory: any[];
+  setWithdrawHistory: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
-export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps) {
+export default function VipTasks({ 
+  userProfile, 
+  setUserProfile, 
+  withdrawHistory, 
+  setWithdrawHistory 
+}: VipTasksProps) {
   const [tasks, setTasks] = useState<UserTask[]>(() => {
     // Check if task IDs already stored in user profile to mark as completed
     return TASKS_DATABASE.map(task => ({
@@ -33,6 +40,71 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const synthNodesRef = useRef<any[]>([]);
+
+  const stopAmbientSynth = () => {
+    if (synthNodesRef.current.length > 0) {
+      synthNodesRef.current.forEach(node => {
+        try { node.stop(); } catch (e) {}
+        try { node.disconnect(); } catch (e) {}
+      });
+      synthNodesRef.current = [];
+    }
+    if (audioCtxRef.current) {
+      try { audioCtxRef.current.close(); } catch (e) {}
+      audioCtxRef.current = null;
+    }
+  };
+
+  const startAmbientSynth = () => {
+    try {
+      if (typeof window === 'undefined') return;
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      
+      stopAmbientSynth();
+      
+      const ctx = new AudioContextClass();
+      audioCtxRef.current = ctx;
+      
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const osc3 = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gainNode = ctx.createGain();
+      
+      // Soothing warm triadic Cmajor background pad (C3, E3, G3 base notes)
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(130.81, ctx.currentTime);
+      
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(164.81, ctx.currentTime);
+      
+      osc3.type = 'sine';
+      osc3.frequency.setValueAtTime(196.00, ctx.currentTime);
+      
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(290, ctx.currentTime); // filter out buzzing treble
+      
+      // Extremely soft ambient loop backing pad
+      gainNode.gain.setValueAtTime(isAudioMuted ? 0 : 0.07, ctx.currentTime);
+      
+      osc1.connect(filter);
+      osc2.connect(filter);
+      osc3.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      osc1.start();
+      osc2.start();
+      osc3.start();
+      
+      synthNodesRef.current = [osc1, osc2, osc3, filter, gainNode];
+    } catch (e) {
+      console.warn("Auto-ambient block avoided:", e);
+    }
+  };
 
   // --- WITHDRAWAL SYSTEM STATES ---
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
@@ -42,29 +114,7 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
   const [isSubmittingWithdrawal, setIsSubmittingWithdrawal] = useState(false);
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
   const [withdrawalError, setWithdrawalError] = useState('');
-  
-  const [withdrawHistory, setWithdrawHistory] = useState<any[]>(() => {
-    const saved = localStorage.getItem('tappmusic_withdrawals');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        // Fallback
-      }
-    }
-    return [
-      {
-        id: 'TAPP-WD-8290',
-        amountCoins: 150,
-        amountUsdt: 5.0,
-        address: 'TY5aH2KsqN9pL8z1vE9m4bCwQaX7y1tB9p',
-        network: 'TRC20',
-        date: '03/06/2026 14:32',
-        status: 'Aprobado',
-        txid: '6fbf4ae7d75dfa312ba24dc1cba77d8a9df6de02b78631481cf1eef45c38c82f'
-      }
-    ];
-  });
+  const [bypass10Days, setBypass10Days] = useState(false);
 
   const handleWithdrawalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +145,38 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
     if (withdrawalNetwork === 'BEP20' && !trTrim.startsWith('0x')) {
       setWithdrawalError('La dirección de retiro BEP-20 (BNB Chain) debe comenzar con la firma "0x". Ej: 0x9f...');
       return;
+    }
+
+    // Validate 10-day constraint unless bypass is checked
+    if (!bypass10Days) {
+      const lastWrd = withdrawHistory.find(w => w.status === 'Aprobado' || w.status === 'Pendiente');
+      if (lastWrd && lastWrd.date) {
+        try {
+          // Date format: "03/06/2026 14:32"
+          const parts = lastWrd.date.split(' ');
+          const dateParts = parts[0].split('/');
+          const timeParts = parts[1] ? parts[1].split(':') : ['00', '00'];
+          
+          const lastDate = new Date(
+            parseInt(dateParts[2]),
+            parseInt(dateParts[1]) - 1,
+            parseInt(dateParts[0]),
+            parseInt(timeParts[0]),
+            parseInt(timeParts[1])
+          );
+          
+          const now = new Date();
+          const diffTime = Math.abs(now.getTime() - lastDate.getTime());
+          const diffDays = diffTime / (1000 * 60 * 60 * 24);
+          
+          if (diffDays < 10) {
+            setWithdrawalError(`La normativa de Tappmusic.com exige esperar un lapso mínimo de 10 días entre retiros. Tu última solicitud fue el ${lastWrd.date} (hace ${diffDays.toFixed(1)} días).`);
+            return;
+          }
+        } catch (err) {
+          // Fallback if parsing fails
+        }
+      }
     }
 
     // Process simulation
@@ -314,15 +396,19 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
           console.log("Reproducción automática esperando acción del usuario", err);
         });
       }
+      // Start the offline browser ambient synthesizer to overlay a warm backup pad
+      startAmbientSynth();
     } else {
       if (audioRef.current) {
         audioRef.current.pause();
       }
+      stopAmbientSynth();
     }
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
       }
+      stopAmbientSynth();
     };
   }, [activeTask, activeReel]);
 
@@ -332,6 +418,17 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
       audioRef.current.muted = isAudioMuted;
       audioRef.current.volume = isAudioMuted ? 0 : 0.22;
     }
+
+    // Sync the local synthesis ambient gain node value!
+    if (synthNodesRef.current.length > 0) {
+      const gainNode = synthNodesRef.current[synthNodesRef.current.length - 1];
+      if (gainNode) {
+        try {
+          gainNode.gain.setValueAtTime(isAudioMuted ? 0 : 0.07, audioCtxRef.current?.currentTime || 0);
+        } catch (e) {}
+      }
+    }
+
     if (isAudioMuted) {
       stopVoiceover();
     } else if (activeTask && activeReel) {
@@ -347,6 +444,7 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
   useEffect(() => {
     return () => {
       stopVoiceover();
+      stopAmbientSynth();
       if (audioRef.current) {
         audioRef.current.pause();
       }
@@ -915,6 +1013,20 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
                     <p className="text-[9px] text-zinc-500 font-mono mt-1">
                       * Mínimo de retiro: 150 monedas (5.00 USDT). Tasa de Conversión: 30 Monedas = 1 USDT.
                     </p>
+                  </div>
+
+                  {/* Bypass simulation checkbox */}
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-zinc-950/80 border border-white/5">
+                    <input
+                      type="checkbox"
+                      id="bypass10DaysCheckbox"
+                      checked={bypass10Days}
+                      onChange={(e) => setBypass10Days(e.target.checked)}
+                      className="accent-[#39FF14] h-3 w-3 rounded border-zinc-800 bg-zinc-900 cursor-pointer"
+                    />
+                    <label htmlFor="bypass10DaysCheckbox" className="text-[9px] font-mono text-zinc-400 select-none cursor-pointer flex-1">
+                      Ignorar límite de 10 días <span className="text-neon-green font-black">[MODO INVERSIONISTA DE PRUEBA]</span>
+                    </label>
                   </div>
 
                   {/* Error display */}

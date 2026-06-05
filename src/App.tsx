@@ -57,6 +57,137 @@ export default function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [selectedInitialVip, setSelectedInitialVip] = useState<VipLevel>('VIP PLATA 10$');
 
+  // New registration payment fields
+  const [registrationPayMethod, setRegistrationPayMethod] = useState<'Pago Móvil' | 'USDT BEP-20'>('Pago Móvil');
+  const [inputReferenceNo, setInputReferenceNo] = useState('');
+  const [attachedFileName, setAttachedFileName] = useState('');
+  const [previewBlob, setPreviewBlob] = useState('');
+  const [copiedAddressFeedback, setCopiedAddressFeedback] = useState(false);
+
+  // Admin section states
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [activeAdminTab, setActiveAdminTab] = useState<'activaciones' | 'retiros'>('activaciones');
+
+  // Registrations Pool to sync approvals
+  const [registrations, setRegistrations] = useState<any[]>(() => {
+    const saved = localStorage.getItem('tappmusic_registrations');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [
+      {
+        id: 'REG-1092',
+        username: 'cristiano_vip',
+        email: 'cristiano@reino.com',
+        vipLevel: 'VIP ORO 20$',
+        paymentMethodUsed: 'Pago Móvil',
+        amountUsd: 20,
+        amountBs: 800,
+        referenceNo: 'pago_bdv_9921',
+        proofFileName: 'capture_banco_venezuela.png',
+        proofFileBlob: '',
+        date: '04/06/2026 18:22',
+        status: 'pending'
+      },
+      {
+        id: 'REG-4432',
+        username: 'fe_y_abundancia',
+        email: 'abundancia@fe.net',
+        vipLevel: 'VIP PLATA 10$',
+        paymentMethodUsed: 'USDT BEP-20',
+        amountUsd: 10,
+        amountBs: 400,
+        referenceNo: '0x3ffd82910fa31bcedfbc22e88a38198f1f44eec',
+        proofFileName: 'binance_screenshot.png',
+        proofFileBlob: '',
+        date: '04/06/2026 19:45',
+        status: 'pending'
+      },
+      {
+        id: 'REG-0021',
+        username: 'mentalidad_oro',
+        email: 'oro@tapp.com',
+        vipLevel: 'VIP DIAMANTE 120$',
+        paymentMethodUsed: 'Pago Móvil',
+        amountUsd: 120,
+        amountBs: 4800,
+        referenceNo: 'ref_bco_ven_2031',
+        proofFileName: 'BDV_0021_capture.jpg',
+        proofFileBlob: '',
+        date: '03/06/2026 10:14',
+        status: 'approved'
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('tappmusic_registrations', JSON.stringify(registrations));
+  }, [registrations]);
+
+  // Shared withdraw history state to prevent sibling desyncs
+  const [withdrawHistory, setWithdrawHistory] = useState<any[]>(() => {
+    const saved = localStorage.getItem('tappmusic_withdrawals');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [
+      {
+        id: 'TAPP-WD-8290',
+        amountCoins: 150,
+        amountUsdt: 5.0,
+        address: '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0',
+        network: 'BEP20',
+        date: '03/06/2026 14:32',
+        status: 'Aprobado',
+        txid: '6fbf4ae7d75dfa312ba24dc1cba77d8a9df6de02b78631481cf1eef45c38c82f'
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('tappmusic_withdrawals', JSON.stringify(withdrawHistory));
+  }, [withdrawHistory]);
+
+  const getLevelPriceInUsd = (lvl: VipLevel): number => {
+    switch (lvl) {
+      case 'VIP PLATA 10$': return 10;
+      case 'VIP ORO 20$': return 20;
+      case 'VIP RUBÍ 40$': return 40;
+      case 'VIP DIAMANTE 120$': return 120;
+      case 'VIP PLATINO 420$': return 420;
+      case 'VIP CORONA IMPERIAL 1000$': return 1000;
+      default: return 10;
+    }
+  };
+
+  const getLevelPriceInBs = (lvl: VipLevel): number => {
+    switch (lvl) {
+      case 'VIP PLATA 10$': return 400;
+      case 'VIP ORO 20$': return 800;
+      case 'VIP RUBÍ 40$': return 1600;
+      case 'VIP DIAMANTE 120$': return 4800;
+      case 'VIP PLATINO 420$': return 16800;
+      case 'VIP CORONA IMPERIAL 1000$': return 40000;
+      default: return 400;
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAttachedFileName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewBlob(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     const name = inputUsername.trim().toLowerCase() || 'invitado_vip';
@@ -67,6 +198,28 @@ export default function App() {
     else if (selectedInitialVip === 'VIP PLATINO 420$') startEarnings = 420.00;
     else if (selectedInitialVip === 'VIP CORONA IMPERIAL 1000$') startEarnings = 1000.00;
 
+    const usdPrice = getLevelPriceInUsd(selectedInitialVip);
+    const bsPrice = getLevelPriceInBs(selectedInitialVip);
+    const regId = `REG-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const newReg = {
+      id: regId,
+      username: name,
+      email: inputEmail,
+      vipLevel: selectedInitialVip,
+      paymentMethodUsed: registrationPayMethod,
+      amountUsd: usdPrice,
+      amountBs: bsPrice,
+      referenceNo: inputReferenceNo || `REF-${Math.floor(100000 + Math.random() * 900000)}`,
+      proofFileName: attachedFileName || 'boceto_captura.png',
+      proofFileBlob: previewBlob || '',
+      date: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'pending'
+    };
+
+    // Store in admin queue
+    setRegistrations(prev => [newReg, ...prev]);
+
     const updated: UserProfile = {
       username: name,
       email: inputEmail,
@@ -74,7 +227,12 @@ export default function App() {
       vipLevel: selectedInitialVip,
       earnings: startEarnings,
       completedTaskIds: [],
-      isRegistered: true
+      isRegistered: true,
+      status: 'pending', // Starts in pending verification
+      paymentMethodUsed: registrationPayMethod,
+      proofFileName: newReg.proofFileName,
+      proofFileBlob: newReg.proofFileBlob,
+      referenceNo: newReg.referenceNo
     };
     saveProfile(updated);
   };
@@ -90,6 +248,9 @@ export default function App() {
     setInputUsername('');
     setInputEmail('');
     setInputPassword('');
+    setInputReferenceNo('');
+    setAttachedFileName('');
+    setPreviewBlob('');
     
     const updated: UserProfile = {
       username: 'usuario_vip',
@@ -116,6 +277,29 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-[#39FF14] pb-16 antialiased selection:bg-[#39FF14] selection:text-black">
+      {/* Dynamic Administrator floating check bar */}
+      <div className="sticky top-0 z-50 bg-[#121214] border-b border-purple-500/20 py-2.5 px-6 flex flex-col sm:flex-row gap-2 justify-between items-center text-xs font-mono">
+        <div className="flex items-center gap-2 text-zinc-400 text-center sm:text-left">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
+          </span>
+          <span className="text-[10px] leading-tight select-none text-zinc-350">
+            HERMANITO: Usa este botón para abrir el <strong className="text-purple-400 font-bold">ADMIN PANEL</strong> y aprobar cuentas o retiros.
+          </span>
+        </div>
+        <button
+          onClick={() => {
+            setActiveAdminTab('activaciones');
+            setIsAdminOpen(true);
+          }}
+          className="flex items-center gap-1.5 bg-gradient-to-r from-purple-800 to-indigo-950 border border-purple-500/50 hover:border-purple-400 hover:text-white px-3 py-1 rounded-xl text-[10px] font-black tracking-wider cursor-pointer text-purple-300 transition-all active:scale-95 whitespace-nowrap uppercase"
+          title="Abrir Panel del Dueño para aprobar activaciones y retiros"
+        >
+          ⚙️ panel de control admin ({registrations.filter(r => r.status === 'pending').length} pend)
+        </button>
+      </div>
+
       {/* Visual background ambient LED glows of Violet & Gold */}
       <div className="fixed top-12 left-1/2 -translate-x-1/2 h-[450px] w-[450px] rounded-full bg-purple-600/10 blur-[140px] pointer-events-none" />
       <div className="fixed bottom-12 left-1/3 h-[400px] w-[400px] rounded-full bg-yellow-500/10 blur-[130px] pointer-events-none" />
@@ -147,27 +331,27 @@ export default function App() {
 
         {/* REGISTRATION GUARDIAN CARD (If unregistered, users register to unlock full board) */}
         {!userProfile.isRegistered ? (
-          <div className="max-w-lg mx-auto rounded-3xl border-2 border-dashed border-[#39FF14]/30 bg-black p-6 sm:p-8 shadow-[0_0_30px_rgba(57,255,20,0.1)] relative">
-            <div className="absolute top-3 right-3 flex items-center gap-1 bg-[#39FF14]/10 text-[#39FF14] font-mono text-[9px] px-2 py-0.5 rounded uppercase font-bold animate-pulse">
-              Acceso Pendiente
+          <div className="max-w-xl mx-auto rounded-3xl border-2 border-dashed border-[#39FF14]/30 bg-black p-6 sm:p-8 shadow-[0_0_50px_rgba(57,255,20,0.12)] relative text-left">
+            <div className="absolute top-4 right-4 flex items-center gap-1 bg-purple-950/40 text-purple-300 border border-purple-500/35 font-mono text-[9px] px-2.5 py-0.5 rounded-full uppercase font-black animate-pulse">
+              Activación Requerida 🔐
             </div>
 
-            <div className="space-y-4 text-center">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-purple-950/40 border border-purple-500/30 text-purple-400">
-                <UserCheck className="h-6 w-6" />
-              </div>
-
-              <div className="space-y-1">
-                <h3 className="text-xl font-bold text-white uppercase tracking-wider">Registro de Miembros VIP</h3>
-                <p className="text-xs text-gray-400">
-                  Regístrate gratis para desbloquear el <strong className="text-[#39FF14]">Panel de Tareas Diarias</strong> y los <strong className="text-purple-400">Reels Motivacionales</strong> de Tappmusic.com
+            <div className="space-y-6">
+              <div className="flex flex-col items-center text-center space-y-2">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-950/40 border border-purple-500/30 text-purple-400">
+                  <UserCheck className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-black text-white uppercase tracking-wider">Registro de Miembros VIP</h3>
+                <p className="text-xs text-zinc-400 max-w-md">
+                  Regístrate y envía tu comprobante de activación para recibir acceso inmediato al panel remunerado y los Reels VIP de Tappmusic.com
                 </p>
               </div>
 
-              <form onSubmit={handleRegister} className="space-y-4 pt-2">
-                <div className="space-y-1 text-left">
-                  <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-bold block">
-                    Nombre de Usuario (Nickname)
+              <form onSubmit={handleRegister} className="space-y-5">
+                {/* Nickname Field */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-black block">
+                    Nombre de Usuario (Nickname) *
                   </label>
                   <input
                     type="text"
@@ -175,14 +359,15 @@ export default function App() {
                     placeholder="Ej. melodia_tapp"
                     value={inputUsername}
                     onChange={(e) => setInputUsername(e.target.value)}
-                    className="w-full text-xs font-semibold bg-black border border-[#39FF14]/30 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                    className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
                   />
                 </div>
 
+                {/* Email and Password */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1 text-left">
-                    <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 font-bold block">
-                      Correo Electrónico
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 font-black block">
+                      Correo Electrónico *
                     </label>
                     <input
                       type="email"
@@ -190,13 +375,13 @@ export default function App() {
                       placeholder="ejemplo@correo.com"
                       value={inputEmail}
                       onChange={(e) => setInputEmail(e.target.value)}
-                      className="w-full text-xs font-semibold bg-black border border-[#39FF14]/30 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                      className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-zinc-805 focus:outline-none focus:border-[#39FF14]"
                     />
                   </div>
 
-                  <div className="space-y-1 text-left">
-                    <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 font-bold block">
-                      Contraseña
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 font-black block">
+                      Contraseña de Acceso *
                     </label>
                     <div className="relative">
                       <input
@@ -205,7 +390,7 @@ export default function App() {
                         placeholder="••••••••"
                         value={inputPassword}
                         onChange={(e) => setInputPassword(e.target.value)}
-                        className="w-full text-xs font-semibold bg-black border border-[#39FF14]/30 rounded-xl pl-4 pr-10 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                        className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl pl-4 pr-10 py-2.5 text-white placeholder-zinc-805 focus:outline-none focus:border-[#39FF14]"
                       />
                       <button
                         type="button"
@@ -218,53 +403,314 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="space-y-1 text-left">
-                  <label className="text-[10px] uppercase font-mono tracking-widest text-purple-400 font-bold block">
-                    Selecciona Nivel VIP Inicial (Precios de Activación Oficial)
+                {/* Initial Level Selector Grid */}
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-[10px] uppercase font-mono tracking-widest text-purple-400 font-black block">
+                    Selecciona tu Nivel VIP (Precios de Activación)
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {([
                       { name: 'VIP PLATA 10$', price: '$10 USD' },
                       { name: 'VIP ORO 20$', price: '$20 USD' },
                       { name: 'VIP RUBÍ 40$', price: '$40 USD' },
                       { name: 'VIP DIAMANTE 120$', price: '$120 USD' },
                       { name: 'VIP PLATINO 420$', price: '$420 USD' },
-                      { name: 'VIP SÚPER VIP 1000$', price: '$1000 USD' }
+                      { name: 'VIP CORONA IMPERIAL 1000$', price: '$1000 USD' }
                     ]).map(v => (
                       <button
                         key={v.name}
                         type="button"
                         onClick={() => setSelectedInitialVip(v.name as VipLevel)}
-                        className={`p-3 rounded-xl text-[11px] font-bold transition-all cursor-pointer border flex flex-col items-center justify-center gap-1 uppercase ${
+                        className={`p-3 rounded-xl text-[10px] font-bold transition-all cursor-pointer border flex flex-col items-center justify-center gap-1 uppercase ${
                           selectedInitialVip === v.name
-                            ? 'bg-purple-950/40 text-white border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.4)] bg-radial'
-                            : 'bg-zinc-950 text-gray-400 border-zinc-800 hover:border-zinc-700/60'
+                            ? 'bg-purple-950/40 text-white border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.3)]'
+                            : 'bg-zinc-950 text-gray-500 border-zinc-900 hover:border-zinc-800'
                         }`}
                       >
-                        <span className="font-extrabold tracking-tight text-center">{v.name}</span>
-                        <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded leading-none ${
+                        <span className="font-extrabold tracking-tight text-center">{v.name.split(' ')[1]}</span>
+                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded leading-none ${
                           selectedInitialVip === v.name
-                            ? 'bg-purple-900/50 text-purple-200'
-                            : 'bg-zinc-900/50 text-zinc-500'
+                            ? 'bg-purple-900/60 text-purple-200 font-bold'
+                            : 'bg-zinc-900 text-zinc-650'
                         }`}>
                           {v.price}
                         </span>
                       </button>
                     ))}
                   </div>
-                  <p className="text-[9px] text-zinc-500 mt-2 font-mono">
-                    * Los rangos superiores otorgan bonos multiplicadores automáticos para tus regalías de tareas.
-                  </p>
+                </div>
+
+                {/* TRANSFER INSTRUCTIONS BOARD */}
+                <div className="p-4 rounded-2xl bg-zinc-950 border border-white/5 space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
+                    <h4 className="text-[10px] uppercase font-mono tracking-wider font-extrabold text-white">
+                      💳 Paso 1: Realizar el Depósito Asociado
+                    </h4>
+                    <div className="text-[10px] font-mono text-right">
+                      <span className="text-zinc-500 font-normal">Monto a Transferir: </span>
+                      <strong className="text-[#39FF14] font-black">${getLevelPriceInUsd(selectedInitialVip)} USD</strong>
+                      <span className="text-zinc-500"> / </span>
+                      <span className="text-yellow-500 font-black">{getLevelPriceInBs(selectedInitialVip).toLocaleString()} Bs</span>
+                    </div>
+                  </div>
+
+                  {/* Payment tab selection */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRegistrationPayMethod('Pago Móvil')}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold font-sans border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        registrationPayMethod === 'Pago Móvil'
+                          ? 'bg-yellow-950/40 text-yellow-500 border-yellow-500/50'
+                          : 'bg-black border-zinc-900 text-zinc-500 hover:text-zinc-400'
+                      }`}
+                    >
+                      🇻🇪 Pago Móvil (Bs)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRegistrationPayMethod('USDT BEP-20')}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold font-sans border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        registrationPayMethod === 'USDT BEP-20'
+                          ? 'bg-purple-950/40 text-purple-400 border-purple-500/50'
+                          : 'bg-black border-zinc-900 text-zinc-500 hover:text-zinc-400'
+                      }`}
+                    >
+                      🪙 USDT BEP-20 (Binance)
+                    </button>
+                  </div>
+
+                  {/* Render Tab Contents */}
+                  {registrationPayMethod === 'Pago Móvil' ? (
+                    <div className="p-3 rounded-xl bg-black border border-yellow-500/10 space-y-2 text-[11px] font-mono leading-relaxed text-zinc-350">
+                      <p className="text-zinc-400 uppercase text-[9px] tracking-wider font-extrabold text-yellow-500">Datos Pago Móvil Venezuela:</p>
+                      <div>Banco: <strong className="text-white">Banco de Venezuela (0102)</strong></div>
+                      <div>Cédula: <strong className="text-white">26304421</strong></div>
+                      <div>Teléfono BDV: <strong className="text-white">04262139920</strong></div>
+                      <div className="pt-1 border-t border-white/5 text-[10px] text-zinc-500">
+                        * Tasa Calculada: <strong className="text-white">1 USD = 40.00 Bs</strong>. Por favor, transfiera el correspondiente exacto de <strong className="text-yellow-500">{getLevelPriceInBs(selectedInitialVip).toLocaleString()} Bs</strong>.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-xl bg-black border border-purple-500/10 space-y-2 text-[11px] font-mono leading-normal text-zinc-350">
+                      <p className="text-zinc-400 uppercase text-[9px] tracking-wider font-extrabold text-purple-400">Datos Depósito USDT BEP-20 (BNB Smart Chain):</p>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] text-zinc-500 font-sans block leading-none">Dirección de Destino:</span>
+                        <div className="flex items-center gap-1.5 bg-zinc-950 p-2 rounded-lg border border-white/5">
+                          <code className="text-[10px] text-purple-300 break-all select-all font-mono">0x29f0f1edd5258ee3b7553bff665df4d1dd811af0</code>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText('0x29f0f1edd5258ee3b7553bff665df4d1dd811af0');
+                              setCopiedAddressFeedback(true);
+                              setTimeout(() => setCopiedAddressFeedback(false), 2000);
+                            }}
+                            className="p-1 rounded bg-zinc-900 border border-white/5 text-purple-400 hover:text-white hover:bg-purple-900/40 transition-all cursor-pointer select-none"
+                            title="Copiar billetera"
+                          >
+                            {copiedAddressFeedback ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="pt-1 border-t border-white/5 text-[10px] text-zinc-500">
+                        * Envíe exactamente <strong className="text-purple-400">${getLevelPriceInUsd(selectedInitialVip)}.00 USDT</strong> a través de la Red <strong className="text-white">BNB Smart Chain (BEP20)</strong>. Redes ajenas causarán pérdida de capital.
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* VOUCHER / CAPTURE VERIFICATION COMPONENT */}
+                <div className="p-4 rounded-2xl bg-zinc-950 border border-white/5 space-y-3.5">
+                  <h4 className="text-[10px] uppercase font-mono tracking-wider font-extrabold text-white border-b border-white/5 pb-2 flex items-center justify-between">
+                    <span>📝 Paso 2: Registrar Datos de Verificación</span>
+                    <span className="text-purple-400 font-bold lowercase">Verificación manual</span>
+                  </h4>
+
+                  {/* Input reference */}
+                  <div className="space-y-1 text-left font-sans">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 font-bold block">
+                      Número de Referencia o Teléfono Emisor *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={registrationPayMethod === 'Pago Móvil' ? 'Ej. Ref: 8295 o tu número' : 'Ej. Hash de Tx o últimos 6 caracteres'}
+                      value={inputReferenceNo}
+                      onChange={(e) => setInputReferenceNo(e.target.value)}
+                      className="w-full text-xs font-semibold bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-850 focus:outline-none focus:border-[#39FF14]"
+                    />
+                  </div>
+
+                  {/* Drag and drop snapshot trigger file picker */}
+                  <div className="space-y-1.5 font-sans">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-bold block">
+                      Adjunta Capture / Comprobante de Pago *
+                    </label>
+                    
+                    <div className="flex items-center gap-3">
+                      <label className="flex flex-col items-center justify-center px-4 py-2 bg-gradient-to-r from-purple-950/40 to-indigo-950/40 border border-purple-500/35 hover:border-purple-400 rounded-xl cursor-pointer text-[10px] font-black uppercase text-purple-300 hover:text-white transition-all shrink-0">
+                        <span>Buscar Archivo 🖼️</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                      </label>
+                      <div className="min-w-0 flex-1">
+                        {attachedFileName ? (
+                          <div className="space-y-1">
+                            <p className="text-xs font-bold text-[#39FF14] truncate font-mono">✅ {attachedFileName}</p>
+                            <span className="text-[8px] font-mono text-zinc-550 block">Imagen cargada con éxito. Pulsa enviar abajo.</span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-zinc-500 block leading-tight font-mono">
+                            Ningún capture seleccionado. Puedes adjuntar cualquier imagen para la demostración.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Image Preview Thumbnail if attached */}
+                    {previewBlob && (
+                      <div className="pt-1.5 flex items-center gap-3">
+                        <div className="rounded-xl border border-white/10 overflow-hidden bg-black p-1">
+                          <img 
+                            src={previewBlob} 
+                            alt="Preview Comprobante" 
+                            className="h-16 w-auto object-cover rounded-lg"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                        <span className="text-[9px] text-zinc-500 font-mono leading-tight">
+                          Esta captura se enviará directamente al Panel del Administrador (Kervin) para su proceso de acreditación de 5 minutos.
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-yellow-500 hover:from-purple-500 hover:to-yellow-400 text-xs font-black uppercase text-black font-sans tracking-widest transition-all cursor-pointer active:scale-95 text-shadow-none"
+                  className="w-full flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-yellow-500 hover:from-purple-500 hover:to-yellow-400 text-xs font-black uppercase text-black font-sans tracking-widest transition-all cursor-pointer active:scale-95 text-shadow-none"
                 >
-                  <span>Registrarme y Acceder</span>
-                  <ArrowRight className="h-4 w-4 text-black" />
+                  <Send className="h-4 w-4 text-black" />
+                  <span>Enviar Pago y Registrarme</span>
                 </button>
               </form>
+            </div>
+          </div>
+        ) : userProfile.status === 'pending' ? (
+          /* PENDING VERIFICATION STATUS DASHBOARD */
+          <div className="max-w-xl mx-auto rounded-3xl border border-purple-500/25 bg-zinc-950/80 p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.12)] relative text-left space-y-6 animate-fade-in">
+            <div className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-yellow-950/40 text-yellow-400 border border-yellow-500/35 font-mono text-[9px] px-2.5 py-0.5 uppercase font-black tracking-wider progress-wave">
+              ⌛ Verificación en Curso
+            </div>
+
+            <div className="flex flex-col items-center text-center space-y-2">
+              <div className="h-14 w-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400 relative">
+                <span className="absolute inset-0 rounded-2xl border border-yellow-400/40 animate-ping opacity-60 pointer-events-none" />
+                <Lock className="h-6 w-6 text-yellow-400 animate-pulse" />
+              </div>
+              <h3 className="text-lg font-black text-white uppercase tracking-wider">Esperando Activación VIP</h3>
+              <p className="text-zinc-400 text-xs max-w-sm leading-relaxed">
+                Kervin, administrador de <strong>Tappmusic.com</strong>, está verificando tu depósito. Tu cuenta se activará automáticamente al conciliar tu comprobante.
+              </p>
+            </div>
+
+            {/* Stepper bar */}
+            <div className="grid grid-cols-3 gap-2 py-2 text-center font-mono text-[9px]">
+              <div className="p-2 rounded-lg bg-emerald-950/20 border border-emerald-500/30 text-[#39FF14] flex flex-col gap-0.5">
+                <span className="font-sans font-black">Paso 1</span>
+                <span>Registro OK</span>
+              </div>
+              <div className="p-2 rounded-lg bg-yellow-950/30 border border-yellow-500/40 text-yellow-400 flex flex-col gap-0.5 animate-pulse">
+                <span className="font-sans font-black text-[#39FF14]">Paso 2</span>
+                <span>Verificando Pago</span>
+              </div>
+              <div className="p-2 rounded-lg bg-zinc-900/30 border border-white/5 text-zinc-550 flex flex-col gap-0.5">
+                <span className="font-sans font-black">Paso 3</span>
+                <span>Ingreso a Tareas</span>
+              </div>
+            </div>
+
+            {/* Receipt Summary Box */}
+            <div className="p-4 rounded-xl bg-black border border-white/5 space-y-3 font-mono text-xs">
+              <h4 className="text-[10px] tracking-wider font-extrabold text-white uppercase border-b border-white/5 pb-2">
+                🏷️ Detalle de tu Solicitud de Ingreso:
+              </h4>
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Miembro Nickname:</span>
+                <span className="text-[#39FF14] font-black">@{userProfile.username}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Membresía Elegida:</span>
+                <span className="text-white font-extrabold">{userProfile.vipLevel}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Método de Pago:</span>
+                <span className="text-yellow-500 font-extrabold">{userProfile.paymentMethodUsed}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Referencia Ingresada:</span>
+                <span className="text-purple-400 font-extrabold select-all">{userProfile.referenceNo}</span>
+              </div>
+              
+              {userProfile.proofFileBlob && (
+                <div className="pt-2 border-t border-white/5 space-y-1.5">
+                  <span className="text-zinc-500 block text-[10px]">Tu Capture original enviado:</span>
+                  <div className="rounded-lg overflow-hidden bg-zinc-950 p-1 border border-white/10 w-24">
+                    <img 
+                      src={userProfile.proofFileBlob} 
+                      alt="Capture de pago enviado" 
+                      className="h-14 w-auto object-cover rounded"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Demo Bypass widget */}
+            <div className="p-4 rounded-2xl border border-purple-500/40 bg-gradient-to-r from-purple-950/30 to-indigo-950/30 text-center space-y-3">
+              <div className="space-y-1">
+                <p className="text-[11px] font-mono font-black text-purple-300 uppercase shrink-0">🔓 MODO PRUEBA DE INVERSIONISTA</p>
+                <p className="text-[10px] text-zinc-400 leading-normal font-sans">
+                  Para probar el funcionamiento de inmediato sin esperar que Kervin lo revise, haz clic para auto-aprobar tu registro y entrar al Tablero del Nivel {userProfile.vipLevel.split(' ')[1]}.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  // Find current user's registration in pool and mark as approved
+                  setRegistrations(prev => prev.map(reg => {
+                    if (reg.username === userProfile.username) {
+                      return { ...reg, status: 'approved' };
+                    }
+                    return reg;
+                  }));
+                  
+                  // Update current profile to active status
+                  saveProfile({
+                    ...userProfile,
+                    status: 'active'
+                  });
+                }}
+                className="w-full flex h-10 items-center justify-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-black uppercase text-white transition-all cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+              >
+                <Check className="h-4 w-4" />
+                <span>Auto-Aprobar Mi Cuenta Ahora</span>
+              </button>
+            </div>
+
+            <div className="flex gap-2 font-mono text-[10px] justify-between text-zinc-500 pt-1">
+              <span>Tappmusic.com • Soporte Live</span>
+              <button
+                onClick={handleLogout}
+                className="text-red-500 hover:underline hover:text-red-400 font-extrabold uppercase cursor-pointer"
+              >
+                Cerrar Sesión / Registrar otro usuario
+              </button>
             </div>
           </div>
         ) : (
@@ -333,6 +779,8 @@ export default function App() {
               <VipTasks 
                 userProfile={userProfile} 
                 setUserProfile={setUserProfile} 
+                withdrawHistory={withdrawHistory}
+                setWithdrawHistory={setWithdrawHistory}
               />
             </div>
 
@@ -476,6 +924,309 @@ export default function App() {
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* DEDICATED ADMINISTRATOR CONTROL CENTER MODAL */}
+      {isAdminOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-2xl rounded-3xl border border-purple-500/40 bg-zinc-950 p-5 sm:p-7 shadow-2xl space-y-5 my-8">
+            
+            {/* Modal corner close button */}
+            <div className="absolute top-4 right-4">
+              <button 
+                onClick={() => setIsAdminOpen(false)}
+                className="h-9 w-9 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-all cursor-pointer"
+                title="Cerrar Panel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Header branding */}
+            <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white font-mono font-bold animate-pulse text-lg">
+                🛠️
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-1.5">
+                  <span>Panel de Control de Kervin</span>
+                  <span className="text-[9px] font-mono bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded-full border border-purple-500/20 lowercase">propietario</span>
+                </h3>
+                <p className="text-[11px] text-zinc-500">Manejo centralizado de verificaciones manuales de depósitos (Bs / USDT) y cobros.</p>
+              </div>
+            </div>
+
+            {/* Tab switch control */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-black rounded-xl border border-white/5 font-sans">
+              <button
+                onClick={() => setActiveAdminTab('activaciones')}
+                className={`py-2 px-3 rounded-lg text-xs font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  activeAdminTab === 'activaciones'
+                    ? 'bg-purple-900/55 text-[#39FF14] border border-purple-500/30'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <UserCheck className="h-3.5 w-3.5" />
+                <span>Activaciones ({registrations.filter(r => r.status === 'pending').length})</span>
+              </button>
+              
+              <button
+                onClick={() => setActiveAdminTab('retiros')}
+                className={`py-2 px-3 rounded-lg text-xs font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                  activeAdminTab === 'retiros'
+                    ? 'bg-purple-900/55 text-[#39FF14] border border-purple-500/30'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Trophy className="h-3.5 w-3.5" />
+                <span>Retiros USDT ({withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').length})</span>
+              </button>
+            </div>
+
+            {/* TAB CONTENT: ACTIVATIONS */}
+            {activeAdminTab === 'activaciones' && (
+              <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
+                <div className="bg-purple-950/20 rounded-xl p-3 border border-purple-500/15 flex items-center gap-3 text-xs text-purple-300">
+                  <div className="h-5 w-5 bg-purple-500/10 rounded-full flex items-center justify-center font-bold shrink-0">i</div>
+                  <p className="leading-normal font-sans">
+                    Cuando un usuario se registra, sube su capture y queda "En Espera". Al presionar <strong className="text-white">Aprobar</strong>, su cuenta se activa automáticamente en tiempo real liberando su portal de tareas.
+                  </p>
+                </div>
+
+                {registrations.length === 0 ? (
+                  <p className="text-center py-8 text-xs font-mono text-zinc-500">No hay registros cargados en el buffer.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {registrations.map((reg) => (
+                      <div 
+                        key={reg.id} 
+                        className={`p-4 rounded-2xl border bg-black font-mono text-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all ${
+                          reg.status === 'approved' 
+                            ? 'border-emerald-500/20 opacity-70 bg-emerald-950/5' 
+                            : 'border-white/5 shadow-md hover:border-white/10'
+                        }`}
+                      >
+                        <div className="space-y-1.5 min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-white font-extrabold text-[13px]">@{reg.username}</span>
+                            <span className="bg-purple-950/60 text-purple-400 border border-purple-500/30 font-sans font-black text-[9px] px-2 py-0.5 rounded uppercase">
+                              {reg.vipLevel}
+                            </span>
+                            <span className={`text-[9px] font-sans px-2 py-0.5 rounded-full font-bold uppercase leading-none ${
+                              reg.status === 'approved'
+                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-yellow-950 text-yellow-400 border border-yellow-500/30'
+                            }`}>
+                              {reg.status === 'approved' ? 'Aprobado ✅' : 'Pendiente ⌛'}
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-zinc-400">
+                            <div>Total: <strong className="text-white">${reg.amountUsd} USD ({reg.amountBs} Bs)</strong></div>
+                            <div>Método: <strong className="text-yellow-500">{reg.paymentMethodUsed}</strong></div>
+                            <div className="col-span-2 truncate">Ref: <code className="text-purple-300 font-bold select-all">{reg.referenceNo}</code></div>
+                            <div className="col-span-2 text-[9px] text-zinc-650">{reg.date} • {reg.email}</div>
+                          </div>
+
+                          {/* Image receipt toggle view if uploaded */}
+                          {reg.proofFileBlob ? (
+                            <div className="pt-2">
+                              <span className="text-zinc-600 text-[10px] block mb-1">Capture Adjunto:</span>
+                              <div className="rounded-lg overflow-hidden bg-zinc-950 p-1 border border-white/5 w-24">
+                                <a href={reg.proofFileBlob} target="_blank" rel="noopener noreferrer" title="Ampliar Imagen">
+                                  <img 
+                                    src={reg.proofFileBlob} 
+                                    alt="Capture depósito" 
+                                    className="h-14 w-auto object-cover rounded hover:scale-105 transition-all"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                </a>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="pt-2 whitespace-nowrap">
+                              <span className="text-zinc-600 text-[10px] block mb-1">Capture Adjunto:</span>
+                              <span className="inline-flex items-center gap-1 bg-zinc-900 border border-white/5 px-2 py-1 rounded text-zinc-500 text-[10px]">
+                                📁 {reg.proofFileName || 'comprobante_banco.png'} (Mock)
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Approvals Action buttons */}
+                        <div className="flex gap-2 w-full md:w-auto shrink-0 font-sans">
+                          {reg.status === 'pending' ? (
+                            <>
+                              <button
+                                onClick={() => {
+                                  // Update status in local registrations list
+                                  setRegistrations(prev => prev.map(r => r.id === reg.id ? { ...r, status: 'approved' } : r));
+                                  // If the registration matches the current logged in user, unlock them!
+                                  if (reg.username === userProfile.username) {
+                                    saveProfile({
+                                      ...userProfile,
+                                      status: 'active'
+                                    });
+                                  }
+                                }}
+                                className="flex-1 md:flex-initial h-9 px-3.5 rounded-xl bg-[#39FF14] text-black font-black text-xs uppercase hover:bg-[#34e512] transition-all cursor-pointer flex items-center justify-center gap-1"
+                              >
+                                <span>Aprobar</span>
+                              </button>
+                              
+                              <button
+                                onClick={() => {
+                                  // Remove or reject registration
+                                  setRegistrations(prev => prev.filter(r => r.id !== reg.id));
+                                  if (reg.username === userProfile.username) {
+                                    saveProfile({
+                                      ...userProfile,
+                                      status: 'pending',
+                                      isRegistered: false // resets back to registration form to retry
+                                    });
+                                  }
+                                }}
+                                className="h-9 px-3.5 rounded-xl bg-red-950 text-red-400 border border-red-500/30 font-black text-xs uppercase hover:bg-red-900 hover:text-white transition-all cursor-pointer flex items-center justify-center"
+                              >
+                                Rechazar
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-[10px] text-zinc-500 font-bold uppercase py-1 px-2.5 bg-zinc-900 rounded-lg">
+                              Acreditado
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB CONTENT: WITHDRAWALS */}
+            {activeAdminTab === 'retiros' && (
+              <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
+                <div className="bg-indigo-950/20 rounded-xl p-3 border border-indigo-500/15 flex items-center gap-3 text-xs text-indigo-300">
+                  <div className="h-5 w-5 bg-indigo-500/10 rounded-full flex items-center justify-center font-bold shrink-0">i</div>
+                  <p className="leading-normal font-sans">
+                    Solicitudes de retiro solicitadas en USDT. Al presionar <strong className="text-white">Aprobar</strong> se simula la transferencia de red con TxID. Al hacer clic en <strong className="text-red-400">Rechazar</strong> se cancela el abono y se reembolsan las monedas al saldo del inversionista.
+                  </p>
+                </div>
+
+                {withdrawHistory.length === 0 ? (
+                  <p className="text-center py-8 text-xs font-mono text-zinc-500">No hay transacciones registradas.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {withdrawHistory.map((item) => (
+                      <div 
+                        key={item.id} 
+                        className={`p-4 rounded-2xl border bg-black font-mono text-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all ${
+                          item.status === 'Aprobado' 
+                            ? 'border-emerald-500/20 opacity-70 bg-emerald-950/5' 
+                            : item.status === 'Rechazado'
+                            ? 'border-red-500/20 opacity-70'
+                            : 'border-white/5 shadow-md hover:border-white/10'
+                        }`}
+                      >
+                        <div className="space-y-1.5 min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-white font-extrabold text-[12px]">Retiro #{item.id.replace('TAPP-WD-', '')}</span>
+                            <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-2 py-0.5 rounded font-sans font-bold text-[10px]">
+                              {item.amountCoins} Monedas (${item.amountUsdt.toFixed(2)} USDT)
+                            </span>
+                            
+                            {/* status pill */}
+                            <span className={`text-[9px] font-sans px-2 py-0.5 rounded-full font-bold uppercase leading-none ${
+                              item.status === 'Aprobado'
+                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+                                : item.status === 'Rechazado'
+                                ? 'bg-red-950/40 text-red-400 border border-red-500/30'
+                                : 'bg-yellow-950 text-yellow-400 border border-yellow-500/30'
+                            }`}>
+                              {item.status}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1 text-[11px] text-zinc-400 leading-normal">
+                            <div>Destino: <strong className="text-purple-300 font-semibold select-all break-all">{item.address}</strong></div>
+                            <div>Red: <code className="text-white uppercase font-bold">{item.network || 'BEP20'}</code> • Fecha: {item.date}</div>
+                            {item.txid && (
+                              <div className="text-[10px] truncate max-w-sm text-zinc-550 pt-0.5 bg-zinc-950 p-1.5 rounded border border-white/5">
+                                TxID Blockchain: <code className="text-purple-400 text-[9px] select-all leading-none">{item.txid}</code>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Withdraw actions */}
+                        <div className="flex gap-2 w-full md:w-auto shrink-0 font-sans">
+                          {(item.status === 'pendiente' || item.status === 'Pendiente') ? (
+                            <>
+                              <button
+                                onClick={() => {
+                                  // Approve withdrawal
+                                  const generatedTx = '0x' + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
+                                  setWithdrawHistory(prev => prev.map(w => 
+                                    w.id === item.id 
+                                      ? { ...w, status: 'Aprobado', txid: generatedTx } 
+                                      : w
+                                  ));
+                                }}
+                                className="flex-1 md:flex-initial h-9 px-3.5 rounded-xl bg-purple-600 text-white font-black text-xs uppercase hover:bg-purple-505 transition-all cursor-pointer flex items-center justify-center"
+                              >
+                                Cancelar Pago
+                              </button>
+                              
+                              <button
+                                onClick={() => {
+                                  // Reject withdrawal and refund coins to current user profile
+                                  setWithdrawHistory(prev => prev.map(w =>
+                                    w.id === item.id ? { ...w, status: 'Rechazado' } : w
+                                  ));
+
+                                  // Refund coins to current user profile live. (converting back to virtual balance)
+                                  const refundedCoins = item.amountCoins;
+                                  // Assuming 36.7 coins = $1 or similarly derived from vip levels or directly added to earnings
+                                  // In VipTasks, withdrawal amount was deducted from earnings as amountUsdt! We refund exactly dollar sum
+                                  if (userProfile.isRegistered) {
+                                    saveProfile({
+                                      ...userProfile,
+                                      earnings: userProfile.earnings + item.amountUsdt
+                                    });
+                                  }
+                                }}
+                                className="h-9 px-3.5 rounded-xl bg-red-950 text-red-400 border border-red-500/30 font-black text-xs uppercase hover:bg-red-900 hover:text-white transition-all cursor-pointer flex items-center justify-center"
+                                title="Negar retiro y devolver fondos de manera inmediata"
+                              >
+                                Negar y Reembolsar
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-[10px] text-zinc-500 font-bold uppercase py-1 px-2.5 bg-zinc-900 rounded-lg whitespace-nowrap select-none">
+                              Completado
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Modal footer closing */}
+            <div className="flex items-center justify-between pt-4 border-t border-white/5 font-mono text-[10px] text-zinc-500">
+              <span>Sincronizado vía LocalStorage</span>
+              <button
+                onClick={() => setIsAdminOpen(false)}
+                className="text-white font-sans font-bold hover:underline"
+              >
+                Cerrar Panel
+              </button>
+            </div>
           </div>
         </div>
       )}

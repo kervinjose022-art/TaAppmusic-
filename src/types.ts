@@ -70,4 +70,9 @@ export interface UserProfile {
   earnings: number;
   completedTaskIds: string[];
   isRegistered: boolean;
+  status?: 'pending' | 'active';
+  paymentMethodUsed?: 'Pago Móvil' | 'USDT BEP-20';
+  proofFileName?: string;
+  proofFileBlob?: string; // base64 or placeholder preview link
+  referenceNo?: string;
 }

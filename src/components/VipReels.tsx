@@ -43,6 +43,71 @@ export default function VipReels({ currentVip }: VipReelsProps) {
   
   // Ref to hold the active speech utterance
   const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const synthNodesRef = useRef<any[]>([]);
+
+  const stopAmbientSynth = () => {
+    if (synthNodesRef.current.length > 0) {
+      synthNodesRef.current.forEach(node => {
+        try { node.stop(); } catch (e) {}
+        try { node.disconnect(); } catch (e) {}
+      });
+      synthNodesRef.current = [];
+    }
+    if (audioCtxRef.current) {
+      try { audioCtxRef.current.close(); } catch (e) {}
+      audioCtxRef.current = null;
+    }
+  };
+
+  const startAmbientSynth = () => {
+    try {
+      if (typeof window === 'undefined') return;
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      
+      stopAmbientSynth();
+      
+      const ctx = new AudioContextClass();
+      audioCtxRef.current = ctx;
+      
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const osc3 = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gainNode = ctx.createGain();
+      
+      // Soothing warm triadic Cmajor background pad (C3, E3, G3 base notes)
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(130.81, ctx.currentTime);
+      
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(164.81, ctx.currentTime);
+      
+      osc3.type = 'sine';
+      osc3.frequency.setValueAtTime(196.00, ctx.currentTime);
+      
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(290, ctx.currentTime); // filter out buzzing treble
+      
+      // Extremely soft ambient loop backing pad
+      gainNode.gain.setValueAtTime(isMuted ? 0 : 0.07, ctx.currentTime);
+      
+      osc1.connect(filter);
+      osc2.connect(filter);
+      osc3.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      
+      osc1.start();
+      osc2.start();
+      osc3.start();
+      
+      synthNodesRef.current = [osc1, osc2, osc3, filter, gainNode];
+    } catch (e) {
+      console.warn("Auto-ambient block avoided:", e);
+    }
+  };
 
   const stopVoiceover = () => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -97,6 +162,7 @@ export default function VipReels({ currentVip }: VipReelsProps) {
         audioRef.current.pause();
       }
       stopVoiceover();
+      stopAmbientSynth();
       setPlayingReelId(null);
     } else {
       // Play new
@@ -110,6 +176,8 @@ export default function VipReels({ currentVip }: VipReelsProps) {
           console.warn("Autoplay block averted on reel:", err);
         });
       }
+      // Start the dynamic offline backing synth loop
+      startAmbientSynth();
       // Voice narration trigger
       startVoiceover(`${reel.title}. @${reel.artist} proclama: ${reel.caption}`);
     }
@@ -120,6 +188,17 @@ export default function VipReels({ currentVip }: VipReelsProps) {
     if (audioRef.current) {
       audioRef.current.volume = isMuted ? 0 : 0.22;
     }
+    
+    // Sync the synthesizer backing drone volume dynamically with mute state
+    if (synthNodesRef.current.length > 0) {
+      const gainNode = synthNodesRef.current[synthNodesRef.current.length - 1];
+      if (gainNode) {
+        try {
+          gainNode.gain.setValueAtTime(isMuted ? 0 : 0.07, audioCtxRef.current?.currentTime || 0);
+        } catch (e) {}
+      }
+    }
+
     if (isMuted) {
       stopVoiceover();
     } else if (playingReelId) {
@@ -142,6 +221,7 @@ export default function VipReels({ currentVip }: VipReelsProps) {
         audioRef.current.pause();
       }
       stopVoiceover();
+      stopAmbientSynth();
     };
   }, []);
 
@@ -151,6 +231,7 @@ export default function VipReels({ currentVip }: VipReelsProps) {
       audioRef.current.pause();
     }
     stopVoiceover();
+    stopAmbientSynth();
     setPlayingReelId(null);
   }, [activeTab]);
 
