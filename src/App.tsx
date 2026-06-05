@@ -32,7 +32,7 @@ export default function App() {
       username: 'usuario_vip',
       email: '',
       password: '',
-      vipLevel: 'VIP ORO 10$',
+      vipLevel: 'VIP PLATA 10$',
       earnings: 25.50,
       completedTaskIds: ['task_1'],
       isRegistered: false // prompts registration card first
@@ -50,7 +50,7 @@ export default function App() {
   const [inputEmail, setInputEmail] = useState('');
   const [inputPassword, setInputPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedInitialVip, setSelectedInitialVip] = useState<VipLevel>('VIP ORO 10$');
+  const [selectedInitialVip, setSelectedInitialVip] = useState<VipLevel>('VIP PLATA 10$');
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +90,7 @@ export default function App() {
       username: 'usuario_vip',
       email: '',
       password: '',
-      vipLevel: 'VIP ORO 10$',
+      vipLevel: 'VIP PLATA 10$',
       earnings: 25.50,
       completedTaskIds: [],
       isRegistered: false
@@ -219,7 +219,7 @@ export default function App() {
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
                     {([
-                      { name: 'VIP ORO 10$', price: '$10 USD' },
+                      { name: 'VIP PLATA 10$', price: '$10 USD' },
                       { name: 'VIP ORO 20$', price: '$20 USD' },
                       { name: 'VIP RUBÍ 40$', price: '$40 USD' },
                       { name: 'VIP DIAMANTE 120$', price: '$120 USD' },
@@ -452,7 +452,7 @@ export default function App() {
 
               <div className="space-y-2 pt-2 text-left max-h-[350px] overflow-y-auto pr-1">
                 {[
-                  { lvl: 'VIP ORO 10$', desc: 'Tareas de $5.50 y $8.00', bonus: 'Bono x1.0', col: 'text-yellow-505' },
+                  { lvl: 'VIP PLATA 10$', desc: 'Tareas de $5.50 y $8.00', bonus: 'Bono x1.0', col: 'text-zinc-400' },
                   { lvl: 'VIP ORO 20$', desc: 'Tareas de $12.00 y $15.50', bonus: 'Bono x1.5', col: 'text-yellow-400' },
                   { lvl: 'VIP RUBÍ 40$', desc: 'Tareas de $24.00 y $35.00', bonus: 'Bono x2.2', col: 'text-red-400' },
                   { lvl: 'VIP DIAMANTE 120$', desc: 'Misiones de $50.00 y $75.00', bonus: 'Bono x3.5', col: 'text-sky-400 border border-sky-500/20 px-1 rounded' },

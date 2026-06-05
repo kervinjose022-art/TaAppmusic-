@@ -23,7 +23,7 @@ export interface PlaybackState {
 }
 
 export type VipLevel = 
-  | 'VIP ORO 10$'
+  | 'VIP PLATA 10$'
   | 'VIP ORO 20$'
   | 'VIP RUBÍ 40$'
   | 'VIP DIAMANTE 120$'

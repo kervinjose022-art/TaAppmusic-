@@ -117,11 +117,11 @@ export const TRACKS: Track[] = [
 
 export const VIP_TICKETS: VipFeature[] = [
   {
-    name: 'VIP ORO 10$',
+    name: 'VIP PLATA 10$',
     price: '$10 USD',
     bonusMultiplier: 1.0,
-    badgeColor: 'bg-yellow-950/40 text-yellow-500 border-yellow-500/30',
-    glowColor: 'shadow-yellow-500/10'
+    badgeColor: 'bg-zinc-900/40 text-zinc-300 border-zinc-500/35',
+    glowColor: 'shadow-zinc-500/10'
   },
   {
     name: 'VIP ORO 20$',
@@ -167,7 +167,7 @@ export const TASKS_DATABASE: UserTask[] = [
     description: 'Visualiza el video inspirador "Caminando con Jesús" durante al menos 15 segundos para sintonizar tu fe.',
     rewardValue: 5.50,
     isCompleted: false,
-    vipRequired: 'VIP ORO 10$',
+    vipRequired: 'VIP PLATA 10$',
     category: 'Video de Fe'
   },
   {
@@ -176,7 +176,7 @@ export const TASKS_DATABASE: UserTask[] = [
     description: 'Copia nuestro versículo del día y el link oficial de Tappmusic para bendecir a tu familia por WhatsApp o Telegram.',
     rewardValue: 8.00,
     isCompleted: false,
-    vipRequired: 'VIP ORO 10$',
+    vipRequired: 'VIP PLATA 10$',
     category: 'Compartir'
   },
   {
@@ -272,7 +272,7 @@ export const TASKS_DATABASE: UserTask[] = [
 ];
 
 export const REELS_DATABASE: Reel[] = [
-  // VIP ORO 10$ Reels
+  // VIP PLATA 10$ Reels
   {
     id: 'reel_1',
     title: 'Caminando con Jesús Cristo 🕊️',
@@ -282,19 +282,19 @@ export const REELS_DATABASE: Reel[] = [
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     likes: 540,
     commentsCount: 32,
-    vipLevel: 'VIP ORO 10$',
+    vipLevel: 'VIP PLATA 10$',
     duration: '0:15'
   },
   {
     id: 'reel_2',
     title: 'La Familia es el Mayor Regalo 🏠❤️',
-    caption: 'Las riquezas materiales van y vienen, pero el amor de una familia unida dura para siempre. Protege a tu hogar, edifícalo sobre roca firme. #Familia #Hogar #Bendiciones #Unión',
+    caption: 'Las riquezas materiales van y viene, pero el amor de una familia unida dura para siempre. Protege a tu hogar, edifícalo sobre roca firme. #Familia #Hogar #Bendiciones #Unión',
     artist: 'Fe y Familia',
     coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&auto=format&fit=crop&q=80',
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
     likes: 820,
     commentsCount: 45,
-    vipLevel: 'VIP ORO 10$',
+    vipLevel: 'VIP PLATA 10$',
     duration: '0:12'
   },
 

@@ -31,7 +31,7 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
 
   // VIP numbers to check locker status
   const VIP_RANK_MAPPING: Record<VipLevel, number> = {
-    'VIP ORO 10$': 1,
+    'VIP PLATA 10$': 1,
     'VIP ORO 20$': 2,
     'VIP RUBÍ 40$': 3,
     'VIP DIAMANTE 120$': 4,
@@ -213,7 +213,7 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
                         ? 'border-red-500/30 text-red-400 bg-red-400/5'
                         : task.vipRequired === 'VIP ORO 20$'
                         ? 'border-yellow-400/35 text-yellow-300 bg-yellow-400/5'
-                        : 'border-yellow-500/30 text-yellow-500 bg-yellow-500/5'
+                        : 'border-zinc-500/35 text-zinc-300 bg-zinc-500/5'
                     }`}>
                       {task.vipRequired}
                     </span>

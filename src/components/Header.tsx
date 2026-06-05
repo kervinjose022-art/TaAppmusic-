@@ -70,7 +70,7 @@ export default function Header({ userProfile, onOpenShareModal, onOpenVipSelecto
               ? 'border-red-500/30 text-red-400'
               : userProfile.vipLevel === 'VIP ORO 20$'
               ? 'border-yellow-400/35 text-yellow-300'
-              : 'border-yellow-500/25 text-yellow-500'
+              : 'border-zinc-500/30 text-zinc-300'
           }`}
           title="Cambiar Nivel VIP"
         >
