@@ -84,7 +84,7 @@ export default function App() {
         vipLevel: 'VIP ORO 20$',
         paymentMethodUsed: 'Pago Móvil',
         amountUsd: 20,
-        amountBs: 800,
+        amountBs: 14680,
         referenceNo: 'pago_bdv_9921',
         proofFileName: 'capture_banco_venezuela.png',
         proofFileBlob: '',
@@ -98,7 +98,7 @@ export default function App() {
         vipLevel: 'VIP PLATA 10$',
         paymentMethodUsed: 'USDT BEP-20',
         amountUsd: 10,
-        amountBs: 400,
+        amountBs: 7340,
         referenceNo: '0x3ffd82910fa31bcedfbc22e88a38198f1f44eec',
         proofFileName: 'binance_screenshot.png',
         proofFileBlob: '',
@@ -112,7 +112,7 @@ export default function App() {
         vipLevel: 'VIP DIAMANTE 120$',
         paymentMethodUsed: 'Pago Móvil',
         amountUsd: 120,
-        amountBs: 4800,
+        amountBs: 88080,
         referenceNo: 'ref_bco_ven_2031',
         proofFileName: 'BDV_0021_capture.jpg',
         proofFileBlob: '',
@@ -166,13 +166,13 @@ export default function App() {
 
   const getLevelPriceInBs = (lvl: VipLevel): number => {
     switch (lvl) {
-      case 'VIP PLATA 10$': return 400;
-      case 'VIP ORO 20$': return 800;
-      case 'VIP RUBÍ 40$': return 1600;
-      case 'VIP DIAMANTE 120$': return 4800;
-      case 'VIP PLATINO 420$': return 16800;
-      case 'VIP CORONA IMPERIAL 1000$': return 40000;
-      default: return 400;
+      case 'VIP PLATA 10$': return 7340;
+      case 'VIP ORO 20$': return 14680;
+      case 'VIP RUBÍ 40$': return 29360;
+      case 'VIP DIAMANTE 120$': return 88080;
+      case 'VIP PLATINO 420$': return 308280;
+      case 'VIP CORONA IMPERIAL 1000$': return 734000;
+      default: return 7340;
     }
   };
 
@@ -488,7 +488,7 @@ export default function App() {
                       <div>Cédula: <strong className="text-white">26304421</strong></div>
                       <div>Teléfono BDV: <strong className="text-white">04262139920</strong></div>
                       <div className="pt-1 border-t border-white/5 text-[10px] text-zinc-500">
-                        * Tasa Calculada: <strong className="text-white">1 USD = 40.00 Bs</strong>. Por favor, transfiera el correspondiente exacto de <strong className="text-yellow-500">{getLevelPriceInBs(selectedInitialVip).toLocaleString()} Bs</strong>.
+                        * Tasa Calculada: <strong className="text-white">1 USDT = 734 Bs</strong>. Por favor, transfiera el correspondiente exacto de <strong className="text-yellow-500">{getLevelPriceInBs(selectedInitialVip).toLocaleString()} Bs</strong>.
                       </div>
                     </div>
                   ) : (
