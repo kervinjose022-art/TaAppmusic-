@@ -40,6 +40,48 @@ export default function VipReels({ currentVip }: VipReelsProps) {
 
   // Core HTML5 Audio Player for Reels
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // Ref to hold the active speech utterance
+  const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const stopVoiceover = () => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  };
+
+  const startVoiceover = (text: string) => {
+    stopVoiceover();
+    if (typeof window !== 'undefined' && window.speechSynthesis && !isMuted) {
+      // Clean emojis and symbols for elegant text narration
+      const cleaned = text
+        .replace(/#/g, ' hashtag ')
+        .replace(/🕊️|❤️|🏠|📈|💼|✨|🙌|✝️|🔥|🛡️|👑|💎|🌟|🌍/g, '');
+
+      const utterance = new SpeechSynthesisUtterance(cleaned);
+      utterance.lang = 'es-MX'; // Deep Latin American accent for sermons/motivation
+      
+      const voices = window.speechSynthesis.getVoices();
+      // Look for beautiful Spanish/Latin voices
+      const spanishVoice = voices.find(v => v.lang.startsWith('es-MX') || v.lang.startsWith('es-ES') || v.lang.startsWith('es-')) || voices[0];
+      if (spanishVoice) {
+        utterance.voice = spanishVoice;
+      }
+
+      utterance.rate = 0.85; // Deep, slow, reflective sermon tempo
+      utterance.pitch = 0.95; // Noble and authoritative tone for motivation
+
+      utterance.onend = () => {
+        // Boost music volume a bit once voiceover completes
+        if (audioRef.current && !isMuted) {
+          audioRef.current.volume = 0.5;
+        }
+      };
+
+      speechUtteranceRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   // Play audio snippet when reel gets active and clicked
   const handleTogglePlayReel = (reel: Reel) => {
@@ -48,6 +90,7 @@ export default function VipReels({ currentVip }: VipReelsProps) {
       if (audioRef.current) {
         audioRef.current.pause();
       }
+      stopVoiceover();
       setPlayingReelId(null);
     } else {
       // Play new
@@ -55,29 +98,55 @@ export default function VipReels({ currentVip }: VipReelsProps) {
       if (audioRef.current) {
         audioRef.current.src = reel.videoUrl;
         audioRef.current.loop = true;
-        audioRef.current.volume = isMuted ? 0 : 0.8;
+        // Keep background loop low so the voiceover shines
+        audioRef.current.volume = isMuted ? 0 : 0.15;
         audioRef.current.play().catch(err => {
           console.warn("Autoplay block averted on reel:", err);
         });
       }
+      // Voice narration trigger
+      startVoiceover(`${reel.title}. @${reel.artist} proclama: ${reel.caption}`);
     }
   };
 
   // Keep volume/mute settings active on audio trigger change
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.volume = isMuted ? 0 : 0.8;
+      audioRef.current.volume = isMuted ? 0 : 0.15;
+    }
+    if (isMuted) {
+      stopVoiceover();
+    } else if (playingReelId) {
+      const activeReel = reels.find(r => r.id === playingReelId);
+      if (activeReel) {
+        startVoiceover(`${activeReel.title}. @${activeReel.artist} proclama: ${activeReel.caption}`);
+      }
     }
   }, [isMuted]);
 
-  // Clean up sound on unmount
+  // Clean up sound on unmount and ensure voiceover stops
   useEffect(() => {
+    // Warm up voice list
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+    }
+
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
       }
+      stopVoiceover();
     };
   }, []);
+
+  // Force stop sounds and speeches when tab switches
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    stopVoiceover();
+    setPlayingReelId(null);
+  }, [activeTab]);
 
   const handleLikeReel = (id: string) => {
     setReels(prev => prev.map(reel => {

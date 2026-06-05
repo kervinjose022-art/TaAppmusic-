@@ -57,10 +57,10 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
     setTaskProgress(0);
 
     const statuses = [
-      'Iniciando canal de sonido...',
-      'Verificando sincronización de audio...',
-      'Transmitiendo beats de prueba...',
-      'Acreditando ganancias Tappmusic...'
+      'Cargando video de fe...',
+      'Verificando mensaje de fe y éxito...',
+      'Analizando testimonio de abundancia...',
+      'Procesando regalía de tarea...'
     ];
 
     let currentStep = 0;

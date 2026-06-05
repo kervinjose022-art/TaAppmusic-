@@ -1,13 +1,14 @@
-import { Headphones, Radio, Share2, Sparkles } from 'lucide-react';
+import { Sparkles, Share2, ShieldCheck, Heart, Crown } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface HeaderProps {
   userProfile: UserProfile;
   onOpenShareModal: () => void;
   onOpenVipSelector?: () => void;
+  onLogout?: () => void;
 }
 
-export default function Header({ userProfile, onOpenShareModal, onOpenVipSelector }: HeaderProps) {
+export default function Header({ userProfile, onOpenShareModal, onOpenVipSelector, onLogout }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[#39FF14]/20 bg-black/95 px-6 py-4 backdrop-blur-md">
       {/* Left items - Live status LED indicator */}
@@ -24,19 +25,29 @@ export default function Header({ userProfile, onOpenShareModal, onOpenVipSelecto
       {/* Centered Tappmusic.com Name with headphones branding */}
       <div className="flex flex-col items-center justify-center text-center">
         <div className="flex items-center gap-2">
-          <Headphones className="h-4 w-4 text-purple-400 animate-pulse" />
+          <Crown className="h-4 w-4 text-yellow-500 animate-pulse" />
           <h1 className="text-xl sm:text-2xl font-black tracking-widest text-center select-all text-neon-green">
             Tappmusic<span className="text-white">.com</span>
           </h1>
-          <Sparkles className="h-3.5 w-3.5 text-yellow-500 animate-bounce" />
+          <Sparkles className="h-3.5 w-3.5 text-purple-400 animate-bounce" />
         </div>
-        <p className="text-[9px] uppercase tracking-[0.25em] text-purple-400 font-bold">
-          Cerebro LED de Sonido Dominicano
+        <p className="text-[9px] uppercase tracking-[0.22em] text-[#39FF14] font-black">
+          DIOS, FAMILIA Y MENTALIDAD MILLONARIA
         </p>
       </div>
 
       {/* Right Items - VIP status indicator and Share Button */}
       <div className="flex items-center gap-3">
+        {userProfile.isRegistered && onLogout && (
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-1 sm:gap-1.5 rounded-lg border border-red-500/20 bg-black hover:bg-red-500/10 hover:border-red-500/40 transition-all px-2.5 py-2 text-[10px] sm:text-xs font-mono font-bold text-red-500 cursor-pointer"
+            title="Cerrar sesión / Registrar nuevo usuario"
+          >
+            SALIR
+          </button>
+        )}
+
         <button
           onClick={onOpenShareModal}
           className="flex items-center gap-1.5 rounded-lg border border-[#39FF14]/40 bg-black hover:bg-[#39FF14]/10 transition-all px-3 py-2 text-[10px] sm:text-xs font-mono font-bold text-[#39FF14] cursor-pointer"

@@ -80,6 +80,14 @@ export default function App() {
     setIsVipSelectorOpen(false);
   };
 
+  const handleLogout = () => {
+    const updated: UserProfile = {
+      ...userProfile,
+      isRegistered: false
+    };
+    saveProfile(updated);
+  };
+
   const copyModalLink = async () => {
     try {
       await navigator.clipboard.writeText(sharedUrl);
@@ -101,6 +109,7 @@ export default function App() {
         userProfile={userProfile} 
         onOpenShareModal={() => setIsShareModalOpen(true)} 
         onOpenVipSelector={() => setIsVipSelectorOpen(true)}
+        onLogout={handleLogout}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-8 text-center">
