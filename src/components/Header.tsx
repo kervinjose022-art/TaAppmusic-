@@ -60,7 +60,7 @@ export default function Header({ userProfile, onOpenShareModal, onOpenVipSelecto
         <button
           onClick={onOpenVipSelector}
           className={`flex items-center gap-2 rounded-xl border p-1 bg-zinc-950 hover:bg-zinc-900 transition-all text-left group pr-2.5 cursor-pointer max-w-[140px] sm:max-w-none ${
-            userProfile.vipLevel === 'VIP SÚPER VIP 1000$' 
+            userProfile.vipLevel === 'VIP CORONA IMPERIAL 1000$' 
               ? 'border-emerald-500/40 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.15)] bg-gradient-to-tr from-black to-emerald-950/20' 
               : userProfile.vipLevel === 'VIP PLATINO 420$'
               ? 'border-purple-500/30 text-purple-400'

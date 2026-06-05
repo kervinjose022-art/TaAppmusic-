@@ -231,12 +231,12 @@ export default function VipReels({ currentVip }: VipReelsProps) {
       {/* Selector VIP Tabs */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2 mb-6">
         {([
-          'VIP ORO 10$', 
+          'VIP PLATA 10$', 
           'VIP ORO 20$', 
           'VIP RUBÍ 40$', 
           'VIP DIAMANTE 120$', 
           'VIP PLATINO 420$', 
-          'VIP SÚPER VIP 1000$'
+          'VIP CORONA IMPERIAL 1000$'
         ] as VipLevel[]).map(lvl => {
           const isActive = activeTab === lvl;
           const isUserLevel = currentVip === lvl;

@@ -60,7 +60,7 @@ export default function App() {
     else if (selectedInitialVip === 'VIP RUBÍ 40$') startEarnings = 40.00;
     else if (selectedInitialVip === 'VIP DIAMANTE 120$') startEarnings = 120.00;
     else if (selectedInitialVip === 'VIP PLATINO 420$') startEarnings = 420.00;
-    else if (selectedInitialVip === 'VIP SÚPER VIP 1000$') startEarnings = 1000.00;
+    else if (selectedInitialVip === 'VIP CORONA IMPERIAL 1000$') startEarnings = 1000.00;
 
     const updated: UserProfile = {
       username: name,
@@ -438,12 +438,12 @@ export default function App() {
 
               <div className="space-y-2 pt-2 text-left max-h-[350px] overflow-y-auto pr-1">
                 {[
-                  { lvl: 'VIP PLATA 10$', desc: 'Tareas de $5.50 y $8.00', bonus: 'Bono x1.0', col: 'text-zinc-400' },
-                  { lvl: 'VIP ORO 20$', desc: 'Tareas de $12.00 y $15.50', bonus: 'Bono x1.5', col: 'text-yellow-400' },
-                  { lvl: 'VIP RUBÍ 40$', desc: 'Tareas de $24.00 y $35.00', bonus: 'Bono x2.2', col: 'text-red-400' },
-                  { lvl: 'VIP DIAMANTE 120$', desc: 'Misiones de $50.00 y $75.00', bonus: 'Bono x3.5', col: 'text-sky-400 border border-sky-500/20 px-1 rounded' },
-                  { lvl: 'VIP PLATINO 420$', desc: 'Misiones de $150.00 y $220.00', bonus: 'Bono x5.0', col: 'text-purple-400 border border-purple-500/20 px-1 rounded' },
-                  { lvl: 'VIP SÚPER VIP 1000$', desc: 'Ganancias de $450.00 y $600.00', bonus: 'Bono x8.0', col: 'text-emerald-400 font-extrabold border border-emerald-500/35 px-1 rounded' }
+                  { lvl: 'VIP PLATA 10$', desc: '5 Tareas de $2.45 (Total: $12.25/día)', bonus: 'Bono x1.0', col: 'text-zinc-400' },
+                  { lvl: 'VIP ORO 20$', desc: '7 Tareas de $3.50 (Total: $24.50/día)', bonus: 'Bono x1.5', col: 'text-yellow-400' },
+                  { lvl: 'VIP RUBÍ 40$', desc: '10 Tareas de $4.90 (Total: $49.00/día)', bonus: 'Bono x2.2', col: 'text-red-400' },
+                  { lvl: 'VIP DIAMANTE 120$', desc: '15 Tareas de $9.79 (Total: $146.85/día)', bonus: 'Bono x3.5', col: 'text-sky-400 border border-sky-500/20 px-1 rounded' },
+                  { lvl: 'VIP PLATINO 420$', desc: '17 Tareas de $30.22 (Total: $513.74/día)', bonus: 'Bono x5.0', col: 'text-purple-400 border border-purple-500/20 px-1 rounded' },
+                  { lvl: 'VIP CORONA IMPERIAL 1000$', desc: '20 Tareas de $61.16 (Total: $1,223.20/día)', bonus: 'Bono x8.0', col: 'text-emerald-400 font-extrabold border border-emerald-500/35 px-1 rounded' }
                 ].map((item) => (
                   <button
                     key={item.lvl}

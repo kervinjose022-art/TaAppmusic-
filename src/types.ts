@@ -28,7 +28,7 @@ export type VipLevel =
   | 'VIP RUBÍ 40$'
   | 'VIP DIAMANTE 120$'
   | 'VIP PLATINO 420$'
-  | 'VIP SÚPER VIP 1000$';
+  | 'VIP CORONA IMPERIAL 1000$';
 
 export interface VipFeature {
   name: VipLevel;

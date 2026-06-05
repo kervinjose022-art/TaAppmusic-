@@ -27,6 +27,37 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
   const [rewardClaimable, setRewardClaimable] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const stopVoiceover = () => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  };
+
+  const startVoiceover = (text: string) => {
+    stopVoiceover();
+    if (typeof window !== 'undefined' && window.speechSynthesis && !isAudioMuted) {
+      const cleaned = text
+        .replace(/#/g, ' hashtag ')
+        .replace(/🕊️|❤️|🏠|📈|💼|✨|🙌|✝️|🔥|🛡️|👑|💎|🌟|🌍/g, '');
+
+      const utterance = new SpeechSynthesisUtterance(cleaned);
+      utterance.lang = 'es-MX';
+      
+      const voices = window.speechSynthesis.getVoices();
+      const spanishVoice = voices.find(v => v.lang.startsWith('es-MX') || v.lang.startsWith('es-ES') || v.lang.startsWith('es-')) || voices[0];
+      if (spanishVoice) {
+        utterance.voice = spanishVoice;
+      }
+
+      utterance.rate = 0.85;
+      utterance.pitch = 0.95;
+
+      speechUtteranceRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
 
   // Filter tasks based on selected tab & matching user's exact VIP requirement
   const currentFilteredTasks = tasks.filter(task => {
@@ -42,7 +73,7 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
     'VIP RUBÍ 40$': 3,
     'VIP DIAMANTE 120$': 4,
     'VIP PLATINO 420$': 5,
-    'VIP SÚPER VIP 1000$': 6,
+    'VIP CORONA IMPERIAL 1000$': 6,
   };
   const getVipRank = (level: VipLevel) => VIP_RANK_MAPPING[level] || 1;
   const userVipRank = getVipRank(userProfile.vipLevel);
@@ -112,12 +143,31 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
     };
   }, [activeTask, activeReel]);
 
-  // Sync mute
+  // Sync mute and voiceover speaker trigger
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.muted = isAudioMuted;
     }
-  }, [isAudioMuted]);
+    if (isAudioMuted) {
+      stopVoiceover();
+    } else if (activeTask && activeReel) {
+      // Direct noble preaching/motivation speech synthesis voice trigger
+      const narrativeText = `${activeTask.title}. Sermón y reflexión: ${activeReel.title}. Mensaje de fe: ${activeReel.caption}`;
+      startVoiceover(narrativeText);
+    } else {
+      stopVoiceover();
+    }
+  }, [isAudioMuted, activeTask, activeReel]);
+
+  // Stop sounds and voiceovers on unmount
+  useEffect(() => {
+    return () => {
+      stopVoiceover();
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, []);
 
   const handleClaimReward = () => {
     if (!activeTask) return;
@@ -240,8 +290,8 @@ export default function VipTasks({ userProfile, setUserProfile }: VipTasksProps)
                       {task.category}
                     </span>
                     <span className={`px-2 py-0.5 rounded text-[9px] font-bold font-mono tracking-wider uppercase border ${
-                      task.vipRequired === 'VIP SÚPER VIP 1000$' 
-                        ? 'border-emerald-550/40 text-emerald-300 bg-emerald-500/5 font-black' 
+                      task.vipRequired === 'VIP CORONA IMPERIAL 1000$' 
+                        ? 'border-emerald-550/40 text-[#39FF14] bg-emerald-500/5 font-black animate-pulse' 
                         : task.vipRequired === 'VIP PLATINO 420$'
                         ? 'border-purple-500/30 text-purple-300 bg-purple-500/5'
                         : task.vipRequired === 'VIP DIAMANTE 120$'
