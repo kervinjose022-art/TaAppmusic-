@@ -142,7 +142,7 @@ export default function App() {
         if (currentLocal) {
           try {
             const parsed = JSON.parse(currentLocal) as UserProfile;
-            const updatedProfile = items.find(u => u.username.toLowerCase().trim() === parsed.username.toLowerCase().trim());
+            const updatedProfile = items.find(u => u.username && parsed.username && u.username.toLowerCase().trim() === parsed.username.toLowerCase().trim());
             if (updatedProfile) {
               setUserProfile(updatedProfile);
             }
@@ -216,10 +216,10 @@ export default function App() {
     // Also sync the changed userProfile back into the master users pool
     if (userProfile && userProfile.isRegistered) {
       setAllUsers(prev => {
-        const exists = prev.some(u => u.username.toLowerCase() === userProfile.username.toLowerCase());
+        const exists = prev.some(u => u.username && userProfile.username && u.username.toLowerCase() === userProfile.username.toLowerCase());
         let updatedList;
         if (exists) {
-          updatedList = prev.map(u => u.username.toLowerCase() === userProfile.username.toLowerCase() ? userProfile : u);
+          updatedList = prev.map(u => u.username && userProfile.username && u.username.toLowerCase() === userProfile.username.toLowerCase() ? userProfile : u);
         } else {
           updatedList = [...prev, userProfile];
         }
@@ -246,7 +246,7 @@ export default function App() {
     
     setAllUsers(prev => {
       const updatedList = prev.map(u => {
-        if (u.username.toLowerCase() === referrerUsername.toLowerCase()) {
+        if (u.username && u.username.toLowerCase() === referrerUsername.toLowerCase()) {
           const currentCommissions = u.inviteCommissionsEarned || 0;
           const currentCount = u.inviteCount || 0;
           const updatedUser = {
@@ -257,7 +257,7 @@ export default function App() {
           };
           
           // Live update active session if the referrer is currently logged in!
-          if (userProfile.username.toLowerCase() === referrerUsername.toLowerCase()) {
+          if (userProfile.username && userProfile.username.toLowerCase() === referrerUsername.toLowerCase()) {
             setTimeout(() => {
               setUserProfile(updatedUser);
             }, 60);
@@ -366,7 +366,7 @@ export default function App() {
     const emailLower = inputEmail.trim().toLowerCase();
 
     // Prevent overwriting existing user data by checking duplicate username or email
-    const nameExists = allUsers.some(u => u.username.toLowerCase() === name);
+    const nameExists = allUsers.some(u => u.username && u.username.toLowerCase() === name);
     const emailExists = allUsers.some(u => u.email && u.email.toLowerCase() === emailLower);
 
     if (nameExists || emailExists) {
@@ -464,10 +464,10 @@ export default function App() {
         foundUser = userSnap.data() as UserProfile;
       } else {
         // Fallback to checking by email or in allUsers state
-        foundUser = allUsers.find(u => u.username.toLowerCase() === inputVal || (u.email && u.email.toLowerCase() === inputVal));
+        foundUser = allUsers.find(u => (u.username && u.username.toLowerCase() === inputVal) || (u.email && u.email.toLowerCase() === inputVal));
       }
     } catch (err) {
-      foundUser = allUsers.find(u => u.username.toLowerCase() === inputVal || (u.email && u.email.toLowerCase() === inputVal));
+      foundUser = allUsers.find(u => (u.username && u.username.toLowerCase() === inputVal) || (u.email && u.email.toLowerCase() === inputVal));
     }
 
     if (!foundUser) {
@@ -497,7 +497,7 @@ export default function App() {
       return;
     }
 
-    const isKervin = foundUser.username.toLowerCase() === 'kervin' || (foundUser.email && foundUser.email.toLowerCase() === 'kervinjose022@gmail.com');
+    const isKervin = (foundUser.username && foundUser.username.toLowerCase() === 'kervin') || (foundUser.email && foundUser.email.toLowerCase() === 'kervinjose022@gmail.com');
 
     if (foundUser.password !== passVal && !(isKervin && (passVal === '26394421' || passVal === '7340' || passVal === '26304421'))) {
       setLoginError('❌ Contraseña incorrecta.');
@@ -515,7 +515,7 @@ export default function App() {
     saveProfile(foundUser);
     
     // Also save in users list update
-    setAllUsers(prev => prev.map(u => u.username.toLowerCase() === foundUser!.username.toLowerCase() ? foundUser! : u));
+    setAllUsers(prev => prev.map(u => u.username && foundUser!.username && u.username.toLowerCase() === foundUser!.username.toLowerCase() ? foundUser! : u));
 
     setLoginInput('');
     setLoginPassword('');
@@ -544,7 +544,7 @@ export default function App() {
         await setDoc(userRef, activatedTarget);
 
         // Update allUsers local state for reactive display updates
-        setAllUsers(prev => prev.map(u => u.username.toLowerCase() === targetName ? activatedTarget : u));
+        setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase() === targetName ? activatedTarget : u));
         
         // 2. Pay 15% commission if referrer exists
         if (userData.invitedBy) {
@@ -561,7 +561,7 @@ export default function App() {
               inviteCount: (referrerUser.inviteCount || 0) + 1
             };
             await setDoc(referrerRef, updatedReferrer);
-            setAllUsers(prev => prev.map(u => u.username.toLowerCase() === referrerName ? updatedReferrer : u));
+            setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase() === referrerName ? updatedReferrer : u));
           }
         }
       }
@@ -572,7 +572,7 @@ export default function App() {
 
   const handleUpgradeVip = (lvl: VipLevel) => {
     // Admin/propietario can instantly upgrade for easy tests
-    const isAdmin = userProfile.username.toLowerCase() === 'kervin' || userProfile.email === 'kervinjose022@gmail.com';
+    const isAdmin = (userProfile.username && userProfile.username.toLowerCase() === 'kervin') || userProfile.email === 'kervinjose022@gmail.com';
     if (isAdmin) {
       const backup = { ...userProfile, vipLevel: lvl };
       saveProfile(backup);
@@ -1733,7 +1733,7 @@ export default function App() {
                                     await deleteDoc(doc(db, 'registrations', reg.id));
                                     
                                     // Reset target user's profile registration status
-                                    const targetUser = allUsers.find(u => u.username.toLowerCase() === reg.username.toLowerCase());
+                                    const targetUser = allUsers.find(u => u.username && reg.username && u.username.toLowerCase() === reg.username.toLowerCase());
                                     if (targetUser) {
                                       const resetUser = { ...targetUser, isRegistered: false, status: 'pending' as const };
                                       await setDoc(doc(db, 'users', reg.username.toLowerCase()), resetUser);
@@ -1849,7 +1849,7 @@ export default function App() {
                                     });
                                     
                                     const ownerName = item.username || userProfile.username;
-                                    const targetUser = allUsers.find(u => u.username.toLowerCase() === ownerName.toLowerCase());
+                                    const targetUser = allUsers.find(u => u.username && ownerName && u.username.toLowerCase() === ownerName.toLowerCase());
                                     if (targetUser) {
                                       const updatedUser = {
                                         ...targetUser,
@@ -1857,7 +1857,7 @@ export default function App() {
                                       };
                                       await setDoc(doc(db, 'users', ownerName.toLowerCase()), updatedUser);
                                       
-                                      if (userProfile.username.toLowerCase() === ownerName.toLowerCase()) {
+                                      if (userProfile.username && ownerName && userProfile.username.toLowerCase() === ownerName.toLowerCase()) {
                                         saveProfile(updatedUser);
                                       }
                                     }

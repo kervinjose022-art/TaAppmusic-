@@ -17,7 +17,7 @@ export default function VipReels({ currentVip }: VipReelsProps) {
   
   // Track active playing reel ID
   const [playingReelId, setPlayingReelId] = useState<string | null>(null);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
 
   // Comments database associated with reel IDs
   const [comments, setComments] = useState<Record<string, { username: string; text: string; time: string }[]>>({
