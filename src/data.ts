@@ -459,131 +459,193 @@ export const REELS_DATABASE: Reel[] = [
   {
     id: 'reel_1',
     title: 'Caminando con Jesús Cristo 🕊️',
-    caption: 'En los momentos más difíciles de la vida, Su gracia nos sostiene. Sigue adelante con fe, Él nunca te abandonará. ¡Fe inquebrantable! #Jesucristo #Fe #DiosEsAmor #Esperanza',
-    artist: 'Kervin de Fe',
-    coverUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&auto=format&fit=crop&q=80',
+    caption: 'En los momentos más difíciles de la vida, Su gracia nos sostiene. Sigue adelante con fe, Él nunca te abandonará. ¡Fe inquebrantable en Jesucristo!',
+    artist: 'Sermones Celestiales',
+    coverUrl: 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=600&auto=format&fit=crop&q=80',
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     likes: 540,
     commentsCount: 32,
     vipLevel: 'VIP PLATA 10$',
-    duration: '0:15'
+    duration: '0:15',
+    category: 'Video de Fe'
+  },
+  {
+    id: 'reel_music_1',
+    title: 'Si No Estás - Iñigo Quintero (TikTok Hits)',
+    caption: 'La canción más viral de TikTok sobre la búsqueda espiritual y la paz profunda. Una reproducción musical perfecta y con canciones reales para motivar tu día.',
+    artist: 'Música TikTok Real',
+    coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=450&auto=format&fit=crop&q=80',
+    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+    likes: 1280,
+    commentsCount: 84,
+    vipLevel: 'VIP PLATA 10$',
+    duration: '0:22',
+    category: 'Video Musical'
   },
   {
     id: 'reel_2',
     title: 'La Familia es el Mayor Regalo 🏠❤️',
-    caption: 'Las riquezas materiales van y viene, pero el amor de una familia unida dura para siempre. Protege a tu hogar, edifícalo sobre roca firme. #Familia #Hogar #Bendiciones #Unión',
-    artist: 'Fe y Familia',
-    coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&auto=format&fit=crop&q=80',
-    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+    caption: 'Las riquezas materiales van y vienen, pero el amor de una familia unida dura para siempre. Protege a tu hogar con sabio amor y verdadero respeto.',
+    artist: 'Reflexión Familiar Sabia',
+    coverUrl: 'https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=400&auto=format&fit=crop&q=80',
+    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
     likes: 820,
     commentsCount: 45,
     vipLevel: 'VIP PLATA 10$',
-    duration: '0:12'
+    duration: '0:12',
+    category: 'Familia'
   },
 
   // VIP ORO 20$ Reels
   {
     id: 'reel_3',
     title: 'Motivación Millonaria: Disciplina Absoluta 📈💼',
-    caption: 'Un ganador no nace, se hace con sudor, desvelos y fe ciega. Pon a Dios en primer lugar en tus negocios y verás tu vida prosperar. #Millonario #Motivacion #Esfuerzo #Disciplina',
-    artist: 'Juventud del Éxito',
-    coverUrl: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&auto=format&fit=crop&q=80',
-    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+    caption: 'Un ganador no se rinde, se levanta con fe ciega y compromiso mental de abundancia. Pon a Dios en primer lugar en tus planes y verás resultados.',
+    artist: 'Mentalidad Creadora',
+    coverUrl: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=400&auto=format&fit=crop&q=80',
+    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
     likes: 1250,
     commentsCount: 68,
     vipLevel: 'VIP ORO 20$',
-    duration: '0:18'
+    duration: '0:18',
+    category: 'Mentalidad'
+  },
+  {
+    id: 'reel_music_2',
+    title: 'LALA - Myke Towers (Instagram Remix)',
+    caption: 'El hit global del momento en Instagram Reels y TikTok. Alta fidelidad de reproducción para tus tareas de monetización de canciones reales.',
+    artist: 'Instagram Hits',
+    coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80',
+    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+    likes: 2450,
+    commentsCount: 130,
+    vipLevel: 'VIP ORO 20$',
+    duration: '0:20',
+    category: 'Video Musical'
   },
   {
     id: 'reel_4',
     title: 'Dios Tiene el Control Absoluto 🙌✨',
-    caption: 'No te preocupes por el mañana, ya que Dios está preparando lo mejor para ti. Ora con fervor, trabaja con honestidad y confía en Su proceso eterno. #DiosEsBueno #Oración #Milagro #Fiel',
-    artist: 'DJ Gracia Divina',
-    coverUrl: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=400&auto=format&fit=crop&q=80',
-    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+    caption: 'No te preocupes por el mañana, ya que tu Padre Celestial prepara lo mejor. Ora con gozo, trabaja sincera y honestamente y confía en Su eterna provisión.',
+    artist: 'Paz Providencial',
+    coverUrl: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=600&auto=format&fit=crop&q=80',
+    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
     likes: 1420,
     commentsCount: 89,
     vipLevel: 'VIP ORO 20$',
-    duration: '0:20'
+    duration: '0:20',
+    category: 'Video de Fe'
   },
 
   // VIP RUBÍ 40$ Reels
   {
     id: 'reel_5',
     title: 'Aprende de Jesús: El Maestro de Vida ✝️🔥',
-    caption: 'Jesús venció al mundo. Con Su fuerza en tu corazón, no hay gigante ni prueba que no puedas derrotar. Levántate con la mente enfocada en Su gloria. #Jesús #Superación #FeActiva',
-    artist: 'La Sensación Cristiana',
-    coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&auto=format&fit=crop&q=80',
-    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+    caption: 'Jesús venció la adversidad. Con Su fuerza bien sembrada en tu corazón, no hay prueba que no puedas superar con creces.',
+    artist: 'Jesucristo Salvador',
+    coverUrl: 'https://images.unsplash.com/photo-1519751138087-5bf79df62d5b?w=600&auto=format&fit=crop&q=80',
+    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
     likes: 3100,
     commentsCount: 143,
     vipLevel: 'VIP RUBÍ 40$',
-    duration: '0:25'
+    duration: '0:25',
+    category: 'Video de Fe'
+  },
+  {
+    id: 'reel_music_3',
+    title: 'Luna - Feid & ATL Jacob (TikTok Hits)',
+    caption: 'La canción bailable que define el éxito de tendencias en Instagram Reels. Compra de VIP para desbloquear mayores regalías semanales en Tappmusic.',
+    artist: 'Música Instagram Real',
+    coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80',
+    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3',
+    likes: 4100,
+    commentsCount: 198,
+    vipLevel: 'VIP RUBÍ 40$',
+    duration: '0:24',
+    category: 'Video Musical'
   },
   {
     id: 'reel_6',
     title: 'Mi Familia Bajo la Cobertura de Dios 🙏🛡️',
-    caption: 'Nada hay más hermoso que ver a toda una familia unida alabando al Creador en armonía. Declaramos paz, provisión y salud sobre tu hogar hoy. #FamiliaDeFe #HogarBendecido #Amor',
-    artist: 'Refugio Familiar',
+    caption: 'Qué hermoso ver a una familia unida caminando bajo sabias enseñanzas de amor y respeto mutuo. Declaramos paz, pan y provisión sobre todos tus seres queridos.',
+    artist: 'Valores Familiares',
     coverUrl: 'https://images.unsplash.com/photo-1516280440614-37939bbacd6a?w=400&auto=format&fit=crop&q=80',
-    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
+    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     likes: 2900,
     commentsCount: 112,
     vipLevel: 'VIP RUBÍ 40$',
-    duration: '0:30'
+    duration: '0:30',
+    category: 'Familia'
   },
 
   // VIP DIAMANTE 120$ Reels
   {
     id: 'reel_7',
     title: 'Riqueza Espiritual y Propósito Millonario 👑💎',
-    caption: 'La sabiduría divina nos instruye a ser excelentes administradores de dones y talentos. Multiplica tu servicio, ayuda a tu prójimo y vive con propósito de abundancia. #MillonarioDeFe #Prosperidad',
-    artist: 'Marina Club Celestial',
-    coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80',
-    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    caption: 'La sabiduría infinita nos instruye a administrar con excelencia cada uno de nuestros recursos. Multiplica tu fe y asiste a tu familia con abundante gozo.',
+    artist: 'Mentalidad de Reino',
+    coverUrl: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=600&auto=format&fit=crop&q=80',
+    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
     likes: 9800,
     commentsCount: 450,
     vipLevel: 'VIP DIAMANTE 120$',
-    duration: '0:35'
+    duration: '0:35',
+    category: 'Mentalidad'
+  },
+  {
+    id: 'reel_music_4',
+    title: 'Gata Only - FloyyMenor & Cris Mj',
+    caption: 'Súper éxito viral de reproducción en TikTok e Instagram de Chile para el mundo, con reproducción limpia y perfecta en fidelidad absoluta.',
+    artist: 'Canciones Más Escuchadas',
+    coverUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=400&auto=format&fit=crop&q=80',
+    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+    likes: 15400,
+    commentsCount: 520,
+    vipLevel: 'VIP DIAMANTE 120$',
+    duration: '0:28',
+    category: 'Video Musical'
   },
   {
     id: 'reel_8',
     title: 'La Gloria Postrera de Dios 🙌🌟',
-    caption: 'Se viene una lluvia de bendiciones sobrenaturales que sobreabundará en tu vida, tus sueños y los de tu familia. ¡Pásate al nivel superior con fe y da gracias! #DiosEsFiel #Abundancia #Amen',
-    artist: 'El Kervin Flow',
-    coverUrl: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=400&auto=format&fit=crop&q=80',
-    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+    caption: 'Lluvia de bendiciones sobrenaturales sobreabundará en tu hogar. Da gracias por la vida de tus familiares y sigue adelante sembrando fe.',
+    artist: 'Refugio de Amor Celestial',
+    coverUrl: 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=600&auto=format&fit=crop&q=80',
+    videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
     likes: 12400,
     commentsCount: 512,
     vipLevel: 'VIP DIAMANTE 120$',
-    duration: '0:40'
+    duration: '0:40',
+    category: 'Video de Fe'
   },
 
   // VIP PLATINO 420$ Reels
   {
     id: 'reel_9',
     title: 'Impacto Platino: La Unión de Liderazgo ⚡🔥',
-    caption: 'Cuando los líderes trabajan bajo una visión divina, los milagros se multiplican. Permanece firme. #PlatinoLevel #Liderazgo #ExitoCristiano',
-    artist: 'Platino Sound',
-    coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80',
+    caption: 'Cuando los líderes trabajan bajo principios sagrados de honestidad, los milagros florecen y la escasez se desvanece por completo. Excelente guía mental.',
+    artist: 'Liderazgo Eterno',
+    coverUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&auto=format&fit=crop&q=80',
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
     likes: 15600,
     commentsCount: 680,
     vipLevel: 'VIP PLATINO 420$',
-    duration: '0:45'
+    duration: '0:45',
+    category: 'Mentalidad'
   },
 
   // VIP CORONA IMPERIAL 1000$ Reels
   {
     id: 'reel_10',
     title: 'Corona Imperial: La Cima de la Bendición 👑🌍',
-    caption: 'Dedicado a los valientes que no temen soñar en grande. La excelencia es un hábito inspirado en Su gracia infinita. #CoronaImperial #Excelencia #Abundancia',
-    artist: 'DJ TaApp Celestial',
-    coverUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&auto=format&fit=crop&q=80',
+    caption: 'Dedicado a los corazones valientes. La excelencia de la vida es una obra de la gracia divina del Creador para edificar hogares hermosos.',
+    artist: 'Dios Es Fiel',
+    coverUrl: 'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=600&auto=format&fit=crop&q=80',
     videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
     likes: 31200,
     commentsCount: 1240,
     vipLevel: 'VIP CORONA IMPERIAL 1000$',
-    duration: '0:50'
+    duration: '0:50',
+    category: 'Video de Fe'
   }
 ];

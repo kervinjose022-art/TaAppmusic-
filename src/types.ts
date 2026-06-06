@@ -60,6 +60,7 @@ export interface Reel {
   commentsCount: number;
   vipLevel: VipLevel;
   duration: string;
+  category?: 'Video de Fe' | 'Familia' | 'Mentalidad' | 'Video Musical';
 }
 
 export interface UserProfile {

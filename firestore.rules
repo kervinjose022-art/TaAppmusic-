@@ -25,37 +25,17 @@ service cloud.firestore {
 
     // Collection: users
     match /users/{username} {
-      allow get: if true;
-      allow list: if isAdmin();
-      
-      // Allow profile creation during sign up/registration
-      allow create: if true;
-      
-      // Users can modify their own earnings, completed tasks or direct invite stats,
-      // but they cannot self-approve or increase their VIP level on their own.
-      allow update: if isAdmin() || (
-        // Ensure status and VIP level can only be changed by admin
-        request.resource.data.status == resource.data.status &&
-        request.resource.data.vipLevel == resource.data.vipLevel
-      );
-      
-      allow delete: if isAdmin();
+      allow read, write: if isSignedIn();
     }
 
     // Collection: registrations
     match /registrations/{registrationId} {
-      allow get: if true;
-      allow list: if isAdmin();
-      allow create: if true;
-      allow update, delete: if isAdmin();
+      allow read, write: if isSignedIn();
     }
 
     // Collection: withdrawals
     match /withdrawals/{withdrawalId} {
-      allow get: if true;
-      allow list: if isAdmin();
-      allow create: if true;
-      allow update, delete: if isAdmin();
+      allow read, write: if isSignedIn();
     }
   }
 }

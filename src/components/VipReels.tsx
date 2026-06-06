@@ -115,12 +115,20 @@ export default function VipReels({ currentVip }: VipReelsProps) {
     }
   };
 
-  const startVoiceover = (text: string) => {
+  const startVoiceover = (text: string, category?: string) => {
     stopVoiceover();
     if (typeof window !== 'undefined' && window.speechSynthesis && !isMuted) {
+      // If it's a music video, let the real audio play unmodified without speaking over it!
+      if (category === 'Video Musical') {
+        if (audioRef.current && !isMuted) {
+          audioRef.current.volume = 0.95; // Let the full song play nicely
+        }
+        return;
+      }
+
       // Clean emojis and symbols for elegant text narration
       const cleaned = text
-        .replace(/#/g, ' hashtag ')
+        .replace(/#/g, '')
         .replace(/🕊️|❤️|🏠|📈|💼|✨|🙌|✝️|🔥|🛡️|👑|💎|🌟|🌍/g, '');
 
       const utterance = new SpeechSynthesisUtterance(cleaned);
@@ -133,12 +141,22 @@ export default function VipReels({ currentVip }: VipReelsProps) {
         utterance.voice = spanishVoice;
       }
 
-      utterance.rate = 0.85; // Deep, slow, reflective sermon tempo
-      utterance.pitch = 0.95; // Noble and authoritative tone for motivation
+      // Customize rates and pitches based on the Category for Voz de Dios / Familia / Mentalidad
+      if (category === 'Video de Fe' || category === 'Voz de Dios') {
+        utterance.rate = 0.76; // Deep, extremely slow, majestic sermon tempo
+        utterance.pitch = 0.82; // Warm, authoritative, divine bass tone
+      } else if (category === 'Familia') {
+        utterance.rate = 0.82; // Warm, loving pacing
+        utterance.pitch = 0.95; // Friendly and wise parental tone
+      } else {
+        // Mentalidad / Compartir
+        utterance.rate = 0.88; // Confident tempo
+        utterance.pitch = 1.02; // Inspiring entrepreneur tone
+      }
 
       utterance.onstart = () => {
         if (audioRef.current && !isMuted) {
-          audioRef.current.volume = 0.22; // Clear background music background beat alongside the voice
+          audioRef.current.volume = 0.15; // Clear background music background beat alongside the voice
         }
       };
 
@@ -179,7 +197,7 @@ export default function VipReels({ currentVip }: VipReelsProps) {
       // Start the dynamic offline backing synth loop
       startAmbientSynth();
       // Voice narration trigger
-      startVoiceover(`${reel.title}. @${reel.artist} proclama: ${reel.caption}`);
+      startVoiceover(`${reel.title}. @${reel.artist} proclama: ${reel.caption}`, reel.category);
     }
   };
 
@@ -204,7 +222,7 @@ export default function VipReels({ currentVip }: VipReelsProps) {
     } else if (playingReelId) {
       const activeReel = reels.find(r => r.id === playingReelId);
       if (activeReel) {
-        startVoiceover(`${activeReel.title}. @${activeReel.artist} proclama: ${activeReel.caption}`);
+        startVoiceover(`${activeReel.title}. @${activeReel.artist} proclama: ${activeReel.caption}`, activeReel.category);
       }
     }
   }, [isMuted]);
@@ -270,8 +288,14 @@ export default function VipReels({ currentVip }: VipReelsProps) {
     }));
   };
 
-  // Filter reels corresponding to selected VIP Level
-  const activeReelsList = reels.filter(reel => reel.vipLevel === activeTab);
+  // Filter reels corresponding to selected VIP Level and Category
+  const [selectedCategory, setSelectedCategory] = useState<string>('Todo');
+
+  const activeReelsList = reels.filter(reel => {
+    const matchesVip = reel.vipLevel === activeTab;
+    const matchesCategory = selectedCategory === 'Todo' || reel.category === selectedCategory;
+    return matchesVip && matchesCategory;
+  });
 
   return (
     <div className="rounded-2xl border border-purple-500/20 bg-black p-6 shadow-xl relative overflow-hidden select-none">
@@ -348,6 +372,23 @@ export default function VipReels({ currentVip }: VipReelsProps) {
             </button>
           );
         })}
+      </div>
+
+      {/* Category selection pills */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-4 pt-1 mb-2 scrollbar-none no-scrollbar">
+        {['Todo', 'Video de Fe', 'Voz de Dios', 'Familia', 'Mentalidad', 'Video Musical'].map(cat => (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(cat)}
+            className={`py-1.5 px-3 rounded-full text-[10px] font-black uppercase transition-all whitespace-nowrap cursor-pointer border ${
+              selectedCategory === cat
+                ? 'bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)] border-purple-500'
+                : 'bg-zinc-950 text-zinc-500 hover:text-zinc-300 border-white/5'
+            }`}
+          >
+            {cat === 'Todo' ? '🔥 Todo' : cat === 'Video de Fe' ? '🕊️ Fe' : cat === 'Voz de Dios' ? '⚡ Dios' : cat === 'Familia' ? '🏠 Familia' : cat === 'Mentalidad' ? '💎 Mentalidad' : '🎵 Música'}
+          </button>
+        ))}
       </div>
 
       {/* List/Carousel of Reels matching the selected Level */}

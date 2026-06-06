@@ -287,7 +287,7 @@ export default function VipTasks({
     stopVoiceover();
     if (typeof window !== 'undefined' && window.speechSynthesis && !isAudioMuted) {
       const cleaned = text
-        .replace(/#/g, ' hashtag ')
+        .replace(/#/g, '')
         .replace(/🕊️|❤️|🏠|📈|💼|✨|🙌|✝️|🔥|🛡️|👑|💎|🌟|🌍/g, '');
 
       const utterance = new SpeechSynthesisUtterance(cleaned);

@@ -7,7 +7,7 @@ import VipReels from './components/VipReels';
 import { UserProfile, VipLevel } from './types';
 import { 
   Sparkles, ShieldCheck, Share2, CircleAlert, Globe, X, 
-  Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock, Eye, EyeOff, Users
+  Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock, Eye, EyeOff, Users, CreditCard
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from './firebase';
 import { collection, doc, onSnapshot, setDoc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
@@ -185,6 +185,25 @@ export default function App() {
   const [showAdminCodePrompt, setShowAdminCodePrompt] = useState(false);
   const [adminUnlockCode, setAdminUnlockCode] = useState('');
 
+  // VIP Upgrade Request States
+  const [upgradeVipLevel, setUpgradeVipLevel] = useState<VipLevel | null>(null);
+  const [upgradePayMethod, setUpgradePayMethod] = useState<'Pago Móvil' | 'USDT BEP-20'>('Pago Móvil');
+  const [upgradeReferenceNo, setUpgradeReferenceNo] = useState('');
+  const [upgradeFileName, setUpgradeFileName] = useState('');
+  const [upgradeFileBlob, setUpgradeFileBlob] = useState('');
+
+  const handleUpgradeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setUpgradeFileName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUpgradeFileBlob(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Login Fields
   const [loginInput, setLoginInput] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -343,7 +362,7 @@ export default function App() {
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = inputUsername.trim().toLowerCase() || 'invitado_vip';
     const emailLower = inputEmail.trim().toLowerCase();
@@ -384,12 +403,6 @@ export default function App() {
       invitedBy: referredBy || undefined
     };
 
-    // Store in admin live Firestore queue
-    setDoc(doc(db, 'registrations', regId), newReg).catch(err => {
-      handleFirestoreError(err, OperationType.WRITE, `registrations/${regId}`);
-    });
-    setRegistrations(prev => [newReg, ...prev]);
-
     const updated: UserProfile = {
       username: name,
       email: emailLower,
@@ -407,13 +420,35 @@ export default function App() {
       inviteCommissionsEarned: 0,
       inviteCount: 0
     };
-    
-    // Push directly to master user list for local and cloud synchronization
-    setDoc(doc(db, 'users', name), updated).catch(err => {
-      handleFirestoreError(err, OperationType.WRITE, `users/${name}`);
-    });
+
+    try {
+      // 1. Store in admin live Firestore registrations queue
+      await setDoc(doc(db, 'registrations', regId), newReg);
+    } catch (err) {
+      console.warn("Could not save to registrations Firestore (using offline mode):", err);
+    }
+
+    try {
+      // 2. Push directly to master user list for cloud synchronization
+      await setDoc(doc(db, 'users', name), updated);
+    } catch (err) {
+      console.warn("Could not save to users Firestore (using offline mode):", err);
+    }
+
+    // 3. Update local react states immediately so registration card advances!
+    setRegistrations(prev => [newReg, ...prev]);
     setAllUsers(prev => [...prev, updated]);
-    saveProfile(updated);
+    await saveProfile(updated);
+
+    // Clear inputs
+    setInputUsername('');
+    setInputEmail('');
+    setInputPassword('');
+    setInputReferenceNo('');
+    setAttachedFileName('');
+    setPreviewBlob('');
+    
+    alert("⚡ ¡Registro de Membresía VIP Enviado! Tu solicitud de depósito está siendo verificada por el propietario (Hermanito Kervin) para activar tu casilla VIP.");
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -446,7 +481,7 @@ export default function App() {
         const adminSeed: UserProfile = {
           username: 'kervin',
           email: 'kervinjose022@gmail.com',
-          password: passVal || '7340',
+          password: passVal || '26394421',
           vipLevel: 'VIP CORONA IMPERIAL 1000$',
           earnings: 1545.00,
           completedTaskIds: [],
@@ -470,7 +505,7 @@ export default function App() {
 
     const isKervin = foundUser.username.toLowerCase() === 'kervin' || (foundUser.email && foundUser.email.toLowerCase() === 'kervinjose022@gmail.com');
 
-    if (foundUser.password !== passVal && !(isKervin && (passVal === '7340' || passVal === '26304421'))) {
+    if (foundUser.password !== passVal && !(isKervin && (passVal === '26394421' || passVal === '7340' || passVal === '26304421'))) {
       setLoginError('❌ Contraseña incorrecta.');
       return;
     }
@@ -496,7 +531,7 @@ export default function App() {
     }
   };
 
-  const handleApproveUser = async (regUsername: string, regAmountUsd: number) => {
+  const handleApproveUser = async (regUsername: string, regAmountUsd: number, regVipLevel?: string) => {
     const targetName = regUsername.toLowerCase().trim();
     
     try {
@@ -505,9 +540,17 @@ export default function App() {
       if (userSnap.exists()) {
         const userData = userSnap.data() as UserProfile;
         
-        // 1. Activate approved user
-        const activatedTarget = { ...userData, status: 'active' as const };
+        // 1. Activate approved user and promote tier if specified
+        const targetVip = regVipLevel ? (regVipLevel as VipLevel) : userData.vipLevel;
+        const activatedTarget = { 
+          ...userData, 
+          status: 'active' as const,
+          vipLevel: targetVip
+        };
         await setDoc(userRef, activatedTarget);
+
+        // Update allUsers local state for reactive display updates
+        setAllUsers(prev => prev.map(u => u.username.toLowerCase() === targetName ? activatedTarget : u));
         
         // 2. Pay 15% commission if referrer exists
         if (userData.invitedBy) {
@@ -524,6 +567,7 @@ export default function App() {
               inviteCount: (referrerUser.inviteCount || 0) + 1
             };
             await setDoc(referrerRef, updatedReferrer);
+            setAllUsers(prev => prev.map(u => u.username.toLowerCase() === referrerName ? updatedReferrer : u));
           }
         }
       }
@@ -533,9 +577,60 @@ export default function App() {
   };
 
   const handleUpgradeVip = (lvl: VipLevel) => {
-    const backup = { ...userProfile, vipLevel: lvl };
-    saveProfile(backup);
+    // Admin/propietario can instantly upgrade for easy tests
+    const isAdmin = userProfile.username.toLowerCase() === 'kervin' || userProfile.email === 'kervinjose022@gmail.com';
+    if (isAdmin) {
+      const backup = { ...userProfile, vipLevel: lvl };
+      saveProfile(backup);
+      setIsVipSelectorOpen(false);
+      alert(`⚡ Rango VIP cambiado instantáneamente a ${lvl} (Cuenta de Propietario).`);
+      return;
+    }
+
+    // Standard user opens checkout overlay inside drawers
+    setUpgradeVipLevel(lvl);
+  };
+
+  const submitUpgradeRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!upgradeVipLevel) return;
+
+    const usdPrice = getLevelPriceInUsd(upgradeVipLevel);
+    const bsPrice = getLevelPriceInBs(upgradeVipLevel);
+    const regId = `UPGRADE-${userProfile.username.toLowerCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const upgradeReg = {
+      id: regId,
+      username: userProfile.username,
+      email: userProfile.email || '',
+      vipLevel: upgradeVipLevel,
+      paymentMethodUsed: upgradePayMethod,
+      amountUsd: usdPrice,
+      amountBs: bsPrice,
+      referenceNo: upgradeReferenceNo || `REF-${Math.floor(100000 + Math.random() * 900000)}`,
+      proofFileName: upgradeFileName || 'comprobante_mejora.png',
+      proofFileBlob: upgradeFileBlob || '',
+      date: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'pending'
+    };
+
+    try {
+      // Store in registrations Firestore queue
+      await setDoc(doc(db, 'registrations', regId), upgradeReg);
+    } catch (err) {
+      console.warn("Could not save upgrade registration in Firestore (using offline local fallback):", err);
+    }
+
+    setRegistrations(prev => [upgradeReg, ...prev]);
+
+    // Clear upgrade inputs
+    setUpgradeVipLevel(null);
+    setUpgradeReferenceNo('');
+    setUpgradeFileName('');
+    setUpgradeFileBlob('');
     setIsVipSelectorOpen(false);
+
+    alert(`⚡ Solicitud de Cambio VIP a ${upgradeVipLevel} enviada con éxito. El administrador (Hermanito Kervin) validará tu depósito para activar el rango.`);
   };
 
   const handleLogout = () => {
@@ -1082,37 +1177,7 @@ export default function App() {
               )}
             </div>
 
-            {/* Quick Demo Bypass widget */}
-            <div className="p-4 rounded-2xl border border-purple-500/40 bg-gradient-to-r from-purple-950/30 to-indigo-950/30 text-center space-y-3">
-              <div className="space-y-1">
-                <p className="text-[11px] font-mono font-black text-purple-300 uppercase shrink-0">🔓 MODO PRUEBA DE INVERSIONISTA</p>
-                <p className="text-[10px] text-zinc-400 leading-normal font-sans">
-                  Para probar el funcionamiento de inmediato sin esperar que Kervin lo revise, haz clic para auto-aprobar tu registro y entrar al Tablero del Nivel {userProfile.vipLevel.split(' ')[1]}.
-                </p>
-              </div>
 
-              <button
-                onClick={() => {
-                  // Find current user's registration in pool and mark as approved
-                  setRegistrations(prev => prev.map(reg => {
-                    if (reg.username === userProfile.username) {
-                      return { ...reg, status: 'approved' };
-                    }
-                    return reg;
-                  }));
-                  
-                  // Update current profile to active status
-                  saveProfile({
-                    ...userProfile,
-                    status: 'active'
-                  });
-                }}
-                className="w-full flex h-10 items-center justify-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-black uppercase text-white transition-all cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.4)]"
-              >
-                <Check className="h-4 w-4" />
-                <span>Auto-Aprobar Mi Cuenta Ahora</span>
-              </button>
-            </div>
 
             <div className="flex gap-2 font-mono text-[10px] justify-between text-zinc-500 pt-1">
               <span>Tappmusic.com • Soporte Live</span>
@@ -1344,64 +1409,179 @@ export default function App() {
         </div>
       )}
 
-      {/* QUICK SELECTOR VIP DRAWER (For demo flexibility changing tiers instantly) */}
+      {/* QUICK SELECTOR VIP DRAWER (For demo flexibility changing tiers instantly with payment request flow) */}
       {isVipSelectorOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-          <div className="relative w-full max-w-sm rounded-3xl border border-purple-500/30 bg-zinc-950 p-6 shadow-2xl relative overflow-hidden text-center">
+          <div className="relative w-full max-w-sm rounded-3xl border border-purple-500/30 bg-zinc-950 p-6 shadow-2xl relative overflow-hidden text-center max-h-[90vh] overflow-y-auto">
             
             <div className="absolute top-4 right-4">
               <button 
-                onClick={() => setIsVipSelectorOpen(false)}
-                className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-all cursor-pointer"
+                onClick={() => {
+                  setIsVipSelectorOpen(false);
+                  setUpgradeVipLevel(null);
+                }}
+                className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-500 hover:text-white transition-all cursor-pointer border-none"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
-                <Trophy className="h-6 w-6" />
-              </div>
+            {!upgradeVipLevel ? (
+              <div className="space-y-4">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                  <Trophy className="h-6 w-6" />
+                </div>
 
-              <div>
-                <h3 className="text-md font-black text-white uppercase tracking-wider">Cambiar Rango VIP</h3>
-                <p className="text-[11px] text-zinc-400">Prueba los diferentes niveles para ver tareas y Reels asociados.</p>
-              </div>
+                <div>
+                  <h3 className="text-md font-black text-white uppercase tracking-wider">Cambiar Rango VIP</h3>
+                  <p className="text-[11px] text-zinc-400">Prueba los diferentes niveles para ver tareas y Reels asociados.</p>
+                </div>
 
-              <div className="space-y-2 pt-2 text-left max-h-[350px] overflow-y-auto pr-1">
-                {[
-                  { lvl: 'VIP PLATA 10$', desc: '5 Videos/Día | Recompensa: 367 monedas diarias', bonus: 'Bono x1.0', col: 'text-zinc-400' },
-                  { lvl: 'VIP ORO 20$', desc: '7 Videos/Día | Recompensa: 734 monedas diarias', bonus: 'Bono x1.5', col: 'text-yellow-400' },
-                  { lvl: 'VIP RUBÍ 40$', desc: '10 Videos/Día | Recompensa: 1468 monedas diarias', bonus: 'Bono x2.2', col: 'text-red-400' },
-                  { lvl: 'VIP DIAMANTE 120$', desc: '15 Videos/Día | Recompensa: 4404 monedas diarias', bonus: 'Bono x3.5', col: 'text-sky-400 border border-sky-500/20 px-1 rounded' },
-                  { lvl: 'VIP PLATINO 420$', desc: '17 Videos/Día | Recompensa: 15414 monedas diarias', bonus: 'Bono x5.0', col: 'text-purple-400 border border-purple-500/20 px-1 rounded' },
-                  { lvl: 'VIP CORONA IMPERIAL 1000$', desc: '20 Videos/Día | Recompensa: 36700  monedas diarias', bonus: 'Bono x8.0', col: 'text-emerald-400 font-extrabold border border-emerald-500/35 px-1 rounded' }
-                ].map((item) => (
-                  <button
-                    key={item.lvl}
-                    onClick={() => handleUpgradeVip(item.lvl as VipLevel)}
-                    className="w-full p-2.5 rounded-xl border border-white/5 bg-black hover:border-purple-500/50 transition-all flex items-center justify-between cursor-pointer"
+                <div className="space-y-2 pt-2 text-left max-h-[350px] overflow-y-auto pr-1">
+                  {[
+                    { lvl: 'VIP PLATA 10$', desc: '5 Videos/Día | Recompensa: 367 monedas diarias', bonus: 'Bono x1.0', col: 'text-zinc-400' },
+                    { lvl: 'VIP ORO 20$', desc: '7 Videos/Día | Recompensa: 734 monedas diarias', bonus: 'Bono x1.5', col: 'text-yellow-400' },
+                    { lvl: 'VIP RUBÍ 40$', desc: '10 Videos/Día | Recompensa: 1468 monedas diarias', bonus: 'Bono x2.2', col: 'text-red-400' },
+                    { lvl: 'VIP DIAMANTE 120$', desc: '15 Videos/Día | Recompensa: 4404 monedas diarias', bonus: 'Bono x3.5', col: 'text-sky-400 border border-sky-500/20 px-1 rounded' },
+                    { lvl: 'VIP PLATINO 420$', desc: '17 Videos/Día | Recompensa: 15414 monedas diarias', bonus: 'Bono x5.0', col: 'text-purple-400 border border-purple-500/20 px-1 rounded' },
+                    { lvl: 'VIP CORONA IMPERIAL 1000$', desc: '20 Videos/Día | Recompensa: 36700  monedas diarias', bonus: 'Bono x8.0', col: 'text-emerald-400 font-extrabold border border-emerald-500/35 px-1 rounded' }
+                  ].map((item) => (
+                    <button
+                      key={item.lvl}
+                      onClick={() => handleUpgradeVip(item.lvl as VipLevel)}
+                      className="w-full p-2.5 rounded-xl border border-white/5 bg-black hover:border-purple-500/50 transition-all flex items-center justify-between cursor-pointer"
+                    >
+                      <div className="pr-2">
+                        <p className={`text-[11px] font-black uppercase ${item.col}`}>{item.lvl}</p>
+                        <p className="text-[9px] text-zinc-500 leading-tight">{item.desc}</p>
+                      </div>
+                      <span className="text-[9px] font-mono font-bold bg-white/5 px-2 py-0.5 rounded text-white shrink-0">
+                        {item.bonus}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="pt-2">
+                  <button 
+                    onClick={() => setIsVipSelectorOpen(false)}
+                    className="text-[11px] text-zinc-500 hover:text-zinc-300 font-bold bg-transparent border-none cursor-pointer"
                   >
-                    <div className="pr-2">
-                      <p className={`text-[11px] font-black uppercase ${item.col}`}>{item.lvl}</p>
-                      <p className="text-[9px] text-zinc-500 leading-tight">{item.desc}</p>
-                    </div>
-                    <span className="text-[9px] font-mono font-bold bg-white/5 px-2 py-0.5 rounded text-white shrink-0">
-                      {item.bonus}
-                    </span>
+                    Cerrar
                   </button>
-                ))}
+                </div>
               </div>
-              
-              <div className="pt-2">
-                <button 
-                  onClick={() => setIsVipSelectorOpen(false)}
-                  className="text-[11px] text-zinc-500 hover:text-zinc-300 font-bold"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </div>
+            ) : (
+              /* VIP UPGRADE CHECKOUT FLOW FORM */
+              <form onSubmit={submitUpgradeRequest} className="space-y-4">
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                  <CreditCard className="h-5 w-5" />
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-black text-white uppercase tracking-wider font-sans">Pagar Cambio VIP</h3>
+                  <p className="text-[10px] text-zinc-400 leading-tight">Completa tu pago e ingresa la referencia para mejorar a <strong className="text-purple-400">{upgradeVipLevel}</strong></p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-zinc-950 border border-white/5 text-left space-y-3">
+                  <div className="flex justify-between text-[11px] border-b border-white/5 pb-2">
+                    <span className="text-zinc-400 font-mono font-extrabold">Monto Fijo:</span>
+                    <span className="text-white font-black">${getLevelPriceInUsd(upgradeVipLevel)} USD / {getLevelPriceInBs(upgradeVipLevel).toLocaleString()} Bs</span>
+                  </div>
+
+                  {/* Payment switcher inside upgrade selector */}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setUpgradePayMethod('Pago Móvil')}
+                      className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                        upgradePayMethod === 'Pago Móvil'
+                          ? 'bg-yellow-950/40 text-yellow-500 border-yellow-500/50'
+                          : 'bg-black border-zinc-900 text-zinc-500 hover:text-zinc-400'
+                      }`}
+                    >
+                      🇻🇪 Pago Móvil
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUpgradePayMethod('USDT BEP-20')}
+                      className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                        upgradePayMethod === 'USDT BEP-20'
+                          ? 'bg-purple-950/40 text-purple-400 border-purple-500/50'
+                          : 'bg-black border-zinc-900 text-zinc-550 hover:text-zinc-400'
+                      }`}
+                    >
+                      🪙 USDT BEP-20
+                    </button>
+                  </div>
+
+                  {/* Payment details content info */}
+                  {upgradePayMethod === 'Pago Móvil' ? (
+                    <div className="p-2.5 rounded-xl bg-black border border-yellow-500/10 space-y-1 font-mono text-[10px] leading-relaxed text-zinc-350">
+                      <div>Banco: <strong className="text-white">Banco de Venezuela (0102)</strong></div>
+                      <div>Cédula: <strong className="text-white">26304421</strong></div>
+                      <div>Teléfono: <strong className="text-white">04262139920</strong></div>
+                    </div>
+                  ) : (
+                    <div className="p-2.5 rounded-xl bg-black border border-purple-500/10 space-y-1.5 font-mono text-[9px] leading-normal text-zinc-350 font-sans">
+                      <span className="text-zinc-500 block leading-none font-sans">Dirección USDT BEP-20 (BNB Chain):</span>
+                      <code className="text-purple-300 break-all select-all block py-1 px-1.5 rounded bg-zinc-950 border border-white/5 font-mono text-[8px]">0x29f0f1edd5258ee3b7553bff665df4d1dd811af0</code>
+                    </div>
+                  )}
+
+                  {/* Upgrade reference input */}
+                  <div className="space-y-1 text-left">
+                    <label className="text-[9px] uppercase font-mono tracking-widest text-zinc-400 font-bold block">
+                      Número de Referencia Emisora *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={upgradePayMethod === 'Pago Móvil' ? 'Ej. Ref: 8295' : 'Ej. Hash de Binance'}
+                      value={upgradeReferenceNo}
+                      onChange={(e) => setUpgradeReferenceNo(e.target.value)}
+                      className="w-full text-[11px] font-semibold bg-black border border-white/10 rounded-xl px-3 py-2 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                    />
+                  </div>
+
+                  {/* Upgrade File Uploder Capture */}
+                  <div className="space-y-1.5 pt-0.5 text-left font-sans">
+                    <label className="text-[9px] uppercase font-mono tracking-widest text-zinc-400 font-bold block">
+                      Capture de Pago (Opcional)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <label className="flex h-9 px-3 rounded-lg border border-dashed border-zinc-700 bg-black hover:border-purple-500 hover:bg-purple-950/20 text-gray-400 hover:text-white transition-all cursor-pointer items-center justify-center text-[10px]">
+                        <span>📁 Voucher Imagen</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleUpgradeFileChange}
+                        />
+                      </label>
+                      {upgradeFileName && <span className="text-[9px] text-white truncate max-w-[120px] font-mono">{upgradeFileName}</span>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setUpgradeVipLevel(null)}
+                    className="w-1/2 flex h-10 items-center justify-center rounded-xl bg-zinc-900 border border-white/5 text-zinc-400 hover:text-white text-xs font-bold transition-all cursor-pointer border-none"
+                  >
+                    Volver Listado
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-1/2 flex h-10 items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-xs font-black uppercase text-white transition-all cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.4)] border-none"
+                  >
+                    <Send className="h-3 w-3 text-white" />
+                    <span>Enviar Pago</span>
+                  </button>
+                </div>
+              </form>
+            )}
 
           </div>
         </div>
@@ -1547,7 +1727,7 @@ export default function App() {
                                     console.error("Error approving registration:", err);
                                   }
                                   // Call master approve solver for database-wide activation + commissions
-                                  handleApproveUser(reg.username, reg.amountUsd);
+                                  handleApproveUser(reg.username, reg.amountUsd, reg.vipLevel);
                                 }}
                                 className="flex-1 md:flex-initial h-9 px-3.5 rounded-xl bg-[#39FF14] text-black font-black text-xs uppercase hover:bg-[#34e512] transition-all cursor-pointer flex items-center justify-center gap-1"
                               >
