@@ -1056,7 +1056,7 @@ export default function App() {
                 <div className="p-4 rounded-2xl bg-zinc-950 border border-white/5 space-y-3.5">
                   <h4 className="text-[10px] uppercase font-mono tracking-wider font-extrabold text-white border-b border-white/5 pb-2 flex items-center justify-between">
                     <span>📝 Paso 2: Registrar Datos de Verificación</span>
-                    <span className="text-purple-400 font-bold lowercase">Verificación manual</span>
+                    <span className="text-purple-400 font-bold lowercase">Verificación instantánea</span>
                   </h4>
 
                   {/* Input reference */}
@@ -1072,54 +1072,6 @@ export default function App() {
                       onChange={(e) => setInputReferenceNo(e.target.value)}
                       className="w-full text-xs font-semibold bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-850 focus:outline-none focus:border-[#39FF14]"
                     />
-                  </div>
-
-                  {/* Drag and drop snapshot trigger file picker */}
-                  <div className="space-y-1.5 font-sans">
-                    <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-bold block">
-                      Adjunta Capture / Comprobante de Pago *
-                    </label>
-                    
-                    <div className="flex items-center gap-3">
-                      <label className="flex flex-col items-center justify-center px-4 py-2 bg-gradient-to-r from-purple-950/40 to-indigo-950/40 border border-purple-500/35 hover:border-purple-400 rounded-xl cursor-pointer text-[10px] font-black uppercase text-purple-300 hover:text-white transition-all shrink-0">
-                        <span>Buscar Archivo 🖼️</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          className="hidden"
-                        />
-                      </label>
-                      <div className="min-w-0 flex-1">
-                        {attachedFileName ? (
-                          <div className="space-y-1">
-                            <p className="text-xs font-bold text-[#39FF14] truncate font-mono">✅ {attachedFileName}</p>
-                            <span className="text-[8px] font-mono text-zinc-550 block">Imagen cargada con éxito. Pulsa enviar abajo.</span>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] text-zinc-500 block leading-tight font-mono">
-                            Ningún capture seleccionado. Puedes adjuntar cualquier imagen para la demostración.
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Image Preview Thumbnail if attached */}
-                    {previewBlob && (
-                      <div className="pt-1.5 flex items-center gap-3">
-                        <div className="rounded-xl border border-white/10 overflow-hidden bg-black p-1">
-                          <img 
-                            src={previewBlob} 
-                            alt="Preview Comprobante" 
-                            className="h-16 w-auto object-cover rounded-lg"
-                            referrerPolicy="no-referrer"
-                          />
-                        </div>
-                        <span className="text-[9px] text-zinc-500 font-mono leading-tight">
-                          Esta captura se enviará directamente al Panel del Administrador (Kervin) para su proceso de acreditación de 5 minutos.
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
 
