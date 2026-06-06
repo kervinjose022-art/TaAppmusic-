@@ -1683,44 +1683,117 @@ export default function App() {
               </button>
             </div>
 
-            {/* Header branding */}
-            <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white font-mono font-bold animate-pulse text-lg">
-                🛠️
+            {/* Header branding & Clean Database Button */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white font-mono font-bold animate-pulse text-lg shrink-0">
+                  🛠️
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-1.5">
+                    <span>Panel de Control de Kervin</span>
+                    <span className="text-[9px] font-mono bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded-full border border-purple-500/20 lowercase">propietario</span>
+                  </h3>
+                  <p className="text-[11px] text-zinc-500 leading-normal">Manejo centralizado de verificaciones, cobros y voces reales.</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-1.5">
-                  <span>Panel de Control de Kervin</span>
-                  <span className="text-[9px] font-mono bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded-full border border-purple-500/20 lowercase">propietario</span>
-                </h3>
-                <p className="text-[11px] text-zinc-500">Manejo centralizado de verificaciones manuales de depósitos (Bs / USDT) y cobros.</p>
-              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (window.confirm("⚠️ ¿Estás seguro de que quieres limpiar toda la base de datos de prueba? Esto reiniciará las invitaciones, activaciones y retiros a cero en Firestore para que el portal quede listo en tiempo real para producción con 0 registrados.")) {
+                    try {
+                      // 1. Clear registrations in Firestore
+                      for (const r of registrations) {
+                        try {
+                          await deleteDoc(doc(db, 'registrations', r.id));
+                        } catch (e) {}
+                      }
+                      // 2. Clear withdrawals in Firestore
+                      for (const w of withdrawHistory) {
+                        try {
+                          if (w.id) {
+                            await deleteDoc(doc(db, 'withdrawals', w.id));
+                          }
+                        } catch (e) {}
+                      }
+                      // 3. Clear users from Firestore (except kervin)
+                      for (const u of allUsers) {
+                        if (u.username && u.username.toLowerCase() !== 'kervin') {
+                          try {
+                            await deleteDoc(doc(db, 'users', u.username.toLowerCase()));
+                          } catch (e) {}
+                        }
+                      }
+                      
+                      // 4. Reset kervin's counts locally and in Firestore
+                      const resetKervin = {
+                        username: 'kervin',
+                        email: 'kervinjose022@gmail.com',
+                        password: '7340',
+                        vipLevel: 'VIP CORONA IMPERIAL 1000$' as VipLevel,
+                        earnings: 1545.00,
+                        completedTaskIds: ['task_1', 'task_2'],
+                        isRegistered: true,
+                        status: 'active' as const,
+                        inviteCount: 0,
+                        inviteCommissionsEarned: 0
+                      };
+                      await setDoc(doc(db, 'users', 'kervin'), resetKervin);
+                      
+                      // Clear local react states & LocalStorage
+                      setRegistrations([]);
+                      setWithdrawHistory([]);
+                      setAllUsers([resetKervin]);
+                      saveProfile(resetKervin);
+                      alert("🎉 ¡Base de datos limpia y lista para usar en producción real en tiempo real con 0 registrados!");
+                    } catch (err: any) {
+                      console.error(err);
+                      alert("Error al limpiar base de datos: " + err.message);
+                    }
+                  }
+                }}
+                className="px-3 py-1.5 rounded-lg border border-red-500/35 text-red-400 hover:bg-red-500 hover:text-white transition-all font-sans font-bold text-[10px] uppercase shrink-0"
+              >
+                🧹 Limpiar Base De Datos
+              </button>
             </div>
 
             {/* Tab switch control */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-black rounded-xl border border-white/5 font-sans">
+            <div className="grid grid-cols-3 gap-2 p-1 bg-black rounded-xl border border-white/5 font-sans">
               <button
                 onClick={() => setActiveAdminTab('activaciones')}
-                className={`py-2 px-3 rounded-lg text-xs font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                className={`py-2 px-1 rounded-lg text-[10px] sm:text-xs font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-2 ${
                   activeAdminTab === 'activaciones'
                     ? 'bg-purple-900/55 text-[#39FF14] border border-purple-500/30'
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                <UserCheck className="h-3.5 w-3.5" />
-                <span>Activaciones ({registrations.filter(r => r.status === 'pending').length})</span>
+                <UserCheck className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Activas ({registrations.filter(r => r.status === 'pending').length})</span>
               </button>
               
               <button
                 onClick={() => setActiveAdminTab('retiros')}
-                className={`py-2 px-3 rounded-lg text-xs font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                className={`py-2 px-1 rounded-lg text-[10px] sm:text-xs font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-2 ${
                   activeAdminTab === 'retiros'
                     ? 'bg-purple-900/55 text-[#39FF14] border border-purple-500/30'
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                <Trophy className="h-3.5 w-3.5" />
-                <span>Retiros USDT ({withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').length})</span>
+                <Trophy className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Retiros ({withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveAdminTab('voces')}
+                className={`py-2 px-1 rounded-lg text-[10px] sm:text-xs font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-2 ${
+                  activeAdminTab === 'voces'
+                    ? 'bg-purple-900/55 text-[#39FF14] border border-purple-500/30'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Volume2 className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Voces ({voiceThemes.length})</span>
               </button>
             </div>
 

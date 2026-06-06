@@ -324,23 +324,9 @@ export default function VipTasks({
         utterance.voice = finalVoice;
       }
 
-      // Dynamic custom rate & pitch override for majestic cathedral bass sermon resonance
-      if (voiceTheme.key === 'dios') {
-        utterance.rate = 0.69; // majestic sermon slow tempo
-        utterance.pitch = 0.72; // deep, divine father bass
-      } else if (voiceTheme.key === 'jesus') {
-        utterance.rate = 0.76; // loving, reflective preaching tempo
-        utterance.pitch = 0.82; // dignified sacred pitch
-      } else if (voiceTheme.key === 'mentalidad') {
-        utterance.rate = 0.80; // magnetic leadership pace
-        utterance.pitch = 0.88; // solid masculine entrepreneur registry
-      } else if (voiceTheme.key === 'familia') {
-        utterance.rate = 0.82; // friendly, caring pace
-        utterance.pitch = 1.0; // friendly wise parental tone
-      } else {
-        utterance.rate = voiceTheme.rate;
-        utterance.pitch = voiceTheme.pitch;
-      }
+      // Dynamic custom rate & pitch override from voiceTheme configuration
+      utterance.rate = typeof voiceTheme.rate === 'number' ? voiceTheme.rate : 0.8;
+      utterance.pitch = typeof voiceTheme.pitch === 'number' ? voiceTheme.pitch : 1.0;
 
       utterance.onstart = () => {
         if (audioRef.current && !isAudioMuted) {
@@ -804,7 +790,7 @@ export default function VipTasks({
                     >
                       <span className="text-sm mb-1">{theme.avatar}</span>
                       <span className="text-[8px] truncate max-w-full text-center">
-                        {theme.key === 'mentalidad' ? 'Millonaria' : theme.key === 'familia' ? 'Familia' : theme.key === 'jesus' ? 'Jesús' : 'Dios'}
+                        {theme.key === 'mentalidad' ? 'Millonaria' : theme.key === 'familia' ? 'Familia' : theme.key === 'jesus' ? 'Jesús' : theme.key === 'dios' ? 'Dios' : (theme.speaker.split(' ').slice(0, 2).join(' '))}
                       </span>
                     </button>
                   );
