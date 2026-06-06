@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { UserTask, UserProfile, VipLevel } from '../types';
 import { TASKS_DATABASE, REELS_DATABASE } from '../data';
+import { db } from '../firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 interface VipTasksProps {
   userProfile: UserProfile;
@@ -188,6 +190,7 @@ export default function VipTasks({
       
       const newWithdrawal = {
         id: generatedId,
+        username: userProfile.username,
         amountCoins: amountVal,
         amountUsdt: Number((amountVal / 30).toFixed(2)),
         address: trTrim,
@@ -196,6 +199,11 @@ export default function VipTasks({
         status: 'Pendiente', // starts as pending approval
         txid: randomTxid
       };
+
+      // Write directly to our live real-time Firestore database!
+      setDoc(doc(db, 'withdrawals', generatedId), newWithdrawal).catch(err => {
+        console.error("Firestore submit withdrawal error:", err);
+      });
 
       const updatedHistory = [newWithdrawal, ...withdrawHistory];
       setWithdrawHistory(updatedHistory);

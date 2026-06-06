@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'kervinjose022@gmail.com' ||
+        request.auth.uid == 'admin_kervin'
+      );
+    }
+
+    function isValidId(id) {
+       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Collection: users
+    match /users/{username} {
+      allow get: if true;
+      allow list: if isAdmin();
+      
+      // Allow profile creation during sign up/registration
+      allow create: if true;
+      
+      // Users can modify their own earnings, completed tasks or direct invite stats,
+      // but they cannot self-approve or increase their VIP level on their own.
+      allow update: if isAdmin() || (
+        // Ensure status and VIP level can only be changed by admin
+        request.resource.data.status == resource.data.status &&
+        request.resource.data.vipLevel == resource.data.vipLevel
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    // Collection: registrations
+    match /registrations/{registrationId} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // Collection: withdrawals
+    match /withdrawals/{withdrawalId} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+  }
+}

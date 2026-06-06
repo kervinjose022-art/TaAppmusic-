@@ -1,0 +1,190 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Stores details of registered VIP users",
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "The custom nickname of the user"
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's registered email"
+        },
+        "password": {
+          "type": "string",
+          "description": "The access password of the user"
+        },
+        "vipLevel": {
+          "type": "string",
+          "description": "The current VIP level of the user"
+        },
+        "earnings": {
+          "type": "number",
+          "description": "Earnings balance in USDT/coins of the user"
+        },
+        "completedTaskIds": {
+          "type": "array",
+          "description": "List of task IDs already completed by the user"
+        },
+        "isRegistered": {
+          "type": "boolean",
+          "description": "Whether user registration is finalized"
+        },
+        "status": {
+          "type": "string",
+          "description": "User account verification status"
+        },
+        "paymentMethodUsed": {
+          "type": "string",
+          "description": "Registration payment method used"
+        },
+        "proofFileName": {
+          "type": "string",
+          "description": "The filename of the deposit proof"
+        },
+        "proofFileBlob": {
+          "type": "string",
+          "description": "The screenshot proof as base64 or link"
+        },
+        "referenceNo": {
+          "type": "string",
+          "description": "The bank/crypto reference number"
+        },
+        "invitedBy": {
+          "type": "string",
+          "description": "Nickname of the user who invited this member"
+        },
+        "inviteCommissionsEarned": {
+          "type": "number",
+          "description": "Commissions earned from direct invites"
+        },
+        "inviteCount": {
+          "type": "number",
+          "description": "Number of users invited by this member"
+        }
+      },
+      "required": ["username", "vipLevel", "earnings", "isRegistered"]
+    },
+    "Registration": {
+      "title": "Registration",
+      "description": "The registration deposit validation queue",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique registration request ID"
+        },
+        "username": {
+          "type": "string",
+          "description": "The unique lowercased nickname of the user"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email used at registration"
+        },
+        "vipLevel": {
+          "type": "string",
+          "description": "The target VIP level applied for"
+        },
+        "paymentMethodUsed": {
+          "type": "string",
+          "description": "Pay Method chosen (Pago Móvil or USDT)"
+        },
+        "amountUsd": {
+          "type": "number",
+          "description": "Target activation price in USD"
+        },
+        "amountBs": {
+          "type": "number",
+          "description": "Target activation price in Bs"
+        },
+        "referenceNo": {
+          "type": "string",
+          "description": "Transaction reference text"
+        },
+        "proofFileName": {
+          "type": "string",
+          "description": "Uploaded attachment filename"
+        },
+        "proofFileBlob": {
+          "type": "string",
+          "description": "Uploaded screenshot payload"
+        },
+        "date": {
+          "type": "string",
+          "description": "Timestamp of the transaction"
+        },
+        "status": {
+          "type": "string",
+          "description": "Pending, Approved, or Rejected state"
+        },
+        "invitedBy": {
+          "type": "string",
+          "description": "Username of the affiliate referral"
+        }
+      },
+      "required": ["id", "username", "vipLevel", "paymentMethodUsed", "amountUsd", "status"]
+    },
+    "Withdrawal": {
+      "title": "Withdrawal",
+      "description": "A USDT/Crypto withdrawal request",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique withdrawal request ID"
+        },
+        "username": {
+          "type": "string",
+          "description": "The user's nickname requesting the withdrawal"
+        },
+        "amountCoins": {
+          "type": "number",
+          "description": "Deducted coins volume"
+        },
+        "amountUsdt": {
+          "type": "number",
+          "description": "USDT cash equivalent value"
+        },
+        "address": {
+          "type": "string",
+          "description": "Target address destination key"
+        },
+        "network": {
+          "type": "string",
+          "description": "The targeted BEP20 or similar chain"
+        },
+        "date": {
+          "type": "string",
+          "description": "Request creation timestamp"
+        },
+        "status": {
+          "type": "string",
+          "description": "Pendiente, Aprobado, or Rechazado status"
+        },
+        "txid": {
+          "type": "string",
+          "description": "Resulting network token TxID hash proof"
+        }
+      },
+      "required": ["id", "username", "amountCoins", "amountUsdt", "address", "status"]
+    }
+  },
+  "firestore": {
+    "users/{username}": {
+      "schema": "UserProfile",
+      "description": "Stores profiles keyed by user's lowercased username"
+    },
+    "registrations/{registrationId}": {
+      "schema": "Registration",
+      "description": "Stores user activation payments queue"
+    },
+    "withdrawals/{withdrawalId}": {
+      "schema": "Withdrawal",
+      "description": "Stores payments retrieval requests ledger"
+    }
+  }
+}

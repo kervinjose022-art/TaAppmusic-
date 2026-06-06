@@ -9,6 +9,9 @@ import {
   Sparkles, ShieldCheck, Share2, CircleAlert, Globe, X, 
   Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock, Eye, EyeOff, Users
 } from 'lucide-react';
+import { db, auth, handleFirestoreError, OperationType } from './firebase';
+import { collection, doc, onSnapshot, setDoc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
 
 export default function App() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -96,10 +99,105 @@ export default function App() {
     ];
   });
 
-  // Persist master users pool
+  // Persist master users pool & Listen to Firestore in Real-Time
   useEffect(() => {
     localStorage.setItem('tappmusic_users', JSON.stringify(allUsers));
   }, [allUsers]);
+
+  // Real-Time Syncing Loop with Firestore Databases
+  useEffect(() => {
+    // 1. Authenticate anonymously to enable secure database access
+    signInAnonymously(auth).then(() => {
+      // Once authenticated, run background seeder if databases are empty
+      const checkAndSeed = async () => {
+        try {
+          const usersSnap = await getDocs(collection(db, 'users'));
+          if (usersSnap.empty) {
+            allUsers.forEach(async (u) => {
+              await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), u);
+            });
+          }
+          
+          const regSnap = await getDocs(collection(db, 'registrations'));
+          if (regSnap.empty) {
+            registrations.forEach(async (r) => {
+              await setDoc(doc(db, 'registrations', r.id), r);
+            });
+          }
+
+          const wdSnap = await getDocs(collection(db, 'withdrawals'));
+          if (wdSnap.empty) {
+            withdrawHistory.forEach(async (w) => {
+              const item = { ...w, username: w.username || 'cristiano_vip' };
+              await setDoc(doc(db, 'withdrawals', w.id), item);
+            });
+          }
+        } catch (err) {
+          console.warn("Background database seed warning:", err);
+        }
+      };
+      checkAndSeed();
+    }).catch(err => {
+      console.warn("Firebase Anonymous Auth warning:", err);
+    });
+
+    // 2. Setup real-time listener for registrations collection
+    const unsubRegistrations = onSnapshot(collection(db, 'registrations'), (snapshot) => {
+      const items: any[] = [];
+      snapshot.forEach((doc) => {
+        items.push(doc.data());
+      });
+      if (items.length > 0) {
+        setRegistrations(items);
+      }
+    }, (error) => {
+      console.error("Firestore listening registrations error:", error);
+    });
+
+    // 3. Setup real-time listener for withdrawals collection
+    const unsubWithdrawals = onSnapshot(collection(db, 'withdrawals'), (snapshot) => {
+      const items: any[] = [];
+      snapshot.forEach((doc) => {
+        items.push(doc.data());
+      });
+      if (items.length > 0) {
+        setWithdrawHistory(items);
+      }
+    }, (error) => {
+      console.error("Firestore listening withdrawals error:", error);
+    });
+
+    // 4. Setup real-time listener for users collection
+    const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const items: UserProfile[] = [];
+      snapshot.forEach((doc) => {
+        items.push(doc.data() as UserProfile);
+      });
+      if (items.length > 0) {
+        setAllUsers(items);
+        
+        // Also sync profile in active session
+        const currentLocal = localStorage.getItem('tappmusic_profile');
+        if (currentLocal) {
+          try {
+            const parsed = JSON.parse(currentLocal) as UserProfile;
+            const updatedProfile = items.find(u => u.username.toLowerCase().trim() === parsed.username.toLowerCase().trim());
+            if (updatedProfile) {
+              setUserProfile(updatedProfile);
+            }
+          } catch (e) {}
+        }
+      }
+    }, (error) => {
+      console.error("Firestore listening users error:", error);
+    });
+
+    return () => {
+      unsubRegistrations();
+      unsubWithdrawals();
+      unsubUsers();
+    };
+  }, []);
 
   // Referral hook: detects ?ref=username in address bar
   const [referredBy, setReferredBy] = useState<string>(() => {
@@ -150,10 +248,17 @@ export default function App() {
     }
   }, [userProfile]);
 
-  // Save profile to local storage helper
-  const saveProfile = (newProfile: UserProfile) => {
+  // Save profile to local storage helper & live Firestore database
+  const saveProfile = async (newProfile: UserProfile) => {
     setUserProfile(newProfile);
     localStorage.setItem('tappmusic_profile', JSON.stringify(newProfile));
+    if (newProfile && newProfile.username && newProfile.username !== 'usuario_vip') {
+      try {
+        await setDoc(doc(db, 'users', newProfile.username.toLowerCase().trim()), newProfile);
+      } catch (err) {
+        // console.warn("Error saving profile to firestore:", err);
+      }
+    }
   };
 
   // 15% VIP Commission Payout engine
@@ -366,7 +471,10 @@ export default function App() {
       invitedBy: referredBy || undefined
     };
 
-    // Store in admin queue
+    // Store in admin live Firestore queue
+    setDoc(doc(db, 'registrations', regId), newReg).catch(err => {
+      handleFirestoreError(err, OperationType.WRITE, `registrations/${regId}`);
+    });
     setRegistrations(prev => [newReg, ...prev]);
 
     const updated: UserProfile = {
@@ -387,12 +495,15 @@ export default function App() {
       inviteCount: 0
     };
     
-    // Push directly to master user list for local synchronization
+    // Push directly to master user list for local and cloud synchronization
+    setDoc(doc(db, 'users', name), updated).catch(err => {
+      handleFirestoreError(err, OperationType.WRITE, `users/${name}`);
+    });
     setAllUsers(prev => [...prev, updated]);
     saveProfile(updated);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
     const inputVal = loginInput.trim().toLowerCase();
@@ -403,9 +514,19 @@ export default function App() {
       return;
     }
 
-    const foundUser = allUsers.find(
-      u => u.username.toLowerCase() === inputVal || (u.email && u.email.toLowerCase() === inputVal)
-    );
+    let foundUser: UserProfile | undefined;
+    
+    try {
+      const userSnap = await getDoc(doc(db, 'users', inputVal));
+      if (userSnap.exists()) {
+        foundUser = userSnap.data() as UserProfile;
+      } else {
+        // Fallback to checking by email or in allUsers state
+        foundUser = allUsers.find(u => u.username.toLowerCase() === inputVal || (u.email && u.email.toLowerCase() === inputVal));
+      }
+    } catch (err) {
+      foundUser = allUsers.find(u => u.username.toLowerCase() === inputVal || (u.email && u.email.toLowerCase() === inputVal));
+    }
 
     if (!foundUser) {
       if (inputVal === 'kervin' || inputVal === 'kervinjose022@gmail.com') {
@@ -421,6 +542,9 @@ export default function App() {
           inviteCount: 0,
           inviteCommissionsEarned: 0
         };
+        try {
+          await setDoc(doc(db, 'users', 'kervin'), adminSeed);
+        } catch (e) {}
         setAllUsers(prev => [...prev, adminSeed]);
         saveProfile(adminSeed);
         setIsAdminVerified(true);
@@ -449,7 +573,7 @@ export default function App() {
     saveProfile(foundUser);
     
     // Also save in users list update
-    setAllUsers(prev => prev.map(u => u.username.toLowerCase() === foundUser.username.toLowerCase() ? foundUser : u));
+    setAllUsers(prev => prev.map(u => u.username.toLowerCase() === foundUser!.username.toLowerCase() ? foundUser! : u));
 
     setLoginInput('');
     setLoginPassword('');
@@ -459,49 +583,44 @@ export default function App() {
     }
   };
 
-  const handleApproveUser = (regUsername: string, regAmountUsd: number) => {
+  const handleApproveUser = async (regUsername: string, regAmountUsd: number) => {
     const targetName = regUsername.toLowerCase().trim();
     let referrerName: string | undefined = undefined;
 
-    setAllUsers(prevUsers => {
-      const found = prevUsers.find(u => u.username.toLowerCase() === targetName);
-      if (found && found.invitedBy) {
-        referrerName = found.invitedBy.toLowerCase().trim();
-      }
+    // Find target user from local synchronized allUsers
+    const found = allUsers.find(u => u.username.toLowerCase() === targetName);
+    if (!found) return;
 
-      const nextUsers = prevUsers.map(u => {
-        if (u.username.toLowerCase() === targetName) {
-          return { ...u, status: 'active' as const };
-        }
-        if (referrerName && u.username.toLowerCase() === referrerName) {
-          const commissionEarned = Number((regAmountUsd * 0.15).toFixed(2));
-          return {
-            ...u,
-            earnings: Number((u.earnings + commissionEarned).toFixed(2)),
-            inviteCommissionsEarned: Number(((u.inviteCommissionsEarned || 0) + commissionEarned).toFixed(2)),
-            inviteCount: (u.inviteCount || 0) + 1
-          };
-        }
-        return u;
-      });
+    if (found.invitedBy) {
+      referrerName = found.invitedBy.toLowerCase().trim();
+    }
 
-      localStorage.setItem('tappmusic_users', JSON.stringify(nextUsers));
-      return nextUsers;
-    });
+    // 1. Activate approved user
+    const activatedTarget = { ...found, status: 'active' as const };
+    try {
+      await setDoc(doc(db, 'users', targetName), activatedTarget);
+    } catch (err) {
+      console.error("Approve target error:", err);
+    }
 
-    // Instantly synchronize current active session if we are the user or the referrer
-    setTimeout(() => {
-      const rawAll = localStorage.getItem('tappmusic_users');
-      const rawSelf = localStorage.getItem('tappmusic_profile');
-      if (rawAll && rawSelf) {
-        const parsedAll = JSON.parse(rawAll) as UserProfile[];
-        const parsedSelf = JSON.parse(rawSelf) as UserProfile;
-        const matchedSelf = parsedAll.find(au => au.username.toLowerCase().trim() === parsedSelf.username.toLowerCase().trim());
-        if (matchedSelf) {
-          saveProfile(matchedSelf);
+    // 2. Pay 15% commission if referrer exists
+    if (referrerName) {
+      const referrerUser = allUsers.find(u => u.username.toLowerCase() === referrerName);
+      if (referrerUser) {
+        const commissionEarned = Number((regAmountUsd * 0.15).toFixed(2));
+        const updatedReferrer = {
+          ...referrerUser,
+          earnings: Number((referrerUser.earnings + commissionEarned).toFixed(2)),
+          inviteCommissionsEarned: Number(((referrerUser.inviteCommissionsEarned || 0) + commissionEarned).toFixed(2)),
+          inviteCount: (referrerUser.inviteCount || 0) + 1
+        };
+        try {
+          await setDoc(doc(db, 'users', referrerName), updatedReferrer);
+        } catch (err) {
+          console.error("Commission payment error:", err);
         }
       }
-    }, 60);
+    }
   };
 
   const handleUpgradeVip = (lvl: VipLevel) => {
@@ -1559,9 +1678,13 @@ export default function App() {
                           {reg.status === 'pending' ? (
                             <>
                               <button
-                                onClick={() => {
-                                  // Update status in local registrations list
-                                  setRegistrations(prev => prev.map(r => r.id === reg.id ? { ...r, status: 'approved' } : r));
+                                onClick={async () => {
+                                  // Update status in live registrations list
+                                  try {
+                                    await updateDoc(doc(db, 'registrations', reg.id), { status: 'approved' });
+                                  } catch (err) {
+                                    console.error("Error approving registration:", err);
+                                  }
                                   // Call master approve solver for database-wide activation + commissions
                                   handleApproveUser(reg.username, reg.amountUsd);
                                 }}
@@ -1571,26 +1694,22 @@ export default function App() {
                               </button>
                               
                               <button
-                                onClick={() => {
-                                  // Remove or reject registration
-                                  setRegistrations(prev => prev.filter(r => r.id !== reg.id));
-                                  setAllUsers(prevUsers => {
-                                    const nextUsers = prevUsers.map(u => {
-                                      if (u.username.toLowerCase() === reg.username.toLowerCase()) {
-                                        return { ...u, isRegistered: false, status: 'pending' as const };
+                                onClick={async () => {
+                                  // Reject/Remove registration request from Firestore
+                                  try {
+                                    await deleteDoc(doc(db, 'registrations', reg.id));
+                                    
+                                    // Reset target user's profile registration status
+                                    const targetUser = allUsers.find(u => u.username.toLowerCase() === reg.username.toLowerCase());
+                                    if (targetUser) {
+                                      const resetUser = { ...targetUser, isRegistered: false, status: 'pending' as const };
+                                      await setDoc(doc(db, 'users', reg.username.toLowerCase()), resetUser);
+                                      if (reg.username === userProfile.username) {
+                                        saveProfile(resetUser);
                                       }
-                                      return u;
-                                    });
-                                    localStorage.setItem('tappmusic_users', JSON.stringify(nextUsers));
-                                    return nextUsers;
-                                  });
-
-                                  if (reg.username === userProfile.username) {
-                                    saveProfile({
-                                      ...userProfile,
-                                      status: 'pending',
-                                      isRegistered: false // resets back to registration form to retry
-                                    });
+                                    }
+                                  } catch (err) {
+                                    console.error("Error rejecting registration:", err);
                                   }
                                 }}
                                 className="h-9 px-3.5 rounded-xl bg-red-950 text-red-400 border border-red-500/30 font-black text-xs uppercase hover:bg-red-900 hover:text-white transition-all cursor-pointer flex items-center justify-center"
@@ -1671,36 +1790,46 @@ export default function App() {
                           {(item.status === 'pendiente' || item.status === 'Pendiente') ? (
                             <>
                               <button
-                                onClick={() => {
+                                onClick={async () => {
                                   // Approve withdrawal
                                   const generatedTx = '0x' + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
-                                  setWithdrawHistory(prev => prev.map(w => 
-                                    w.id === item.id 
-                                      ? { ...w, status: 'Aprobado', txid: generatedTx } 
-                                      : w
-                                  ));
+                                  try {
+                                    await updateDoc(doc(db, 'withdrawals', item.id), {
+                                      status: 'Aprobado',
+                                      txid: generatedTx
+                                    });
+                                  } catch (err) {
+                                    console.error("Approve withdrawal error:", err);
+                                  }
                                 }}
-                                className="flex-1 md:flex-initial h-9 px-3.5 rounded-xl bg-purple-600 text-white font-black text-xs uppercase hover:bg-purple-505 transition-all cursor-pointer flex items-center justify-center"
+                                className="flex-1 md:flex-initial h-9 px-3.5 rounded-xl bg-purple-600 text-white font-black text-xs uppercase hover:bg-purple-500 transition-all cursor-pointer flex items-center justify-center"
                               >
                                 Cancelar Pago
                               </button>
                               
                               <button
-                                onClick={() => {
-                                  // Reject withdrawal and refund coins to current user profile
-                                  setWithdrawHistory(prev => prev.map(w =>
-                                    w.id === item.id ? { ...w, status: 'Rechazado' } : w
-                                  ));
-
-                                  // Refund coins to current user profile live. (converting back to virtual balance)
-                                  const refundedCoins = item.amountCoins;
-                                  // Assuming 36.7 coins = $1 or similarly derived from vip levels or directly added to earnings
-                                  // In VipTasks, withdrawal amount was deducted from earnings as amountUsdt! We refund exactly dollar sum
-                                  if (userProfile.isRegistered) {
-                                    saveProfile({
-                                      ...userProfile,
-                                      earnings: userProfile.earnings + item.amountUsdt
+                                onClick={async () => {
+                                  // Reject withdrawal and refund coins to the corresponding user profile in Firestore
+                                  try {
+                                    await updateDoc(doc(db, 'withdrawals', item.id), {
+                                      status: 'Rechazado'
                                     });
+                                    
+                                    const ownerName = item.username || userProfile.username;
+                                    const targetUser = allUsers.find(u => u.username.toLowerCase() === ownerName.toLowerCase());
+                                    if (targetUser) {
+                                      const updatedUser = {
+                                        ...targetUser,
+                                        earnings: Number((targetUser.earnings + item.amountUsdt).toFixed(2))
+                                      };
+                                      await setDoc(doc(db, 'users', ownerName.toLowerCase()), updatedUser);
+                                      
+                                      if (userProfile.username.toLowerCase() === ownerName.toLowerCase()) {
+                                        saveProfile(updatedUser);
+                                      }
+                                    }
+                                  } catch (err) {
+                                    console.error("Error denying withdrawal:", err);
                                   }
                                 }}
                                 className="h-9 px-3.5 rounded-xl bg-red-950 text-red-400 border border-red-500/30 font-black text-xs uppercase hover:bg-red-900 hover:text-white transition-all cursor-pointer flex items-center justify-center"
