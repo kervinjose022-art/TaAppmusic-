@@ -7,7 +7,7 @@ import VipReels from './components/VipReels';
 import { UserProfile, VipLevel } from './types';
 import { 
   Sparkles, ShieldCheck, Share2, CircleAlert, Globe, X, 
-  Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock, Eye, EyeOff, Users, CreditCard
+  Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock, Eye, EyeOff, Users, CreditCard, Volume2
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from './firebase';
 import { collection, doc, onSnapshot, setDoc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
@@ -97,6 +97,67 @@ export default function App() {
             };
             await setDoc(doc(db, 'users', 'kervin'), adminSeed);
           }
+
+          const voicesSnap = await getDocs(collection(db, 'voices'));
+          if (voicesSnap.empty) {
+            const defaultVoices = [
+              {
+                id: 'jesus',
+                key: 'jesus',
+                speaker: 'Jesucristo Salvador',
+                avatar: '✝️',
+                description: 'Voz de Amor y Redención',
+                intro: 'Hijo mío, recibe mi paz protectora. Anda, contempla esta promesa y compártela: ',
+                color: 'border-purple-500/30 text-purple-300 bg-purple-500/5',
+                badgeColor: 'bg-purple-950/40 text-purple-300 border-purple-500/30',
+                shadow: 'shadow-[0_0_15px_rgba(168,85,247,0.3)]',
+                pitch: 1.02,
+                rate: 0.82
+              },
+              {
+                id: 'dios',
+                key: 'dios',
+                speaker: 'Dios Padre Celestial',
+                avatar: '🌿',
+                description: 'Voz Omnipotente y Calma',
+                intro: 'Yo soy tu refugio en la tormenta. Escucha con reverencia mi mensaje sagrado para ti: ',
+                color: 'border-amber-500/30 text-amber-300 bg-amber-500/5',
+                badgeColor: 'bg-amber-950/40 text-amber-300 border-amber-500/30',
+                shadow: 'shadow-[0_0_15px_rgba(245,158,11,0.3)]',
+                pitch: 0.84,
+                rate: 0.75
+              },
+              {
+                id: 'familia',
+                key: 'familia',
+                speaker: 'La Voz de la Familia',
+                avatar: '🏠',
+                description: 'Unión y Valores Puros',
+                intro: 'Edifica tu bendito hogar sobre la roca del amor. Este es el consejo protector para tu mesa: ',
+                color: 'border-pink-500/30 text-pink-300 bg-pink-500/5',
+                badgeColor: 'bg-pink-950/40 text-pink-300 border-pink-500/30',
+                shadow: 'shadow-[0_0_15px_rgba(236,72,153,0.3)]',
+                pitch: 1.14,
+                rate: 0.88
+              },
+              {
+                id: 'mentalidad',
+                key: 'mentalidad',
+                speaker: 'Mentalidad de Reino',
+                avatar: '💎',
+                description: 'Éxito y Provisión Divina',
+                intro: '¡Declara abundancia en el nombre del Creador! Rompe la escasez y recibe tu prosperidad: ',
+                color: 'border-[#39FF14]/30 text-[#39FF14] bg-[#39FF14]/5',
+                badgeColor: 'bg-zinc-900 text-[#39FF14] border-[#39FF14]/40',
+                shadow: 'shadow-[0_0_15px_rgba(57,255,20,0.3)]',
+                pitch: 1.0,
+                rate: 0.94
+              }
+            ];
+            for (const v of defaultVoices) {
+              await setDoc(doc(db, 'voices', v.id), v);
+            }
+          }
         } catch (err) {
           console.warn("Background database seed warning:", err);
         }
@@ -153,10 +214,22 @@ export default function App() {
       console.error("Firestore listening users error:", error);
     });
 
+    // 5. Setup real-time listener for voices collection
+    const unsubVoices = onSnapshot(collection(db, 'voices'), (snapshot) => {
+      const items: any[] = [];
+      snapshot.forEach((doc) => {
+        items.push({ id: doc.id, ...doc.data() });
+      });
+      setVoiceThemes(items);
+    }, (error) => {
+      console.error("Firestore listening voices error:", error);
+    });
+
     return () => {
       unsubRegistrations();
       unsubWithdrawals();
       unsubUsers();
+      unsubVoices();
     };
   }, []);
 
@@ -286,7 +359,21 @@ export default function App() {
 
   // Admin section states
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [activeAdminTab, setActiveAdminTab] = useState<'activaciones' | 'retiros'>('activaciones');
+  const [activeAdminTab, setActiveAdminTab] = useState<'activaciones' | 'retiros' | 'voces'>('activaciones');
+
+  // Voice database state
+  const [voiceThemes, setVoiceThemes] = useState<any[]>([]);
+
+  // Voice editing / creation admin form states
+  const [isEditingVoice, setIsEditingVoice] = useState<boolean>(false);
+  const [editingVoiceId, setEditingVoiceId] = useState<string>('');
+  const [voiceFormKey, setVoiceFormKey] = useState<string>('');
+  const [voiceFormSpeaker, setVoiceFormSpeaker] = useState<string>('');
+  const [voiceFormAvatar, setVoiceFormAvatar] = useState<string>('');
+  const [voiceFormDescription, setVoiceFormDescription] = useState<string>('');
+  const [voiceFormIntro, setVoiceFormIntro] = useState<string>('');
+  const [voiceFormPitch, setVoiceFormPitch] = useState<number>(1.0);
+  const [voiceFormRate, setVoiceFormRate] = useState<number>(0.8);
 
   // Registrations Pool to sync approvals
   const [registrations, setRegistrations] = useState<any[]>(() => {
@@ -1317,6 +1404,7 @@ export default function App() {
                 setUserProfile={setUserProfile} 
                 withdrawHistory={withdrawHistory}
                 setWithdrawHistory={setWithdrawHistory}
+                voiceThemes={voiceThemes}
               />
             </div>
 
@@ -1881,6 +1969,218 @@ export default function App() {
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* TAB CONTENT: GESTION DE VOCES REALES EN LA BASE DE DATOS */}
+            {activeAdminTab === 'voces' && (
+              <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
+                <div className="bg-purple-950/20 rounded-xl p-3 border border-purple-500/15 flex items-center justify-between gap-3 text-xs text-purple-300">
+                  <div className="flex items-center gap-2">
+                    <div className="h-5 w-5 bg-purple-500/10 rounded-full flex items-center justify-center font-bold shrink-0">i</div>
+                    <p className="leading-normal font-sans">
+                      Gestión de Voces de Oradores en la Base de Datos Real de Firestore.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsEditingVoice(true);
+                      setEditingVoiceId('');
+                      setVoiceFormKey('');
+                      setVoiceFormSpeaker('');
+                      setVoiceFormAvatar('🎙️');
+                      setVoiceFormDescription('');
+                      setVoiceFormIntro('');
+                      setVoiceFormPitch(1.0);
+                      setVoiceFormRate(0.8);
+                    }}
+                    className="h-8 px-3 rounded-lg bg-[#39FF14] text-black font-sans font-black text-xs uppercase hover:bg-[#34e512] transition-all cursor-pointer flex items-center justify-center shrink-0"
+                  >
+                    + Nueva Voz
+                  </button>
+                </div>
+
+                {/* EDITING OR CREATION FORM CONTAINER */}
+                {isEditingVoice && (
+                  <div className="p-4 rounded-2xl border border-purple-500/30 bg-purple-950/10 space-y-3 font-sans">
+                    <h4 className="text-xs font-black uppercase text-purple-400 tracking-wider">
+                      {editingVoiceId ? '✏️ Editar Orador / Voz' : '🎙️ Registrar Nuevo Orador'}
+                    </h4>
+                    
+                    <div className="grid grid-cols-2 gap-3 text-xs text-zinc-300">
+                      <div>
+                        <label className="block text-[10px] text-zinc-500 uppercase font-bold mb-1">Clave Única (ID/Key):</label>
+                        <input
+                          type="text"
+                          disabled={!!editingVoiceId}
+                          placeholder="p.ej. pastor_juan"
+                          value={voiceFormKey}
+                          onChange={(e) => setVoiceFormKey(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                          className="w-full bg-black border border-white/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-purple-500 text-white disabled:opacity-50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-zinc-500 uppercase font-bold mb-1">Nombre del Orador:</label>
+                        <input
+                          type="text"
+                          placeholder="p.ej. Pastor Juan"
+                          value={voiceFormSpeaker}
+                          onChange={(e) => setVoiceFormSpeaker(e.target.value)}
+                          className="w-full bg-black border border-white/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-purple-500 text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-zinc-500 uppercase font-bold mb-1">Avatar / Emoji:</label>
+                        <input
+                          type="text"
+                          placeholder="🎙️, ✝️, 🏠, 🌿"
+                          value={voiceFormAvatar}
+                          onChange={(e) => setVoiceFormAvatar(e.target.value)}
+                          className="w-full bg-black border border-white/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-purple-500 text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-zinc-500 uppercase font-bold mb-1">Breve Descripción:</label>
+                        <input
+                          type="text"
+                          placeholder="p.ej. Voz Profunda de Fe"
+                          value={voiceFormDescription}
+                          onChange={(e) => setVoiceFormDescription(e.target.value)}
+                          className="w-full bg-black border border-white/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-purple-500 text-white"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-[10px] text-zinc-500 uppercase font-bold mb-1">Frase de Introducción Narrada:</label>
+                        <textarea
+                          placeholder="Frase que dice el orador antes de leer la tarea en vivo..."
+                          value={voiceFormIntro}
+                          onChange={(e) => setVoiceFormIntro(e.target.value)}
+                          rows={2}
+                          className="w-full bg-black border border-white/10 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-purple-500 text-white text-xs resize-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-zinc-500 uppercase font-bold mb-1">Tono de Voz (Pitch: {voiceFormPitch})</label>
+                        <input
+                          type="range"
+                          min="0.5"
+                          max="2.0"
+                          step="0.05"
+                          value={voiceFormPitch}
+                          onChange={(e) => setVoiceFormPitch(parseFloat(e.target.value))}
+                          className="w-full accent-purple-500 cursor-pointer"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-zinc-500 uppercase font-bold mb-1">Velocidad (Rate: {voiceFormRate})</label>
+                        <input
+                          type="range"
+                          min="0.5"
+                          max="1.5"
+                          step="0.05"
+                          value={voiceFormRate}
+                          onChange={(e) => setVoiceFormRate(parseFloat(e.target.value))}
+                          className="w-full accent-purple-500 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2 pt-1 font-sans text-xs">
+                      <button
+                        onClick={async () => {
+                          const k = voiceFormKey.trim();
+                          const s = voiceFormSpeaker.trim();
+                          if (!k || !s) {
+                            return;
+                          }
+                          const newVoice = {
+                            key: k,
+                            speaker: s,
+                            avatar: voiceFormAvatar.trim() || '🎙️',
+                            description: voiceFormDescription.trim() || 'Voz en vivo de Abundancia',
+                            intro: voiceFormIntro.trim() || 'Escucha esta sagrada alianza de amor: ',
+                            pitch: voiceFormPitch,
+                            rate: voiceFormRate,
+                            color: k === 'mentalidad' ? 'border-[#39FF14]/30 text-[#39FF14] bg-[#39FF14]/5' : k === 'jesus' ? 'border-purple-500/30 text-purple-300 bg-purple-500/5' : k === 'dios' ? 'border-amber-500/30 text-amber-300 bg-amber-500/5' : 'border-pink-500/30 text-pink-300 bg-pink-500/5',
+                            badgeColor: k === 'mentalidad' ? 'bg-zinc-900 text-[#39FF14] border-[#39FF14]/40' : k === 'jesus' ? 'bg-purple-950/40 text-purple-300 border-purple-500/30' : k === 'dios' ? 'bg-amber-950/40 text-amber-300 border-amber-500/30' : 'bg-pink-950/40 text-pink-300 border-pink-500/30',
+                            shadow: k === 'mentalidad' ? 'shadow-[0_0_15px_rgba(57,255,20,0.3)]' : k === 'jesus' ? 'shadow-[0_0_15px_rgba(168,85,247,0.3)]' : k === 'dios' ? 'shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'shadow-[0_0_15px_rgba(236,72,153,0.3)]',
+                          };
+                          try {
+                            await setDoc(doc(db, 'voices', k), newVoice);
+                            setIsEditingVoice(false);
+                          } catch (err) {
+                            console.error("Error saving voice:", err);
+                          }
+                        }}
+                        className="flex-1 h-9 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold uppercase transition-all cursor-pointer"
+                      >
+                        {editingVoiceId ? 'Guardar Cambios' : 'Registrar'}
+                      </button>
+                      <button
+                        onClick={() => setIsEditingVoice(false)}
+                        className="px-4 h-9 rounded-xl bg-zinc-900 border border-white/5 text-zinc-400 font-bold uppercase hover:text-white transition-all cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* VOICES LIST TABLE */}
+                <div className="space-y-3 font-mono text-xs">
+                  {voiceThemes.length === 0 ? (
+                    <p className="text-center py-8 text-zinc-500">Cargando la base de datos de voces...</p>
+                  ) : (
+                    voiceThemes.map((v) => (
+                      <div 
+                        key={v.id} 
+                        className="p-3 rounded-xl border border-white/5 bg-zinc-950/40 flex items-center justify-between gap-3 text-left"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{v.avatar || '🎙️'}</span>
+                          <div>
+                            <h4 className="text-white font-black text-sm">{v.speaker}</h4>
+                            <p className="text-[10px] text-zinc-500 leading-normal mb-0.5">{v.description}</p>
+                            <p className="text-[10px] text-purple-400 italic font-sans truncate max-w-xs">{v.intro}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0 font-sans">
+                          <button
+                            onClick={() => {
+                              setIsEditingVoice(true);
+                              setEditingVoiceId(v.id);
+                              setVoiceFormKey(v.key);
+                              setVoiceFormSpeaker(v.speaker);
+                              setVoiceFormAvatar(v.avatar || '🎙️');
+                              setVoiceFormDescription(v.description || '');
+                              setVoiceFormIntro(v.intro || '');
+                              setVoiceFormPitch(v.pitch || 1.0);
+                              setVoiceFormRate(v.rate || 0.8);
+                            }}
+                            className="h-7 px-2.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 font-bold text-[10px] transition-all border border-white/5 cursor-pointer"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await deleteDoc(doc(db, 'voices', v.id));
+                                if (isEditingVoice && editingVoiceId === v.id) {
+                                  setIsEditingVoice(false);
+                                }
+                              } catch (err) {
+                                console.error("Error deleting voice:", err);
+                              }
+                            }}
+                            className="h-7 px-2.5 rounded bg-red-950/30 text-red-400 border border-red-500/10 text-[10px] font-bold hover:bg-red-900 hover:text-white transition-all cursor-pointer"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             )}
 

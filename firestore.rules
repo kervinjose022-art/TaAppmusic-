@@ -37,5 +37,10 @@ service cloud.firestore {
     match /withdrawals/{withdrawalId} {
       allow read, write: if true;
     }
+
+    // Collection: voices
+    match /voices/{voiceId} {
+      allow read, write: if true;
+    }
   }
 }

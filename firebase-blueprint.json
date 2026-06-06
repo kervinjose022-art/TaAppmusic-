@@ -171,6 +171,54 @@
         }
       },
       "required": ["id", "username", "amountCoins", "amountUsdt", "address", "status"]
+    },
+    "VoiceTheme": {
+      "title": "VoiceTheme",
+      "description": "A customized TTS character narrative theme",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Key identifier e.g. jesus, dios, pastor"
+        },
+        "speaker": {
+          "type": "string",
+          "description": "Human displays speaker name"
+        },
+        "avatar": {
+          "type": "string",
+          "description": "Character emoji badge icon"
+        },
+        "description": {
+          "type": "string",
+          "description": "Character vocal subclass detail"
+        },
+        "intro": {
+          "type": "string",
+          "description": "Prefix spoken utterance speech statement"
+        },
+        "pitch": {
+          "type": "number",
+          "description": "Vocal tone multiplier"
+        },
+        "rate": {
+          "type": "number",
+          "description": "Vocal speech speed coefficient"
+        },
+        "color": {
+          "type": "string",
+          "description": "HTML CSS borders and highlights class definitions"
+        },
+        "badgeColor": {
+          "type": "string",
+          "description": "HTML CSS visual badge layouts class properties"
+        },
+        "shadow": {
+          "type": "string",
+          "description": "Dynamic radial visual shadow glows"
+        }
+      },
+      "required": ["key", "speaker", "avatar", "intro", "pitch", "rate"]
     }
   },
   "firestore": {
@@ -185,6 +233,10 @@
     "withdrawals/{withdrawalId}": {
       "schema": "Withdrawal",
       "description": "Stores payments retrieval requests ledger"
+    },
+    "voices/{voiceId}": {
+      "schema": "VoiceTheme",
+      "description": "Stores real-time synthesized voice narrations for user missions"
     }
   }
 }

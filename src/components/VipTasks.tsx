@@ -14,13 +14,15 @@ interface VipTasksProps {
   setUserProfile: (profile: UserProfile | ((prev: UserProfile) => UserProfile)) => void;
   withdrawHistory: any[];
   setWithdrawHistory: React.Dispatch<React.SetStateAction<any[]>>;
+  voiceThemes?: any[];
 }
 
 export default function VipTasks({ 
   userProfile, 
   setUserProfile, 
   withdrawHistory, 
-  setWithdrawHistory 
+  setWithdrawHistory,
+  voiceThemes = []
 }: VipTasksProps) {
   const [tasks, setTasks] = useState<UserTask[]>(() => {
     // Check if task IDs already stored in user profile to mark as completed
@@ -226,7 +228,7 @@ export default function VipTasks({
     }, 3000); // 3 sec delay
   };
 
-  const VOICE_THEMES = [
+  const VOICE_THEMES = voiceThemes.length > 0 ? voiceThemes : [
     {
       key: 'jesus',
       speaker: 'Jesucristo Salvador',
