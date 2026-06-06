@@ -294,23 +294,61 @@ export default function VipTasks({
       utterance.lang = 'es-MX';
       
       const voices = window.speechSynthesis.getVoices();
-      const spanishVoice = voices.find(v => v.lang.startsWith('es-MX') || v.lang.startsWith('es-ES') || v.lang.startsWith('es-')) || voices[0];
-      if (spanishVoice) {
-        utterance.voice = spanishVoice;
+      const spanishVoices = voices.filter(v => v.lang.startsWith('es-MX') || v.lang.startsWith('es-ES') || v.lang.startsWith('es-') || v.lang.startsWith('es'));
+      
+      // Look for beautiful Spanish/Latin voices (Google, Natural, Neural)
+      let chosenVoice = spanishVoices.find(v => 
+        v.name.toLowerCase().includes('google') || 
+        v.name.toLowerCase().includes('natural') || 
+        v.name.toLowerCase().includes('neural')
+      );
+
+      // Preferred masculine/divine/resonant/authoritative voices for Jesucristo, Dios, and Mentalidad
+      if (voiceTheme.key === 'jesus' || voiceTheme.key === 'dios' || voiceTheme.key === 'mentalidad') {
+        const maleVoice = spanishVoices.find(v => 
+          v.name.toLowerCase().includes('male') || 
+          v.name.toLowerCase().includes('hombre') || 
+          v.name.toLowerCase().includes('jorge') || 
+          v.name.toLowerCase().includes('david') || 
+          v.name.toLowerCase().includes('juan')
+        );
+        if (maleVoice) {
+          chosenVoice = maleVoice;
+        }
       }
 
-      utterance.rate = voiceTheme.rate;
-      utterance.pitch = voiceTheme.pitch;
+      const finalVoice = chosenVoice || spanishVoices[0] || voices[0];
+      if (finalVoice) {
+        utterance.voice = finalVoice;
+      }
+
+      // Dynamic custom rate & pitch override for majestic cathedral bass sermon resonance
+      if (voiceTheme.key === 'dios') {
+        utterance.rate = 0.69; // majestic sermon slow tempo
+        utterance.pitch = 0.72; // deep, divine father bass
+      } else if (voiceTheme.key === 'jesus') {
+        utterance.rate = 0.76; // loving, reflective preaching tempo
+        utterance.pitch = 0.82; // dignified sacred pitch
+      } else if (voiceTheme.key === 'mentalidad') {
+        utterance.rate = 0.80; // magnetic leadership pace
+        utterance.pitch = 0.88; // solid masculine entrepreneur registry
+      } else if (voiceTheme.key === 'familia') {
+        utterance.rate = 0.82; // friendly, caring pace
+        utterance.pitch = 1.0; // friendly wise parental tone
+      } else {
+        utterance.rate = voiceTheme.rate;
+        utterance.pitch = voiceTheme.pitch;
+      }
 
       utterance.onstart = () => {
         if (audioRef.current && !isAudioMuted) {
-          audioRef.current.volume = 0.22; // Clear background music background beat alongside the voice
+          audioRef.current.volume = 0.12; // Lower overlay level so background beat plays beautifully behind the words
         }
       };
 
       utterance.onend = () => {
         if (audioRef.current && !isAudioMuted) {
-          audioRef.current.volume = 0.55; // Majestic full music on narration end
+          audioRef.current.volume = 0.50; // Majestic full music on narration end
         }
       };
 

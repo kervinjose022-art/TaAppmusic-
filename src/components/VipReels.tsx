@@ -115,7 +115,7 @@ export default function VipReels({ currentVip }: VipReelsProps) {
     }
   };
 
-  const startVoiceover = (text: string, category?: string) => {
+  const startVoiceover = (title: string, caption: string, artist: string, category?: string) => {
     stopVoiceover();
     if (typeof window !== 'undefined' && window.speechSynthesis && !isMuted) {
       // If it's a music video, let the real audio play unmodified without speaking over it!
@@ -126,44 +126,83 @@ export default function VipReels({ currentVip }: VipReelsProps) {
         return;
       }
 
+      // 1. Build a highly spiritual, majestic or motivating narration text
+      let finalSpeechText = "";
+      const cleanArtist = artist.replace(/^@/, ''); // Natural name reading instead of "@" technical symbol
+
+      if (category === 'Video de Fe' || category === 'Voz de Dios') {
+        finalSpeechText = `Mensaje de Fe Celestial. El Dios Todopoderoso y Jesucristo de Nazaret te proclaman para tu vida hoy: "${caption}". Amén y bendiciones hoy y siempre.`;
+      } else if (category === 'Familia') {
+        finalSpeechText = `Mensaje bendecido para la Familia y el Hogar Sagrado de parte del hermano ${cleanArtist}: "${caption}".`;
+      } else if (category === 'Mentalidad') {
+        finalSpeechText = `Declaración de Mentalidad Millonaria y el camino al Éxito, para el Nivel VIP: "${title}". Recuerda y graba esta regla de oro: "${caption}". Éxito rotundo.`;
+      } else {
+        finalSpeechText = `Mensaje de ${title}. Presentado con poder por ${cleanArtist}: "${caption}".`;
+      }
+
       // Clean emojis and symbols for elegant text narration
-      const cleaned = text
+      const cleaned = finalSpeechText
         .replace(/#/g, '')
         .replace(/🕊️|❤️|🏠|📈|💼|✨|🙌|✝️|🔥|🛡️|👑|💎|🌟|🌍/g, '');
 
       const utterance = new SpeechSynthesisUtterance(cleaned);
-      utterance.lang = 'es-MX'; // Deep Latin American accent for sermons/motivation
+      utterance.lang = 'es-MX'; // Deep Latin American accent
       
       const voices = window.speechSynthesis.getVoices();
       // Look for beautiful Spanish/Latin voices
-      const spanishVoice = voices.find(v => v.lang.startsWith('es-MX') || v.lang.startsWith('es-ES') || v.lang.startsWith('es-')) || voices[0];
-      if (spanishVoice) {
-        utterance.voice = spanishVoice;
+      const spanishVoices = voices.filter(v => v.lang.startsWith('es-MX') || v.lang.startsWith('es-ES') || v.lang.startsWith('es-') || v.lang.startsWith('es'));
+      
+      // Look for neural or high-quality google ones
+      let chosenVoice = spanishVoices.find(v => 
+        v.name.toLowerCase().includes('google') || 
+        v.name.toLowerCase().includes('natural') || 
+        v.name.toLowerCase().includes('neural')
+      );
+
+      // Preferred deep registers for divine/authority preaching
+      if (category === 'Video de Fe' || category === 'Voz de Dios' || category === 'Mentalidad') {
+        const maleVoice = spanishVoices.find(v => 
+          v.name.toLowerCase().includes('male') || 
+          v.name.toLowerCase().includes('hombre') || 
+          v.name.toLowerCase().includes('jorge') || 
+          v.name.toLowerCase().includes('david') || 
+          v.name.toLowerCase().includes('juan')
+        );
+        if (maleVoice) {
+          chosenVoice = maleVoice;
+        }
       }
 
-      // Customize rates and pitches based on the Category for Voz de Dios / Familia / Mentalidad
+      const finalVoice = chosenVoice || spanishVoices[0] || voices[0];
+      if (finalVoice) {
+        utterance.voice = finalVoice;
+      }
+
+      // Customize rates and pitches for specialized preaching / teaching / motivational flows
       if (category === 'Video de Fe' || category === 'Voz de Dios') {
-        utterance.rate = 0.76; // Deep, extremely slow, majestic sermon tempo
-        utterance.pitch = 0.82; // Warm, authoritative, divine bass tone
+        utterance.rate = 0.69; // Extremely slow, majestic, and heavy sermon tempo
+        utterance.pitch = 0.72; // Warm, authoritative, divine bass tone
       } else if (category === 'Familia') {
         utterance.rate = 0.82; // Warm, loving pacing
         utterance.pitch = 0.95; // Friendly and wise parental tone
+      } else if (category === 'Mentalidad') {
+        utterance.rate = 0.78; // Deep, powerful magnetic tempo
+        utterance.pitch = 0.88; // Deep, rich and confident entrepreneur coach register
       } else {
-        // Mentalidad / Compartir
-        utterance.rate = 0.88; // Confident tempo
-        utterance.pitch = 1.02; // Inspiring entrepreneur tone
+        utterance.rate = 0.84;
+        utterance.pitch = 0.95;
       }
 
       utterance.onstart = () => {
         if (audioRef.current && !isMuted) {
-          audioRef.current.volume = 0.15; // Clear background music background beat alongside the voice
+          audioRef.current.volume = 0.12; // Lower overlay level so background beat plays beautifully behind the words
         }
       };
 
       utterance.onend = () => {
-        // Boost music volume a bit once voiceover completes
+        // Boost music volume nicely once the narration is complete
         if (audioRef.current && !isMuted) {
-          audioRef.current.volume = 0.55;
+          audioRef.current.volume = 0.50;
         }
       };
 
@@ -197,7 +236,7 @@ export default function VipReels({ currentVip }: VipReelsProps) {
       // Start the dynamic offline backing synth loop
       startAmbientSynth();
       // Voice narration trigger
-      startVoiceover(`${reel.title}. @${reel.artist} proclama: ${reel.caption}`, reel.category);
+      startVoiceover(reel.title, reel.caption, reel.artist, reel.category);
     }
   };
 
@@ -222,7 +261,7 @@ export default function VipReels({ currentVip }: VipReelsProps) {
     } else if (playingReelId) {
       const activeReel = reels.find(r => r.id === playingReelId);
       if (activeReel) {
-        startVoiceover(`${activeReel.title}. @${activeReel.artist} proclama: ${activeReel.caption}`, activeReel.category);
+        startVoiceover(activeReel.title, activeReel.caption, activeReel.artist, activeReel.category);
       }
     }
   }, [isMuted]);
