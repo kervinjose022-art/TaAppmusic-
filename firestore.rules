@@ -25,17 +25,17 @@ service cloud.firestore {
 
     // Collection: users
     match /users/{username} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
 
     // Collection: registrations
     match /registrations/{registrationId} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
 
     // Collection: withdrawals
     match /withdrawals/{withdrawalId} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
   }
 }

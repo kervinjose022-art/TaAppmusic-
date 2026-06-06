@@ -229,15 +229,13 @@ export default function App() {
   }, [userProfile]);
 
   // Save profile to local storage helper & live Firestore database
-  const saveProfile = async (newProfile: UserProfile) => {
+  const saveProfile = (newProfile: UserProfile) => {
     setUserProfile(newProfile);
     localStorage.setItem('tappmusic_profile', JSON.stringify(newProfile));
     if (newProfile && newProfile.username && newProfile.username !== 'usuario_vip') {
-      try {
-        await setDoc(doc(db, 'users', newProfile.username.toLowerCase().trim()), newProfile);
-      } catch (err) {
-        // console.warn("Error saving profile to firestore:", err);
-      }
+      setDoc(doc(db, 'users', newProfile.username.toLowerCase().trim()), newProfile).catch(err => {
+        // Background sync fail silent
+      });
     }
   };
 
@@ -421,24 +419,20 @@ export default function App() {
       inviteCount: 0
     };
 
-    try {
-      // 1. Store in admin live Firestore registrations queue
-      await setDoc(doc(db, 'registrations', regId), newReg);
-    } catch (err) {
+    // 1. Store in admin live Firestore registrations queue (non-blocking)
+    setDoc(doc(db, 'registrations', regId), newReg).catch(err => {
       console.warn("Could not save to registrations Firestore (using offline mode):", err);
-    }
+    });
 
-    try {
-      // 2. Push directly to master user list for cloud synchronization
-      await setDoc(doc(db, 'users', name), updated);
-    } catch (err) {
+    // 2. Push directly to master user list for cloud synchronization (non-blocking)
+    setDoc(doc(db, 'users', name), updated).catch(err => {
       console.warn("Could not save to users Firestore (using offline mode):", err);
-    }
+    });
 
     // 3. Update local react states immediately so registration card advances!
     setRegistrations(prev => [newReg, ...prev]);
     setAllUsers(prev => [...prev, updated]);
-    await saveProfile(updated);
+    saveProfile(updated);
 
     // Clear inputs
     setInputUsername('');
@@ -614,12 +608,10 @@ export default function App() {
       status: 'pending'
     };
 
-    try {
-      // Store in registrations Firestore queue
-      await setDoc(doc(db, 'registrations', regId), upgradeReg);
-    } catch (err) {
+    // Store in registrations Firestore queue (non-blocking)
+    setDoc(doc(db, 'registrations', regId), upgradeReg).catch(err => {
       console.warn("Could not save upgrade registration in Firestore (using offline local fallback):", err);
-    }
+    });
 
     setRegistrations(prev => [upgradeReg, ...prev]);
 
