@@ -47,7 +47,10 @@ export default function App() {
     const saved = localStorage.getItem('tappmusic_users');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(u => u.username !== 'cristiano_vip' && u.username !== 'fe_y_abundancia' && u.username !== 'mentalidad_oro');
+        }
       } catch (e) {}
     }
     return [
@@ -60,41 +63,8 @@ export default function App() {
         completedTaskIds: ['task_1', 'task_2'],
         isRegistered: true,
         status: 'active',
-        inviteCount: 4,
-        inviteCommissionsEarned: 247.50
-      },
-      {
-        username: 'cristiano_vip',
-        email: 'cristiano@reino.com',
-        password: 'cristiano77',
-        vipLevel: 'VIP ORO 20$',
-        earnings: 30.00,
-        completedTaskIds: [],
-        isRegistered: true,
-        status: 'pending',
-        invitedBy: 'kervin'
-      },
-      {
-        username: 'fe_y_abundancia',
-        email: 'abundancia@fe.net',
-        password: 'fe123',
-        vipLevel: 'VIP PLATA 10$',
-        earnings: 15.00,
-        completedTaskIds: [],
-        isRegistered: true,
-        status: 'pending',
-        invitedBy: 'kervin'
-      },
-      {
-        username: 'mentalidad_oro',
-        email: 'oro@tapp.com',
-        password: 'oro123',
-        vipLevel: 'VIP DIAMANTE 120$',
-        earnings: 120.00,
-        completedTaskIds: ['task_1'],
-        isRegistered: true,
-        status: 'active',
-        invitedBy: 'fe_y_abundancia'
+        inviteCount: 0,
+        inviteCommissionsEarned: 0
       }
     ];
   });
@@ -113,24 +83,19 @@ export default function App() {
         try {
           const usersSnap = await getDocs(collection(db, 'users'));
           if (usersSnap.empty) {
-            allUsers.forEach(async (u) => {
-              await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), u);
-            });
-          }
-          
-          const regSnap = await getDocs(collection(db, 'registrations'));
-          if (regSnap.empty) {
-            registrations.forEach(async (r) => {
-              await setDoc(doc(db, 'registrations', r.id), r);
-            });
-          }
-
-          const wdSnap = await getDocs(collection(db, 'withdrawals'));
-          if (wdSnap.empty) {
-            withdrawHistory.forEach(async (w) => {
-              const item = { ...w, username: w.username || 'cristiano_vip' };
-              await setDoc(doc(db, 'withdrawals', w.id), item);
-            });
+            const adminSeed: UserProfile = {
+              username: 'kervin',
+              email: 'kervinjose022@gmail.com',
+              password: '7340',
+              vipLevel: 'VIP CORONA IMPERIAL 1000$',
+              earnings: 1545.00,
+              completedTaskIds: ['task_1', 'task_2'],
+              isRegistered: true,
+              status: 'active',
+              inviteCount: 0,
+              inviteCommissionsEarned: 0
+            };
+            await setDoc(doc(db, 'users', 'kervin'), adminSeed);
           }
         } catch (err) {
           console.warn("Background database seed warning:", err);
@@ -147,9 +112,7 @@ export default function App() {
       snapshot.forEach((doc) => {
         items.push(doc.data());
       });
-      if (items.length > 0) {
-        setRegistrations(items);
-      }
+      setRegistrations(items);
     }, (error) => {
       console.error("Firestore listening registrations error:", error);
     });
@@ -160,9 +123,7 @@ export default function App() {
       snapshot.forEach((doc) => {
         items.push(doc.data());
       });
-      if (items.length > 0) {
-        setWithdrawHistory(items);
-      }
+      setWithdrawHistory(items);
     }, (error) => {
       console.error("Firestore listening withdrawals error:", error);
     });
@@ -315,53 +276,13 @@ export default function App() {
     const saved = localStorage.getItem('tappmusic_registrations');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((r: any) => r.username !== 'cristiano_vip' && r.username !== 'fe_y_abundancia' && r.username !== 'mentalidad_oro');
+        }
       } catch (e) {}
     }
-    return [
-      {
-        id: 'REG-1092',
-        username: 'cristiano_vip',
-        email: 'cristiano@reino.com',
-        vipLevel: 'VIP ORO 20$',
-        paymentMethodUsed: 'Pago Móvil',
-        amountUsd: 20,
-        amountBs: 14680,
-        referenceNo: 'pago_bdv_9921',
-        proofFileName: 'capture_banco_venezuela.png',
-        proofFileBlob: '',
-        date: '04/06/2026 18:22',
-        status: 'pending'
-      },
-      {
-        id: 'REG-4432',
-        username: 'fe_y_abundancia',
-        email: 'abundancia@fe.net',
-        vipLevel: 'VIP PLATA 10$',
-        paymentMethodUsed: 'USDT BEP-20',
-        amountUsd: 10,
-        amountBs: 7340,
-        referenceNo: '0x3ffd82910fa31bcedfbc22e88a38198f1f44eec',
-        proofFileName: 'binance_screenshot.png',
-        proofFileBlob: '',
-        date: '04/06/2026 19:45',
-        status: 'pending'
-      },
-      {
-        id: 'REG-0021',
-        username: 'mentalidad_oro',
-        email: 'oro@tapp.com',
-        vipLevel: 'VIP DIAMANTE 120$',
-        paymentMethodUsed: 'Pago Móvil',
-        amountUsd: 120,
-        amountBs: 88080,
-        referenceNo: 'ref_bco_ven_2031',
-        proofFileName: 'BDV_0021_capture.jpg',
-        proofFileBlob: '',
-        date: '03/06/2026 10:14',
-        status: 'approved'
-      }
-    ];
+    return [];
   });
 
   useEffect(() => {
@@ -373,21 +294,13 @@ export default function App() {
     const saved = localStorage.getItem('tappmusic_withdrawals');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter((w: any) => w.id !== 'TAPP-WD-8290');
+        }
       } catch (e) {}
     }
-    return [
-      {
-        id: 'TAPP-WD-8290',
-        amountCoins: 150,
-        amountUsdt: 5.0,
-        address: '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0',
-        network: 'BEP20',
-        date: '03/06/2026 14:32',
-        status: 'Aprobado',
-        txid: '6fbf4ae7d75dfa312ba24dc1cba77d8a9df6de02b78631481cf1eef45c38c82f'
-      }
-    ];
+    return [];
   });
 
   useEffect(() => {
@@ -585,41 +498,37 @@ export default function App() {
 
   const handleApproveUser = async (regUsername: string, regAmountUsd: number) => {
     const targetName = regUsername.toLowerCase().trim();
-    let referrerName: string | undefined = undefined;
-
-    // Find target user from local synchronized allUsers
-    const found = allUsers.find(u => u.username.toLowerCase() === targetName);
-    if (!found) return;
-
-    if (found.invitedBy) {
-      referrerName = found.invitedBy.toLowerCase().trim();
-    }
-
-    // 1. Activate approved user
-    const activatedTarget = { ...found, status: 'active' as const };
+    
     try {
-      await setDoc(doc(db, 'users', targetName), activatedTarget);
-    } catch (err) {
-      console.error("Approve target error:", err);
-    }
-
-    // 2. Pay 15% commission if referrer exists
-    if (referrerName) {
-      const referrerUser = allUsers.find(u => u.username.toLowerCase() === referrerName);
-      if (referrerUser) {
-        const commissionEarned = Number((regAmountUsd * 0.15).toFixed(2));
-        const updatedReferrer = {
-          ...referrerUser,
-          earnings: Number((referrerUser.earnings + commissionEarned).toFixed(2)),
-          inviteCommissionsEarned: Number(((referrerUser.inviteCommissionsEarned || 0) + commissionEarned).toFixed(2)),
-          inviteCount: (referrerUser.inviteCount || 0) + 1
-        };
-        try {
-          await setDoc(doc(db, 'users', referrerName), updatedReferrer);
-        } catch (err) {
-          console.error("Commission payment error:", err);
+      const userRef = doc(db, 'users', targetName);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.data() as UserProfile;
+        
+        // 1. Activate approved user
+        const activatedTarget = { ...userData, status: 'active' as const };
+        await setDoc(userRef, activatedTarget);
+        
+        // 2. Pay 15% commission if referrer exists
+        if (userData.invitedBy) {
+          const referrerName = userData.invitedBy.toLowerCase().trim();
+          const referrerRef = doc(db, 'users', referrerName);
+          const referrerSnap = await getDoc(referrerRef);
+          if (referrerSnap.exists()) {
+            const referrerUser = referrerSnap.data() as UserProfile;
+            const commissionEarned = Number((regAmountUsd * 0.15).toFixed(2));
+            const updatedReferrer = {
+              ...referrerUser,
+              earnings: Number((referrerUser.earnings + commissionEarned).toFixed(2)),
+              inviteCommissionsEarned: Number(((referrerUser.inviteCommissionsEarned || 0) + commissionEarned).toFixed(2)),
+              inviteCount: (referrerUser.inviteCount || 0) + 1
+            };
+            await setDoc(referrerRef, updatedReferrer);
+          }
         }
       }
+    } catch (err) {
+      console.error("handleApproveUser error:", err);
     }
   };
 
@@ -1565,11 +1474,11 @@ export default function App() {
                   </p>
                 </div>
 
-                {registrations.length === 0 ? (
-                  <p className="text-center py-8 text-xs font-mono text-zinc-500">No hay registros cargados en el buffer.</p>
+                {registrations.filter(r => r.status === 'pending').length === 0 ? (
+                  <p className="text-center py-8 text-xs font-mono text-zinc-500">No hay solicitudes de activación pendientes.</p>
                 ) : (
                   <div className="space-y-3">
-                    {registrations.map((reg) => (
+                    {registrations.filter(r => r.status === 'pending').map((reg) => (
                       <div 
                         key={reg.id} 
                         className={`p-4 rounded-2xl border bg-black font-mono text-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all ${
@@ -1692,11 +1601,11 @@ export default function App() {
                   </p>
                 </div>
 
-                {withdrawHistory.length === 0 ? (
-                  <p className="text-center py-8 text-xs font-mono text-zinc-500">No hay transacciones registradas.</p>
+                {withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').length === 0 ? (
+                  <p className="text-center py-8 text-xs font-mono text-zinc-500">No hay solicitudes de retiro pendientes.</p>
                 ) : (
                   <div className="space-y-3">
-                    {withdrawHistory.map((item) => (
+                    {withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').map((item) => (
                       <div 
                         key={item.id} 
                         className={`p-4 rounded-2xl border bg-black font-mono text-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all ${
@@ -1756,7 +1665,7 @@ export default function App() {
                                 }}
                                 className="flex-1 md:flex-initial h-9 px-3.5 rounded-xl bg-purple-600 text-white font-black text-xs uppercase hover:bg-purple-500 transition-all cursor-pointer flex items-center justify-center"
                               >
-                                Cancelar Pago
+                                Aprobar Retiro
                               </button>
                               
                               <button
