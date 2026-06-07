@@ -76,92 +76,97 @@ export default function App() {
 
   // Real-Time Syncing Loop with Firestore Databases
   useEffect(() => {
-    // 1. Authenticate anonymously to enable secure database access
-    signInAnonymously(auth).then(() => {
-      // Once authenticated, run background seeder if databases are empty
-      const checkAndSeed = async () => {
-        try {
-          const usersSnap = await getDocs(collection(db, 'users'));
-          if (usersSnap.empty) {
-            const adminSeed: UserProfile = {
-              username: 'kervin',
-              email: 'kervinjose022@gmail.com',
-              password: '7340',
-              vipLevel: 'VIP CORONA IMPERIAL 1000$',
-              earnings: 1545.00,
-              completedTaskIds: ['task_1', 'task_2'],
-              isRegistered: true,
-              status: 'active',
-              inviteCount: 0,
-              inviteCommissionsEarned: 0
-            };
-            await setDoc(doc(db, 'users', 'kervin'), adminSeed);
-          }
-
-          const voicesSnap = await getDocs(collection(db, 'voices'));
-          if (voicesSnap.empty) {
-            const defaultVoices = [
-              {
-                id: 'jesus',
-                key: 'jesus',
-                speaker: 'Jesucristo Salvador',
-                avatar: '✝️',
-                description: 'Voz de Amor y Redención',
-                intro: 'Hijo mío, recibe mi paz protectora. Anda, contempla esta promesa y compártela: ',
-                color: 'border-purple-500/30 text-purple-300 bg-purple-500/5',
-                badgeColor: 'bg-purple-950/40 text-purple-300 border-purple-500/30',
-                shadow: 'shadow-[0_0_15px_rgba(168,85,247,0.3)]',
-                pitch: 1.02,
-                rate: 0.82
-              },
-              {
-                id: 'dios',
-                key: 'dios',
-                speaker: 'Dios Padre Celestial',
-                avatar: '🌿',
-                description: 'Voz Omnipotente y Calma',
-                intro: 'Yo soy tu refugio en la tormenta. Escucha con reverencia mi mensaje sagrado para ti: ',
-                color: 'border-amber-500/30 text-amber-300 bg-amber-500/5',
-                badgeColor: 'bg-amber-950/40 text-amber-300 border-amber-500/30',
-                shadow: 'shadow-[0_0_15px_rgba(245,158,11,0.3)]',
-                pitch: 0.84,
-                rate: 0.75
-              },
-              {
-                id: 'familia',
-                key: 'familia',
-                speaker: 'La Voz de la Familia',
-                avatar: '🏠',
-                description: 'Unión y Valores Puros',
-                intro: 'Edifica tu bendito hogar sobre la roca del amor. Este es el consejo protector para tu mesa: ',
-                color: 'border-pink-500/30 text-pink-300 bg-pink-500/5',
-                badgeColor: 'bg-pink-950/40 text-pink-300 border-pink-500/30',
-                shadow: 'shadow-[0_0_15px_rgba(236,72,153,0.3)]',
-                pitch: 1.14,
-                rate: 0.88
-              },
-              {
-                id: 'mentalidad',
-                key: 'mentalidad',
-                speaker: 'Mentalidad de Reino',
-                avatar: '💎',
-                description: 'Éxito y Provisión Divina',
-                intro: '¡Declara abundancia en el nombre del Creador! Rompe la escasez y recibe tu prosperidad: ',
-                color: 'border-[#39FF14]/30 text-[#39FF14] bg-[#39FF14]/5',
-                badgeColor: 'bg-zinc-900 text-[#39FF14] border-[#39FF14]/40',
-                shadow: 'shadow-[0_0_15px_rgba(57,255,20,0.3)]',
-                pitch: 1.0,
-                rate: 0.94
-              }
-            ];
-            for (const v of defaultVoices) {
-              await setDoc(doc(db, 'voices', v.id), v);
-            }
-          }
-        } catch (err) {
-          console.warn("Background database seed warning:", err);
+    // Background seeder function designed to run unconditionally and make sure collections exist
+    const checkAndSeed = async () => {
+      try {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        if (usersSnap.empty) {
+          const adminSeed: UserProfile = {
+            username: 'kervin',
+            email: 'kervinjose022@gmail.com',
+            password: '7340',
+            vipLevel: 'VIP CORONA IMPERIAL 1000$',
+            earnings: 1545.00,
+            completedTaskIds: ['task_1', 'task_2'],
+            isRegistered: true,
+            status: 'active',
+            inviteCount: 0,
+            inviteCommissionsEarned: 0
+          };
+          await setDoc(doc(db, 'users', 'kervin'), adminSeed);
         }
-      };
+
+        const voicesSnap = await getDocs(collection(db, 'voices'));
+        if (voicesSnap.empty) {
+          const defaultVoices = [
+            {
+              id: 'jesus',
+              key: 'jesus',
+              speaker: 'Jesucristo Salvador',
+              avatar: '✝️',
+              description: 'Voz de Amor y Redención',
+              intro: 'Hijo mío, recibe mi paz protectora. Anda, contempla esta promesa y compártela: ',
+              color: 'border-purple-500/30 text-purple-300 bg-purple-500/5',
+              badgeColor: 'bg-purple-950/40 text-purple-300 border-purple-500/30',
+              shadow: 'shadow-[0_0_15px_rgba(168,85,247,0.3)]',
+              pitch: 1.02,
+              rate: 0.82
+            },
+            {
+              id: 'dios',
+              key: 'dios',
+              speaker: 'Dios Padre Celestial',
+              avatar: '🌿',
+              description: 'Voz Omnipotente y Calma',
+              intro: 'Yo soy tu refugio en la tormenta. Escucha con reverencia mi mensaje sagrado para ti: ',
+              color: 'border-amber-500/30 text-amber-300 bg-amber-500/5',
+              badgeColor: 'bg-amber-950/40 text-amber-300 border-amber-500/30',
+              shadow: 'shadow-[0_0_15px_rgba(245,158,11,0.3)]',
+              pitch: 0.84,
+              rate: 0.75
+            },
+            {
+              id: 'familia',
+              key: 'familia',
+              speaker: 'La Voz de la Familia',
+              avatar: '🏠',
+              description: 'Unión y Valores Puros',
+              intro: 'Edifica tu bendito hogar sobre la roca del amor. Este es el consejo protector para tu mesa: ',
+              color: 'border-pink-500/30 text-pink-300 bg-pink-500/5',
+              badgeColor: 'bg-pink-950/40 text-pink-300 border-pink-500/30',
+              shadow: 'shadow-[0_0_15px_rgba(236,72,153,0.3)]',
+              pitch: 1.14,
+              rate: 0.88
+            },
+            {
+              id: 'mentalidad',
+              key: 'mentalidad',
+              speaker: 'Mentalidad de Reino',
+              avatar: '💎',
+              description: 'Éxito y Provisión Divina',
+              intro: '¡Declara abundancia en el nombre del Creador! Rompe la escasez y recibe tu prosperidad: ',
+              color: 'border-[#39FF14]/30 text-[#39FF14] bg-[#39FF14]/5',
+              badgeColor: 'bg-zinc-900 text-[#39FF14] border-[#39FF14]/40',
+              shadow: 'shadow-[0_0_15px_rgba(57,255,20,0.3)]',
+              pitch: 1.0,
+              rate: 0.94
+            }
+          ];
+          for (const v of defaultVoices) {
+            await setDoc(doc(db, 'voices', v.id), v);
+          }
+        }
+      } catch (err) {
+        console.warn("Background database seed warning:", err);
+      }
+    };
+
+    // Run seeder immediately in an unconditional way
+    checkAndSeed();
+
+    // 1. Authenticate anonymously to enable secure database access (non-blocking fallback)
+    signInAnonymously(auth).then(() => {
+      // Re-run seeder as authenticated in case of security rules constraints
       checkAndSeed();
     }).catch(err => {
       console.warn("Firebase Anonymous Auth warning:", err);
@@ -173,7 +178,19 @@ export default function App() {
       snapshot.forEach((doc) => {
         items.push(doc.data());
       });
-      setRegistrations(items);
+      // Merge with registrations state to avoid clearing out newer local elements
+      setRegistrations(prev => {
+        const merged = [...prev];
+        items.forEach(item => {
+          const index = merged.findIndex(r => r.id === item.id);
+          if (index !== -1) {
+            merged[index] = item;
+          } else {
+            merged.push(item);
+          }
+        });
+        return merged;
+      });
     }, (error) => {
       console.error("Firestore listening registrations error:", error);
     });
@@ -184,7 +201,19 @@ export default function App() {
       snapshot.forEach((doc) => {
         items.push(doc.data());
       });
-      setWithdrawHistory(items);
+      // Merge with withdrawals history state
+      setWithdrawHistory(prev => {
+        const merged = [...prev];
+        items.forEach(item => {
+          const index = merged.findIndex(w => w.id === item.id);
+          if (index !== -1) {
+            merged[index] = item;
+          } else {
+            merged.push(item);
+          }
+        });
+        return merged;
+      });
     }, (error) => {
       console.error("Firestore listening withdrawals error:", error);
     });
@@ -196,7 +225,22 @@ export default function App() {
         items.push(doc.data() as UserProfile);
       });
       if (items.length > 0) {
-        setAllUsers(items);
+        setAllUsers(prev => {
+          // Merge local master users pool with Firestore users so offline-registered users are kept
+          const merged = [...prev];
+          items.forEach(item => {
+            const index = merged.findIndex(u => u.username && item.username && u.username.toLowerCase().trim() === item.username.toLowerCase().trim());
+            if (index !== -1) {
+              merged[index] = {
+                ...merged[index],
+                ...item
+              };
+            } else {
+              merged.push(item);
+            }
+          });
+          return merged;
+        });
         
         // Also sync profile in active session
         const currentLocal = localStorage.getItem('tappmusic_profile');
@@ -205,7 +249,10 @@ export default function App() {
             const parsed = JSON.parse(currentLocal) as UserProfile;
             const updatedProfile = items.find(u => u.username && parsed.username && u.username.toLowerCase().trim() === parsed.username.toLowerCase().trim());
             if (updatedProfile) {
-              setUserProfile(updatedProfile);
+              setUserProfile(prevProfile => ({
+                ...prevProfile,
+                ...updatedProfile
+              }));
             }
           } catch (e) {}
         }
@@ -220,7 +267,20 @@ export default function App() {
       snapshot.forEach((doc) => {
         items.push({ id: doc.id, ...doc.data() });
       });
-      setVoiceThemes(items);
+      if (items.length > 0) {
+        setVoiceThemes(prev => {
+          const merged = [...prev];
+          items.forEach(item => {
+            const index = merged.findIndex(v => v.id === item.id);
+            if (index !== -1) {
+              merged[index] = item;
+            } else {
+              merged.push(item);
+            }
+          });
+          return merged;
+        });
+      }
     }, (error) => {
       console.error("Firestore listening voices error:", error);
     });
@@ -361,8 +421,61 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [activeAdminTab, setActiveAdminTab] = useState<'activaciones' | 'retiros' | 'voces'>('activaciones');
 
-  // Voice database state
-  const [voiceThemes, setVoiceThemes] = useState<any[]>([]);
+  // Voice database state (initialized with default voices for instant local fallback)
+  const [voiceThemes, setVoiceThemes] = useState<any[]>([
+    {
+      id: 'jesus',
+      key: 'jesus',
+      speaker: 'Jesucristo Salvador',
+      avatar: '✝️',
+      description: 'Voz de Amor y Redención',
+      intro: 'Hijo mío, recibe mi paz protectora. Anda, contempla esta promesa y compártela: ',
+      color: 'border-purple-500/30 text-purple-300 bg-purple-500/5',
+      badgeColor: 'bg-purple-950/40 text-purple-300 border-purple-500/30',
+      shadow: 'shadow-[0_0_15px_rgba(168,85,247,0.3)]',
+      pitch: 1.02,
+      rate: 0.82
+    },
+    {
+      id: 'dios',
+      key: 'dios',
+      speaker: 'Dios Padre Celestial',
+      avatar: '🌿',
+      description: 'Voz Omnipotente y Calma',
+      intro: 'Yo soy tu refugio en la tormenta. Escucha con reverencia mi mensaje sagrado para ti: ',
+      color: 'border-amber-500/30 text-amber-300 bg-amber-500/5',
+      badgeColor: 'bg-amber-950/40 text-amber-300 border-amber-500/30',
+      shadow: 'shadow-[0_0_15px_rgba(245,158,11,0.3)]',
+      pitch: 0.84,
+      rate: 0.75
+    },
+    {
+      id: 'familia',
+      key: 'familia',
+      speaker: 'La Voz de la Familia',
+      avatar: '🏠',
+      description: 'Unión y Valores Puros',
+      intro: 'Edifica tu bendito hogar sobre la roca del amor. Este es el consejo protector para tu mesa: ',
+      color: 'border-pink-500/30 text-pink-300 bg-pink-500/5',
+      badgeColor: 'bg-pink-950/40 text-pink-300 border-pink-500/30',
+      shadow: 'shadow-[0_0_15px_rgba(236,72,153,0.3)]',
+      pitch: 1.14,
+      rate: 0.88
+    },
+    {
+      id: 'mentalidad',
+      key: 'mentalidad',
+      speaker: 'Mentalidad de Reino',
+      avatar: '💎',
+      description: 'Éxito y Provisión Divina',
+      intro: '¡Declara abundancia en el nombre del Creador! Rompe la escasez y recibe tu prosperidad: ',
+      color: 'border-[#39FF14]/30 text-[#39FF14] bg-[#39FF14]/5',
+      badgeColor: 'bg-zinc-900 text-[#39FF14] border-[#39FF14]/40',
+      shadow: 'shadow-[0_0_15px_rgba(57,255,20,0.3)]',
+      pitch: 1.0,
+      rate: 0.94
+    }
+  ]);
 
   // Voice editing / creation admin form states
   const [isEditingVoice, setIsEditingVoice] = useState<boolean>(false);
@@ -618,9 +731,19 @@ export default function App() {
     try {
       const userRef = doc(db, 'users', targetName);
       const userSnap = await getDoc(userRef);
+      
+      let userData: UserProfile | null = null;
       if (userSnap.exists()) {
-        const userData = userSnap.data() as UserProfile;
-        
+        userData = userSnap.data() as UserProfile;
+      } else {
+        // Fallback to local react state allUsers
+        const localUser = allUsers.find(u => u.username && u.username.toLowerCase().trim() === targetName);
+        if (localUser) {
+          userData = localUser;
+        }
+      }
+      
+      if (userData) {
         // 1. Activate approved user and promote tier if specified
         const targetVip = regVipLevel ? (regVipLevel as VipLevel) : userData.vipLevel;
         const activatedTarget = { 
@@ -638,8 +761,18 @@ export default function App() {
           const referrerName = userData.invitedBy.toLowerCase().trim();
           const referrerRef = doc(db, 'users', referrerName);
           const referrerSnap = await getDoc(referrerRef);
+          
+          let referrerUser: UserProfile | null = null;
           if (referrerSnap.exists()) {
-            const referrerUser = referrerSnap.data() as UserProfile;
+            referrerUser = referrerSnap.data() as UserProfile;
+          } else {
+            const localReferrer = allUsers.find(u => u.username && u.username.toLowerCase().trim() === referrerName);
+            if (localReferrer) {
+              referrerUser = localReferrer;
+            }
+          }
+          
+          if (referrerUser) {
             const commissionEarned = Number((regAmountUsd * 0.15).toFixed(2));
             const updatedReferrer = {
               ...referrerUser,
@@ -2167,6 +2300,7 @@ export default function App() {
                             return;
                           }
                           const newVoice = {
+                            id: k,
                             key: k,
                             speaker: s,
                             avatar: voiceFormAvatar.trim() || '🎙️',
@@ -2180,6 +2314,15 @@ export default function App() {
                           };
                           try {
                             await setDoc(doc(db, 'voices', k), newVoice);
+                            // Live update of state so it reflects instantly!
+                            setVoiceThemes(prev => {
+                              const exists = prev.some(v => v.id === k);
+                              if (exists) {
+                                return prev.map(v => v.id === k ? { id: k, ...newVoice } : v);
+                              } else {
+                                return [...prev, { id: k, ...newVoice }];
+                              }
+                            });
                             setIsEditingVoice(false);
                           } catch (err) {
                             console.error("Error saving voice:", err);
@@ -2238,6 +2381,8 @@ export default function App() {
                             onClick={async () => {
                               try {
                                 await deleteDoc(doc(db, 'voices', v.id));
+                                // Live update of state so it reflects instantly!
+                                setVoiceThemes(prev => prev.filter(item => item.id !== v.id));
                                 if (isEditingVoice && editingVoiceId === v.id) {
                                   setIsEditingVoice(false);
                                 }
