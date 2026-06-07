@@ -303,7 +303,7 @@ export default function App() {
   });
 
   // Login Mode and Secure Admin Protection States
-  const [isLoginMode, setIsLoginMode] = useState(false);
+  const [isLoginMode, setIsLoginMode] = useState(true);
   const [isAdminVerified, setIsAdminVerified] = useState(() => {
     // If they already have Kervin's email loaded, auto-verify
     const cur = localStorage.getItem('tappmusic_profile');
@@ -642,6 +642,7 @@ export default function App() {
     setAttachedFileName('');
     setPreviewBlob('');
     
+    setIsVipSelectorOpen(false);
     alert("⚡ ¡Registro de Membresía VIP Enviado! Tu solicitud de depósito está siendo verificada por el propietario (Hermanito Kervin) para activar tu casilla VIP.");
   };
 
@@ -949,9 +950,8 @@ export default function App() {
 
         {/* REGISTRATION GUARDIAN CARD (If unregistered, users register to unlock full board) */}
         {!userProfile.isRegistered ? (
-          isLoginMode ? (
-            /* LOGIN CARD */
-            <div className="max-w-xl mx-auto rounded-3xl border-2 border-dashed border-purple-500/40 bg-zinc-950 p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.15)] relative text-left animate-fade-in">
+          /* LOGIN CARD */
+          <div className="max-w-xl mx-auto rounded-3xl border-2 border-dashed border-purple-500/40 bg-zinc-950 p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.15)] relative text-left animate-fade-in">
               <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-purple-950/45 text-purple-300 border border-purple-500/35 font-mono text-[9px] px-2.5 py-0.5 rounded-full uppercase font-black animate-pulse">
                 Acceso Miembros 🔑
               </div>
@@ -1028,7 +1028,7 @@ export default function App() {
                     ¿Aún no tienes una membresía VIP en Tappmusic? <br />
                     <button 
                       type="button"
-                      onClick={() => setIsLoginMode(false)}
+                      onClick={() => setIsVipSelectorOpen(true)}
                       className="text-[#39FF14] hover:underline font-extrabold uppercase tracking-widest text-xs mt-1 cursor-pointer bg-transparent border-none"
                     >
                       REGISTRARME Y ACTIVAR CASILLA VIP ⚡
@@ -1047,7 +1047,7 @@ export default function App() {
                 </div>
               </div>
             </div>
-          ) : (
+          ) : false ? (
             /* REGISTRATION CARD */
             <div className="max-w-xl mx-auto rounded-3xl border-2 border-dashed border-[#39FF14]/30 bg-black p-6 sm:p-8 shadow-[0_0_50px_rgba(57,255,20,0.12)] relative text-left animate-fade-in animate-duration-300">
               {referredBy && (
@@ -1318,7 +1318,7 @@ export default function App() {
               </div>
             </div>
           </div>
-        )) : userProfile.status === 'pending' ? (
+        ) : userProfile.status === 'pending' ? (
           /* PENDING VERIFICATION STATUS DASHBOARD */
           <div className="max-w-xl mx-auto rounded-3xl border border-purple-500/25 bg-zinc-950/80 p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.12)] relative text-left space-y-6 animate-fade-in">
             <div className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-yellow-950/40 text-yellow-400 border border-yellow-500/35 font-mono text-[9px] px-2.5 py-0.5 uppercase font-black tracking-wider progress-wave">
@@ -1624,8 +1624,8 @@ export default function App() {
 
       {/* QUICK SELECTOR VIP DRAWER (For demo flexibility changing tiers instantly with payment request flow) */}
       {isVipSelectorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
-          <div className="relative w-full max-w-sm rounded-3xl border border-purple-500/30 bg-zinc-950 p-6 shadow-2xl relative overflow-hidden text-center max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm overflow-y-auto">
+          <div className={`relative w-full ${!userProfile.isRegistered ? 'max-w-xl' : 'max-w-sm'} rounded-3xl border border-purple-500/30 bg-zinc-950 p-6 sm:p-8 shadow-2xl relative overflow-hidden max-h-[95vh] overflow-y-auto`}>
             
             <div className="absolute top-4 right-4">
               <button 
@@ -1639,7 +1639,267 @@ export default function App() {
               </button>
             </div>
 
-            {!upgradeVipLevel ? (
+            {!userProfile.isRegistered ? (
+              /* MODAL REGISTRATION FORM */
+              <form onSubmit={handleRegister} className="space-y-6 text-left">
+                <div className="text-center space-y-2">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#39FF14]/10 to-purple-500/10 border border-[#39FF14]/30 text-[#39FF14]">
+                    <UserCheck className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-black text-white uppercase tracking-wider">Registro de Miembro VIP</h3>
+                  <p className="text-xs text-zinc-400">
+                    Crea tu cuenta VIP y envía el comprobante de activación de tu membresía para activar tu casilla remunerada en Tappmusic.com
+                  </p>
+                </div>
+
+                {referredBy && (
+                  <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/40 flex items-center justify-center gap-2 text-xs text-purple-300 text-center">
+                    <Sparkles className="h-4 w-4 text-yellow-400 animate-pulse" />
+                    <span className="font-sans leading-tight">
+                      Invitado especial por: <strong className="text-white">@{referredBy}</strong>
+                    </span>
+                  </div>
+                )}
+
+                {/* Paso 1: Datos */}
+                <div className="space-y-4 rounded-2xl border border-white/5 bg-black/60 p-4">
+                  <h4 className="text-[10px] uppercase font-mono tracking-wider font-extrabold text-[#39FF14] border-b border-white/5 pb-2">
+                    🔑 Paso 1: Datos de tu Nueva Cuenta
+                  </h4>
+                  
+                  {/* Account Nickname */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-black block">
+                      Nombre de Usuario (Nickname) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej. melodia_tapp"
+                      value={inputUsername}
+                      onChange={(e) => setInputUsername(e.target.value)}
+                      className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                    />
+                  </div>
+
+                  {/* Account email & password */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-405 text-zinc-400 font-bold block">
+                        Correo Electrónico *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="ejemplo@correo.com"
+                        value={inputEmail}
+                        onChange={(e) => setInputEmail(e.target.value)}
+                        className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-405 text-zinc-400 font-bold block">
+                        Contraseña de Acceso *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          placeholder="••••••••"
+                          value={inputPassword}
+                          onChange={(e) => setInputPassword(e.target.value)}
+                          className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl pl-4 pr-10 py-2.5 text-white placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-[#39FF14] transition-all cursor-pointer focus:outline-none bg-transparent border-none"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Paso 2: Membresia VIP */}
+                <div className="space-y-4 rounded-2xl border border-white/5 bg-black/60 p-4">
+                  <h4 className="text-[10px] uppercase font-mono tracking-wider font-extrabold text-[#39FF14] border-b border-white/5 pb-2">
+                    👑 Paso 2: Elige tu Membresía VIP
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {([
+                      { name: 'VIP PLATA 10$', price: '$10 USD' },
+                      { name: 'VIP ORO 20$', price: '$20 USD' },
+                      { name: 'VIP RUBÍ 40$', price: '$40 USD' },
+                      { name: 'VIP DIAMANTE 120$', price: '$120 USD' },
+                      { name: 'VIP PLATINO 420$', price: '$420 USD' },
+                      { name: 'VIP CORONA IMPERIAL 1000$', price: '$1000 USD' }
+                    ]).map(v => (
+                      <button
+                        key={v.name}
+                        type="button"
+                        onClick={() => setSelectedInitialVip(v.name as VipLevel)}
+                        className={`p-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer border flex flex-col items-center justify-center gap-1 uppercase ${
+                          selectedInitialVip === v.name
+                            ? 'bg-purple-950/45 text-white border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.3)]'
+                            : 'bg-zinc-950 text-gray-500 border-zinc-900 hover:border-zinc-800'
+                        }`}
+                      >
+                        <span className="font-extrabold tracking-tight text-center">{v.name.split(' ')[1]}</span>
+                        <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded leading-none ${
+                          selectedInitialVip === v.name
+                            ? 'bg-purple-900/60 text-purple-200 font-bold'
+                            : 'bg-zinc-900 text-zinc-650'
+                        }`}>
+                          {v.price}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Paso 3: Pago */}
+                <div className="p-4 rounded-2xl bg-black border border-white/5 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-2.5 gap-2">
+                    <h4 className="text-[10px] uppercase font-mono tracking-wider font-extrabold text-white">
+                      💳 Paso 3: Realizar el Depósito Asociado
+                    </h4>
+                    <div className="text-[10px] font-mono text-left sm:text-right">
+                      <strong className="text-[#39FF14] font-black">${getLevelPriceInUsd(selectedInitialVip)} USD</strong>
+                      <span className="text-zinc-500"> / </span>
+                      <span className="text-yellow-500 font-black">{getLevelPriceInBs(selectedInitialVip).toLocaleString()} Bs</span>
+                    </div>
+                  </div>
+
+                  {/* Pago Movil vs USDT BEP20 */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      key="registration_pago_movil"
+                      type="button"
+                      onClick={() => setRegistrationPayMethod('Pago Móvil')}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold font-sans border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        registrationPayMethod === 'Pago Móvil'
+                          ? 'bg-yellow-950/40 text-yellow-500 border-yellow-500/50'
+                          : 'bg-black border-zinc-900 text-zinc-500 hover:text-zinc-400'
+                      }`}
+                    >
+                      🇻🇪 Pago Móvil (Bs)
+                    </button>
+                    <button
+                      key="registration_usdt"
+                      type="button"
+                      onClick={() => setRegistrationPayMethod('USDT BEP-20')}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold font-sans border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        registrationPayMethod === 'USDT BEP-20'
+                          ? 'bg-purple-950/40 text-purple-400 border-purple-500/50'
+                          : 'bg-black border-zinc-900 text-zinc-500 hover:text-zinc-400'
+                      }`}
+                    >
+                      🪙 USDT BEP-20
+                    </button>
+                  </div>
+
+                  {registrationPayMethod === 'Pago Móvil' ? (
+                    <div className="p-3 rounded-xl bg-zinc-950 border border-yellow-500/10 space-y-2 text-[11px] font-mono leading-relaxed text-zinc-350">
+                      <p className="text-zinc-400 uppercase text-[9px] tracking-wider font-extrabold text-yellow-500">Datos Pago Móvil Venezuela:</p>
+                      <div>Banco: <strong className="text-white font-black">Banco de Venezuela (0102)</strong></div>
+                      <div>Cédula: <strong className="text-white font-black">26304421</strong></div>
+                      <div>Teléfono BDV: <strong className="text-white font-black">04262139920</strong></div>
+                      <div className="pt-1 border-t border-white/5 text-[9px] text-zinc-550">
+                        * Tasa Calculada: 1 USDT = 734 Bs. Transfiera <strong className="text-yellow-500 font-extrabold">{getLevelPriceInBs(selectedInitialVip).toLocaleString()} Bs</strong>.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-xl bg-zinc-950 border border-purple-500/10 space-y-2 text-[11px] font-mono leading-normal text-zinc-350">
+                      <p className="text-zinc-400 uppercase text-[9px] tracking-wider font-extrabold text-purple-400">Datos Depósito USDT BEP-20 (Binance):</p>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] text-zinc-500 block leading-none">Dirección de Destino:</span>
+                        <div className="flex items-center gap-1.5 bg-black p-2 rounded-lg border border-white/5">
+                          <code className="text-[10px] text-purple-300 break-all select-all font-mono">0x29f0f1edd5258ee3b7553bff665df4d1dd811af0</code>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText('0x29f0f1edd5258ee3b7553bff665df4d1dd811af0');
+                              setCopiedAddressFeedback(true);
+                              setTimeout(() => setCopiedAddressFeedback(false), 2000);
+                            }}
+                            className="p-1 rounded bg-zinc-900 border border-white/5 text-purple-400 hover:text-white hover:bg-purple-900/40 transition-all cursor-pointer select-none"
+                            title="Copiar billetera"
+                          >
+                            {copiedAddressFeedback ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="pt-1 border-t border-white/5 text-[9px] text-zinc-550">
+                        * Envíe exactamente <strong className="text-purple-400">${getLevelPriceInUsd(selectedInitialVip)}.00 USDT</strong> a la red <strong className="text-white">BNB Smart Chain (BEP20)</strong>.
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Paso 4: Referencia */}
+                <div className="space-y-4 rounded-2xl border border-white/5 bg-black/60 p-4">
+                  <h4 className="text-[10px] uppercase font-mono tracking-wider font-extrabold text-white border-b border-white/5 pb-2">
+                    📝 Paso 4: Registrar Datos de Verificación
+                  </h4>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-black block">
+                      Número de Referencia o Teléfono Emisor *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={registrationPayMethod === 'Pago Móvil' ? 'Ej. Ref: 8295' : 'Ej. Hash de Binance'}
+                      value={inputReferenceNo}
+                      onChange={(e) => setInputReferenceNo(e.target.value)}
+                      className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-850 focus:outline-none focus:border-[#39FF14]"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 font-bold block">
+                      Capture de Pago Voucher (Opcional)
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <label className="flex h-10 px-4 rounded-xl border border-dashed border-zinc-700 bg-zinc-950 hover:border-[#39FF14] hover:bg-[#39FF14]/5 text-zinc-400 hover:text-white transition-all cursor-pointer items-center justify-center text-xs">
+                        <span>📁 Cargar Voucher</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileChange}
+                        />
+                      </label>
+                      {attachedFileName && (
+                        <span className="text-xs text-white truncate max-w-[200px] font-mono block">
+                          {attachedFileName}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsVipSelectorOpen(false)}
+                    className="w-1/2 flex h-12 items-center justify-center rounded-xl bg-zinc-900 border border-white/5 text-zinc-400 hover:text-white text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-1/2 flex h-12 items-center justify-center gap-2 rounded-xl bg-[#39FF14] text-black hover:bg-white text-xs font-black uppercase tracking-widest transition-all cursor-pointer active:scale-95 shadow-[0_0_15px_rgba(57,255,20,0.3)] border-none"
+                  >
+                    <Send className="h-4 w-4 text-black" />
+                    <span>Registrarme</span>
+                  </button>
+                </div>
+              </form>
+            ) : !upgradeVipLevel ? (
               <div className="space-y-4">
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
                   <Trophy className="h-6 w-6" />
