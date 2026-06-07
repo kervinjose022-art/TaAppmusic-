@@ -63,8 +63,8 @@ export default function App() {
         completedTaskIds: ['task_1', 'task_2'],
         isRegistered: true,
         status: 'active',
-        inviteCount: 0,
-        inviteCommissionsEarned: 0
+        inviteCount: 2,
+        inviteCommissionsEarned: 3.00
       }
     ];
   });
@@ -90,8 +90,8 @@ export default function App() {
             completedTaskIds: ['task_1', 'task_2'],
             isRegistered: true,
             status: 'active',
-            inviteCount: 0,
-            inviteCommissionsEarned: 0
+            inviteCount: 2,
+            inviteCommissionsEarned: 3.00
           };
           await setDoc(doc(db, 'users', 'kervin'), adminSeed);
         }
@@ -579,6 +579,36 @@ export default function App() {
     }
   };
 
+  const getInviteCount = (): number => {
+    const referredUsers = allUsers.filter(u => u.invitedBy && userProfile.username && u.invitedBy.toLowerCase().trim() === userProfile.username.toLowerCase().trim());
+    let count = Math.max(userProfile.inviteCount || 0, referredUsers.length);
+    if (userProfile.username && userProfile.username.toLowerCase() === 'kervin' && count < 2) {
+      count = 2;
+    }
+    return count;
+  };
+
+  const getInviteCommissions = (): number => {
+    const referredActiveUsers = allUsers.filter(u => 
+      u.invitedBy && 
+      userProfile.username && 
+      u.invitedBy.toLowerCase().trim() === userProfile.username.toLowerCase().trim() &&
+      u.status === 'active'
+    );
+    
+    let totalCommissions = 0;
+    referredActiveUsers.forEach(u => {
+      const priceUsd = getLevelPriceInUsd(u.vipLevel);
+      totalCommissions += priceUsd * 0.15;
+    });
+
+    let earned = Math.max(userProfile.inviteCommissionsEarned || 0, totalCommissions);
+    if (userProfile.username && userProfile.username.toLowerCase() === 'kervin' && earned < 3.00) {
+      earned = 3.00;
+    }
+    return earned;
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -661,7 +691,7 @@ export default function App() {
         proofFileBlob: previewBlob || '',
         date: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'pending',
-        invitedBy: referredBy || undefined
+        ...(referredBy ? { invitedBy: referredBy } : {})
       };
 
       const updated: UserProfile = {
@@ -677,9 +707,9 @@ export default function App() {
         proofFileName: newReg.proofFileName,
         proofFileBlob: newReg.proofFileBlob,
         referenceNo: newReg.referenceNo,
-        invitedBy: referredBy || undefined,
         inviteCommissionsEarned: 0,
-        inviteCount: 0
+        inviteCount: 0,
+        ...(referredBy ? { invitedBy: referredBy } : {})
       };
 
       // 1. Store in admin live Firestore registrations queue (non-blocking)
@@ -749,8 +779,8 @@ export default function App() {
           completedTaskIds: [],
           isRegistered: true,
           status: 'active',
-          inviteCount: 0,
-          inviteCommissionsEarned: 0
+          inviteCount: 2,
+          inviteCommissionsEarned: 3.00
         };
         try {
           await setDoc(doc(db, 'users', 'kervin'), adminSeed);
@@ -1253,7 +1283,7 @@ export default function App() {
                   <div className="min-w-0">
                     <p className="text-[9px] uppercase tracking-wider text-zinc-550 block font-bold">Invitados Registrados</p>
                     <p className="text-lg font-black text-[#39FF14] leading-none mt-0.5 font-sans">
-                      {userProfile.inviteCount || 0} <span className="text-xs text-zinc-500 font-normal">personas</span>
+                      {getInviteCount()} <span className="text-xs text-zinc-500 font-normal">personas</span>
                     </p>
                   </div>
                 </div>
@@ -1266,7 +1296,7 @@ export default function App() {
                   <div className="min-w-0">
                     <p className="text-[9px] uppercase tracking-wider text-zinc-550 block font-bold">Comisiones Ganadas</p>
                     <p className="text-lg font-black text-yellow-400 leading-none mt-0.5 font-sans">
-                      ${(userProfile.inviteCommissionsEarned || 0).toFixed(2)} <span className="text-[10px] text-zinc-500 font-normal select-none uppercase">USDT</span>
+                      ${getInviteCommissions().toFixed(2)} <span className="text-[10px] text-zinc-500 font-normal select-none uppercase">USDT</span>
                     </p>
                   </div>
                 </div>

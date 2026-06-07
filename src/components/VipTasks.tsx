@@ -194,7 +194,7 @@ export default function VipTasks({
         id: generatedId,
         username: userProfile.username,
         amountCoins: amountVal,
-        amountUsdt: Number((amountVal / 30).toFixed(2)),
+        amountUsdt: Number((amountVal / 734).toFixed(2)),
         address: trTrim,
         network: withdrawalNetwork,
         date: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -934,7 +934,7 @@ export default function VipTasks({
                 <div className="border-l border-white/5 pl-4">
                   <span className="text-[9px] text-zinc-500 uppercase block tracking-wider">Equivalente USDT</span>
                   <span className="text-xl font-black text-[#39FF14]">
-                    ${(userProfile.earnings / 30).toFixed(2)}
+                    ${(userProfile.earnings / 734).toFixed(2)}
                   </span>
                   <span className="text-[9px] text-zinc-400 ml-1.5 uppercase font-sans">USDT</span>
                 </div>
@@ -1046,12 +1046,12 @@ export default function VipTasks({
                         className="w-full text-xs font-mono bg-zinc-950 border border-white/10 rounded-xl pl-4 pr-24 py-2.5 text-white placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
                       />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-900 border border-white/5 text-[9px] text-[#39FF14] px-2 py-1 rounded font-bold font-mono">
-                        ≈ {isNaN(parseFloat(withdrawalAmount)) ? '0.00' : (parseFloat(withdrawalAmount) / 30).toFixed(2)} USDT
+                        ≈ {isNaN(parseFloat(withdrawalAmount)) ? '0.00' : (parseFloat(withdrawalAmount) / 734).toFixed(2)} USDT
                       </div>
                     </div>
                     
                     <p className="text-[9px] text-zinc-500 font-mono mt-1">
-                      * Mínimo de retiro: 150 monedas (5.00 USDT). Tasa de Conversión: 30 Monedas = 1 USDT.
+                      * Mínimo de retiro: 150 monedas (≈ {(150 / 734).toFixed(2)} USDT). Tasa de Conversión: 734 Monedas = 1 USDT.
                     </p>
                   </div>
 
