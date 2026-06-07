@@ -330,8 +330,39 @@ export default function App() {
     if (file) {
       setUpgradeFileName(file.name);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setUpgradeFileBlob(reader.result as string);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 400;
+          const MAX_HEIGHT = 400;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.6);
+            setUpgradeFileBlob(compressed);
+          } else {
+            setUpgradeFileBlob(event.target?.result as string || '');
+          }
+        };
+        img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -553,8 +584,39 @@ export default function App() {
     if (file) {
       setAttachedFileName(file.name);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewBlob(reader.result as string);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 400;
+          const MAX_HEIGHT = 400;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.6);
+            setPreviewBlob(compressed);
+          } else {
+            setPreviewBlob(event.target?.result as string || '');
+          }
+        };
+        img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -562,88 +624,93 @@ export default function App() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    const name = inputUsername.trim().toLowerCase() || 'invitado_vip';
-    const emailLower = inputEmail.trim().toLowerCase();
+    try {
+      const name = inputUsername.trim().toLowerCase() || 'invitado_vip';
+      const emailLower = inputEmail.trim().toLowerCase();
 
-    // Prevent overwriting existing user data by checking duplicate username or email
-    const nameExists = allUsers.some(u => u.username && u.username.toLowerCase() === name);
-    const emailExists = allUsers.some(u => u.email && u.email.toLowerCase() === emailLower);
+      // Prevent overwriting existing user data by checking duplicate username or email
+      const nameExists = allUsers.some(u => u.username && u.username.toLowerCase() === name);
+      const emailExists = allUsers.some(u => u.email && u.email.toLowerCase() === emailLower);
 
-    if (nameExists || emailExists) {
-      alert("❌ Este nombre de usuario o correo ya está registrado en Tappmusic.com. Por favor, inicia sesión con tu cuenta actual usando la opción de abajo.");
-      return;
+      if (nameExists || emailExists) {
+        alert("❌ Este nombre de usuario o correo ya está registrado en Tappmusic.com. Por favor, inicia sesión con tu cuenta actual usando la opción de abajo.");
+        return;
+      }
+
+      let startEarnings = 10.00;
+      if (selectedInitialVip === 'VIP ORO 20$') startEarnings = 20.00;
+      else if (selectedInitialVip === 'VIP RUBÍ 40$') startEarnings = 40.00;
+      else if (selectedInitialVip === 'VIP DIAMANTE 120$') startEarnings = 120.00;
+      else if (selectedInitialVip === 'VIP PLATINO 420$') startEarnings = 420.00;
+      else if (selectedInitialVip === 'VIP CORONA IMPERIAL 1000$') startEarnings = 1000.00;
+
+      const usdPrice = getLevelPriceInUsd(selectedInitialVip);
+      const bsPrice = getLevelPriceInBs(selectedInitialVip);
+      const regId = `REG-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const newReg = {
+        id: regId,
+        username: name,
+        email: emailLower,
+        vipLevel: selectedInitialVip,
+        paymentMethodUsed: registrationPayMethod,
+        amountUsd: usdPrice,
+        amountBs: bsPrice,
+        referenceNo: inputReferenceNo || `REF-${Math.floor(100000 + Math.random() * 900000)}`,
+        proofFileName: attachedFileName || 'boceto_captura.png',
+        proofFileBlob: previewBlob || '',
+        date: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'pending',
+        invitedBy: referredBy || undefined
+      };
+
+      const updated: UserProfile = {
+        username: name,
+        email: emailLower,
+        password: inputPassword,
+        vipLevel: selectedInitialVip,
+        earnings: startEarnings,
+        completedTaskIds: [],
+        isRegistered: true,
+        status: 'pending', // Starts in pending verification
+        paymentMethodUsed: registrationPayMethod,
+        proofFileName: newReg.proofFileName,
+        proofFileBlob: newReg.proofFileBlob,
+        referenceNo: newReg.referenceNo,
+        invitedBy: referredBy || undefined,
+        inviteCommissionsEarned: 0,
+        inviteCount: 0
+      };
+
+      // 1. Store in admin live Firestore registrations queue (non-blocking)
+      setDoc(doc(db, 'registrations', regId), newReg).catch(err => {
+        console.warn("Could not save to registrations Firestore (using offline mode):", err);
+      });
+
+      // 2. Push directly to master user list for cloud synchronization (non-blocking)
+      setDoc(doc(db, 'users', name), updated).catch(err => {
+        console.warn("Could not save to users Firestore (using offline mode):", err);
+      });
+
+      // 3. Update local react states immediately so registration card advances!
+      setRegistrations(prev => [newReg, ...prev]);
+      setAllUsers(prev => [...prev, updated]);
+      saveProfile(updated);
+
+      // Clear inputs
+      setInputUsername('');
+      setInputEmail('');
+      setInputPassword('');
+      setInputReferenceNo('');
+      setAttachedFileName('');
+      setPreviewBlob('');
+      
+      setIsVipSelectorOpen(false);
+      alert("⚡ ¡Registro de Membresía VIP Enviado! Tu solicitud de depósito está siendo verificada por el propietario (Hermanito Kervin) para activar tu casilla VIP.");
+    } catch (err) {
+      console.error("Critical error in handleRegister:", err);
+      alert("⚠️ Error al registrarse: " + (err instanceof Error ? err.message : String(err)));
     }
-
-    let startEarnings = 10.00;
-    if (selectedInitialVip === 'VIP ORO 20$') startEarnings = 20.00;
-    else if (selectedInitialVip === 'VIP RUBÍ 40$') startEarnings = 40.00;
-    else if (selectedInitialVip === 'VIP DIAMANTE 120$') startEarnings = 120.00;
-    else if (selectedInitialVip === 'VIP PLATINO 420$') startEarnings = 420.00;
-    else if (selectedInitialVip === 'VIP CORONA IMPERIAL 1000$') startEarnings = 1000.00;
-
-    const usdPrice = getLevelPriceInUsd(selectedInitialVip);
-    const bsPrice = getLevelPriceInBs(selectedInitialVip);
-    const regId = `REG-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const newReg = {
-      id: regId,
-      username: name,
-      email: emailLower,
-      vipLevel: selectedInitialVip,
-      paymentMethodUsed: registrationPayMethod,
-      amountUsd: usdPrice,
-      amountBs: bsPrice,
-      referenceNo: inputReferenceNo || `REF-${Math.floor(100000 + Math.random() * 900000)}`,
-      proofFileName: attachedFileName || 'boceto_captura.png',
-      proofFileBlob: previewBlob || '',
-      date: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'pending',
-      invitedBy: referredBy || undefined
-    };
-
-    const updated: UserProfile = {
-      username: name,
-      email: emailLower,
-      password: inputPassword,
-      vipLevel: selectedInitialVip,
-      earnings: startEarnings,
-      completedTaskIds: [],
-      isRegistered: true,
-      status: 'pending', // Starts in pending verification
-      paymentMethodUsed: registrationPayMethod,
-      proofFileName: newReg.proofFileName,
-      proofFileBlob: newReg.proofFileBlob,
-      referenceNo: newReg.referenceNo,
-      invitedBy: referredBy || undefined,
-      inviteCommissionsEarned: 0,
-      inviteCount: 0
-    };
-
-    // 1. Store in admin live Firestore registrations queue (non-blocking)
-    setDoc(doc(db, 'registrations', regId), newReg).catch(err => {
-      console.warn("Could not save to registrations Firestore (using offline mode):", err);
-    });
-
-    // 2. Push directly to master user list for cloud synchronization (non-blocking)
-    setDoc(doc(db, 'users', name), updated).catch(err => {
-      console.warn("Could not save to users Firestore (using offline mode):", err);
-    });
-
-    // 3. Update local react states immediately so registration card advances!
-    setRegistrations(prev => [newReg, ...prev]);
-    setAllUsers(prev => [...prev, updated]);
-    saveProfile(updated);
-
-    // Clear inputs
-    setInputUsername('');
-    setInputEmail('');
-    setInputPassword('');
-    setInputReferenceNo('');
-    setAttachedFileName('');
-    setPreviewBlob('');
-    
-    setIsVipSelectorOpen(false);
-    alert("⚡ ¡Registro de Membresía VIP Enviado! Tu solicitud de depósito está siendo verificada por el propietario (Hermanito Kervin) para activar tu casilla VIP.");
   };
 
   const handleLogin = async (e: React.FormEvent) => {
