@@ -366,6 +366,12 @@ export default function VipTasks({
 
   // Core handler: Click to "Hacer Tarea" (Do Task) with fancy simulated loader
   const handlePerformTask = (task: UserTask) => {
+    // Guard of verification status
+    if (userProfile.status === 'pending') {
+      alert(`⚠️ Tu cuenta está en modo gratuito para explorar la plataforma. Podrás realizar y cobrar estas tareas VIP una vez que tu depósito sea verificado y activado por el administrador (Hermanito Kervin).`);
+      return;
+    }
+
     const requiredRank = getVipRank(task.vipRequired);
     
     // Guard of VIP level

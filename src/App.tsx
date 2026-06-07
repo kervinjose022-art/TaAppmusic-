@@ -1045,92 +1045,71 @@ export default function App() {
                 </div>
               </div>
             </div>
-        ) : userProfile.status === 'pending' ? (
-          /* PENDING VERIFICATION STATUS DASHBOARD */
-          <div className="max-w-xl mx-auto rounded-3xl border border-purple-500/25 bg-zinc-950/80 p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.12)] relative text-left space-y-6 animate-fade-in">
-            <div className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-yellow-950/40 text-yellow-400 border border-yellow-500/35 font-mono text-[9px] px-2.5 py-0.5 uppercase font-black tracking-wider progress-wave">
-              ⌛ Verificación en Curso
-            </div>
-
-            <div className="flex flex-col items-center text-center space-y-2">
-              <div className="h-14 w-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-yellow-400 relative">
-                <span className="absolute inset-0 rounded-2xl border border-yellow-400/40 animate-ping opacity-60 pointer-events-none" />
-                <Lock className="h-6 w-6 text-yellow-400 animate-pulse" />
-              </div>
-              <h3 className="text-lg font-black text-white uppercase tracking-wider">Esperando Activación VIP</h3>
-              <p className="text-zinc-400 text-xs max-w-sm leading-relaxed">
-                Kervin, administrador de <strong>Tappmusic.com</strong>, está verificando tu depósito. Tu cuenta se activará automáticamente al conciliar tu comprobante.
-              </p>
-            </div>
-
-            {/* Stepper bar */}
-            <div className="grid grid-cols-3 gap-2 py-2 text-center font-mono text-[9px]">
-              <div className="p-2 rounded-lg bg-emerald-950/20 border border-emerald-500/30 text-[#39FF14] flex flex-col gap-0.5">
-                <span className="font-sans font-black">Paso 1</span>
-                <span>Registro OK</span>
-              </div>
-              <div className="p-2 rounded-lg bg-yellow-950/30 border border-yellow-500/40 text-yellow-400 flex flex-col gap-0.5 animate-pulse">
-                <span className="font-sans font-black text-[#39FF14]">Paso 2</span>
-                <span>Verificando Pago</span>
-              </div>
-              <div className="p-2 rounded-lg bg-zinc-900/30 border border-white/5 text-zinc-550 flex flex-col gap-0.5">
-                <span className="font-sans font-black">Paso 3</span>
-                <span>Ingreso a Tareas</span>
-              </div>
-            </div>
-
-            {/* Receipt Summary Box */}
-            <div className="p-4 rounded-xl bg-black border border-white/5 space-y-3 font-mono text-xs">
-              <h4 className="text-[10px] tracking-wider font-extrabold text-white uppercase border-b border-white/5 pb-2">
-                🏷️ Detalle de tu Solicitud de Ingreso:
-              </h4>
-              <div className="flex justify-between">
-                <span className="text-zinc-500">Miembro Nickname:</span>
-                <span className="text-[#39FF14] font-black">@{userProfile.username}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-500">Membresía Elegida:</span>
-                <span className="text-white font-extrabold">{userProfile.vipLevel}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-500">Método de Pago:</span>
-                <span className="text-yellow-500 font-extrabold">{userProfile.paymentMethodUsed}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-500">Referencia Ingresada:</span>
-                <span className="text-purple-400 font-extrabold select-all">{userProfile.referenceNo}</span>
-              </div>
-              
-              {userProfile.proofFileBlob && (
-                <div className="pt-2 border-t border-white/5 space-y-1.5">
-                  <span className="text-zinc-500 block text-[10px]">Tu Capture original enviado:</span>
-                  <div className="rounded-lg overflow-hidden bg-zinc-950 p-1 border border-white/10 w-24">
-                    <img 
-                      src={userProfile.proofFileBlob} 
-                      alt="Capture de pago enviado" 
-                      className="h-14 w-auto object-cover rounded"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-
-
-            <div className="flex gap-2 font-mono text-[10px] justify-between text-zinc-500 pt-1">
-              <span>Tappmusic.com • Soporte Live</span>
-              <button
-                onClick={handleLogout}
-                className="text-red-500 hover:underline hover:text-red-400 font-extrabold uppercase cursor-pointer"
-              >
-                Cerrar Sesión / Registrar otro usuario
-              </button>
-            </div>
-          </div>
         ) : (
           /* FULL BOARD LAYOUT (Unlocked upon registration) */
           <div className="space-y-8">
+            
+            {userProfile.status === 'pending' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto animate-fade-in text-left">
+                {/* Yellow Notice Block */}
+                <div className="p-5 rounded-2xl border border-yellow-500/20 bg-zinc-950/90 shadow-[0_0_20px_rgba(234,179,8,0.05)] space-y-3 flex flex-col justify-center">
+                  <div className="flex items-center gap-2 text-yellow-400">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                    </span>
+                    <span className="text-xs uppercase font-mono font-black tracking-wider">Modo Exploratorio Gratuito Activo</span>
+                  </div>
+                  <h3 className="text-md font-black text-white uppercase font-sans">Sintoniza de forma Gratuita 🎧</h3>
+                  <p className="text-zinc-400 text-xs leading-relaxed">
+                    ¡Bienvenido a <strong>Tappmusic.com</strong>! Tienes acceso gratuito para navegar en la plataforma, disfrutar de reels motivacionales de fe, sintonizar sermones y poner a prueba los sistemas.
+                  </p>
+                  <p className="text-[#39FF14] text-[11px] leading-relaxed font-mono font-bold">
+                    ⚠️ NOTA: El cobro y realización de tareas VIP remuneradas se activará una vez que el propietario (Hermanito Kervin) verifique tu depósito.
+                  </p>
+                </div>
+
+                {/* Compact Receipt Box */}
+                <div className="p-5 rounded-2xl border border-purple-500/15 bg-zinc-950 font-mono text-[11px] space-y-2.5">
+                  <h4 className="text-[10px] tracking-wider font-extrabold text-white uppercase border-b border-white/5 pb-2 flex items-center gap-1.5">
+                    ⌛ DETALLE DE TU ACTIVACIÓN PENDIENTE:
+                  </h4>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Usuario:</span>
+                    <span className="text-[#39FF14] font-black">@{userProfile.username}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Membresía Elegida:</span>
+                    <span className="text-white font-extrabold">{userProfile.vipLevel}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Métodos / Referencia:</span>
+                    <span className="text-yellow-500 font-extrabold">{userProfile.paymentMethodUsed} - {userProfile.referenceNo}</span>
+                  </div>
+                  {userProfile.proofFileBlob && (
+                    <div className="pt-1.5 border-t border-white/5 flex items-center gap-3">
+                      <span className="text-zinc-500 text-[10px]">Capture:</span>
+                      <div className="rounded-lg overflow-hidden bg-zinc-950 p-0.5 border border-white/10">
+                        <img 
+                          src={userProfile.proofFileBlob} 
+                          alt="Capture de pago" 
+                          className="h-8 w-auto object-cover rounded"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-white/5 text-center text-zinc-500">
+                    <button
+                      onClick={handleLogout}
+                      className="text-red-400 hover:underline hover:text-red-300 font-sans font-bold text-[10px] uppercase cursor-pointer bg-transparent border-none"
+                    >
+                      Cerrar Sesión / Ir al inicio
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* INFORMATIVE GREEN PROMO DECK */}
             <div className="relative overflow-hidden rounded-2xl border border-[#39FF14]/30 bg-zinc-950/50 p-6 md:p-8 backdrop-blur-sm shadow-2xl text-left">
