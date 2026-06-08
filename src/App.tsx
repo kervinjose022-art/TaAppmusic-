@@ -96,6 +96,35 @@ export default function App() {
           await setDoc(doc(db, 'users', 'kervin'), adminSeed);
         }
 
+        // 4 Users Yesterday Progress Migration: Set 367 coins and clear completedTaskIds so they can do tasks today
+        const migrationDone = localStorage.getItem('yesterday_migration_complete_v2');
+        if (!migrationDone && !usersSnap.empty) {
+          for (const uDoc of usersSnap.docs) {
+            const u = uDoc.data() as UserProfile;
+            if (u.username && u.username.toLowerCase() !== 'kervin') {
+              const migratedUser: UserProfile = {
+                ...u,
+                earnings: 367.0,
+                completedTaskIds: []
+              };
+              await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), migratedUser);
+              
+              // If the current logged-in user matches, update their active profile state
+              const savedProfileStr = localStorage.getItem('tappmusic_profile');
+              if (savedProfileStr) {
+                try {
+                  const savedObj = JSON.parse(savedProfileStr) as UserProfile;
+                  if (savedObj.username && savedObj.username.toLowerCase() === u.username.toLowerCase()) {
+                    setUserProfile(migratedUser);
+                    localStorage.setItem('tappmusic_profile', JSON.stringify(migratedUser));
+                  }
+                } catch (e) {}
+              }
+            }
+          }
+          localStorage.setItem('yesterday_migration_complete_v2', 'true');
+        }
+
         const voicesSnap = await getDocs(collection(db, 'voices'));
         if (voicesSnap.empty) {
           const defaultVoices = [
@@ -249,10 +278,25 @@ export default function App() {
             const parsed = JSON.parse(currentLocal) as UserProfile;
             const updatedProfile = items.find(u => u.username && parsed.username && u.username.toLowerCase().trim() === parsed.username.toLowerCase().trim());
             if (updatedProfile) {
-              setUserProfile(prevProfile => ({
-                ...prevProfile,
-                ...updatedProfile
-              }));
+              setUserProfile(prevProfile => {
+                const earningsChanged = prevProfile.earnings !== updatedProfile.earnings;
+                const vipLevelChanged = prevProfile.vipLevel !== updatedProfile.vipLevel;
+                const statusChanged = prevProfile.status !== updatedProfile.status;
+                const inviteCountChanged = prevProfile.inviteCount !== updatedProfile.inviteCount;
+                const inviteCommissionsChanged = prevProfile.inviteCommissionsEarned !== updatedProfile.inviteCommissionsEarned;
+                
+                const prevTasksStr = [...(prevProfile.completedTaskIds || [])].sort().join(',');
+                const updatedTasksStr = [...(updatedProfile.completedTaskIds || [])].sort().join(',');
+                const tasksChanged = prevTasksStr !== updatedTasksStr;
+
+                if (earningsChanged || vipLevelChanged || statusChanged || inviteCountChanged || inviteCommissionsChanged || tasksChanged) {
+                  return {
+                    ...prevProfile,
+                    ...updatedProfile
+                  };
+                }
+                return prevProfile;
+              });
             }
           } catch (e) {}
         }
@@ -389,6 +433,14 @@ export default function App() {
         }
         return updatedList;
       });
+
+      // Synchronize in real-time with Firestore so coins/tasks are never lost on updates or refresh
+      if (userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip') {
+        const userDocRef = doc(db, 'users', userProfile.username.toLowerCase().trim());
+        setDoc(userDocRef, userProfile).catch(err => {
+          console.warn("Background setDoc failed for userProfile:", err);
+        });
+      }
     }
   }, [userProfile]);
 
@@ -1951,6 +2003,65 @@ export default function App() {
                 className="px-3 py-1.5 rounded-lg border border-red-500/35 text-red-400 hover:bg-red-500 hover:text-white transition-all font-sans font-bold text-[10px] uppercase shrink-0"
               >
                 🧹 Limpiar Base De Datos
+              </button>
+
+              {/* Adjust coins of yesterday to 367 for the 4 registered users */}
+              <button
+                type="button"
+                onClick={async () => {
+                  if (window.confirm("⚠️ ¿Estás seguro de restablecer el progreso de ayer para los 4 registros? Esto les pondrá 367 monedas de saldo, y limpiará sus misiones de hoy para que puedan volver a hacer las tareas y conseguir sus recompensas diarias.")) {
+                    try {
+                      let count = 0;
+                      // Fetch all user accounts directly from Firestore
+                      const snap = await getDocs(collection(db, 'users'));
+                      for (const uDoc of snap.docs) {
+                        const u = uDoc.data() as UserProfile;
+                        if (u.username && u.username.toLowerCase() !== 'kervin') {
+                          const updatedUser: UserProfile = {
+                            ...u,
+                            earnings: 367.0,
+                            completedTaskIds: []
+                          };
+                          await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), updatedUser);
+                          count++;
+                        }
+                      }
+                      
+                      // Synchronize local states instantly
+                      setAllUsers(prev => {
+                        return prev.map(u => {
+                          if (u.username && u.username.toLowerCase() !== 'kervin') {
+                            return {
+                              ...u,
+                              earnings: 367.0,
+                              completedTaskIds: []
+                            };
+                          }
+                          return u;
+                        });
+                      });
+
+                      // If current active session is a registered user, update it
+                      if (userProfile.username && userProfile.username.toLowerCase() !== 'kervin') {
+                        const activeMigrated = {
+                          ...userProfile,
+                          earnings: 367.0,
+                          completedTaskIds: []
+                        };
+                        setUserProfile(activeMigrated);
+                        localStorage.setItem('tappmusic_profile', JSON.stringify(activeMigrated));
+                      }
+
+                      alert(`🎉 ¡Éxito! Se han configurado 367 monedas de saldo y se ha reiniciado el progreso de tareas para ${count} usuarios en Firestore.`);
+                    } catch (err: any) {
+                      console.error(err);
+                      alert("Error al restaurar saldo de ayer: " + err.message);
+                    }
+                  }
+                }}
+                className="px-3 py-1.5 rounded-lg border border-yellow-500/35 text-yellow-500 hover:bg-yellow-500 hover:text-black transition-all font-sans font-bold text-[10px] uppercase shrink-0"
+              >
+                ✨ Reestablecer 367 Monedas (Ayer)
               </button>
             </div>
 
