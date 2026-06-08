@@ -113,7 +113,11 @@ export default function VipTasks({
   // --- WITHDRAWAL SYSTEM STATES ---
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [withdrawalAddress, setWithdrawalAddress] = useState('');
-  const [withdrawalNetwork, setWithdrawalNetwork] = useState<'TRC20' | 'BEP20'>('TRC20');
+  const [withdrawalNetwork, setWithdrawalNetwork] = useState<'BEP20' | 'PAGO_MOVIL'>('BEP20');
+  const [pmPhone, setPmPhone] = useState('');
+  const [pmCedula, setPmCedula] = useState('');
+  const [pmBank, setPmBank] = useState('Banco de Venezuela (0102)');
+  const [pmCustomBank, setPmCustomBank] = useState('');
   const [withdrawalAmount, setWithdrawalAmount] = useState<string>('150');
   const [isSubmittingWithdrawal, setIsSubmittingWithdrawal] = useState(false);
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
@@ -135,20 +139,36 @@ export default function VipTasks({
       return;
     }
 
-    const trTrim = withdrawalAddress.trim();
-    if (!trTrim) {
-      setWithdrawalError('Introduce una dirección de destino USDT válida.');
-      return;
-    }
-
-    if (withdrawalNetwork === 'TRC20' && !trTrim.startsWith('T')) {
-      setWithdrawalError('La dirección de retiro TRC-20 (Tron) debe comenzar con la letra "T". Ej: TY5a...');
-      return;
-    }
-
-    if (withdrawalNetwork === 'BEP20' && !trTrim.startsWith('0x')) {
-      setWithdrawalError('La dirección de retiro BEP-20 (BNB Chain) debe comenzar con la firma "0x". Ej: 0x9f...');
-      return;
+    let finalAddress = '';
+    if (withdrawalNetwork === 'BEP20') {
+      const trTrim = withdrawalAddress.trim();
+      if (!trTrim) {
+        setWithdrawalError('Introduce una dirección de destino USDT válida.');
+        return;
+      }
+      if (!trTrim.startsWith('0x')) {
+        setWithdrawalError('La dirección de retiro BEP-20 (BNB Chain) debe comenzar con la firma "0x". Ej: 0x9f...');
+        return;
+      }
+      finalAddress = trTrim;
+    } else {
+      const pTrim = pmPhone.trim();
+      const cTrim = pmCedula.trim();
+      const chosenBank = pmBank === 'Otro' ? pmCustomBank.trim() : pmBank;
+      
+      if (!pTrim) {
+        setWithdrawalError('Introduce el número de teléfono para el Pago Móvil.');
+        return;
+      }
+      if (!cTrim) {
+        setWithdrawalError('Introduce la cédula de identidad para el Pago Móvil.');
+        return;
+      }
+      if (!chosenBank) {
+        setWithdrawalError('Introduce o selecciona el banco receptor.');
+        return;
+      }
+      finalAddress = `Pago Móvil: Tel: ${pTrim} • CI: ${cTrim} • Banco: ${chosenBank}`;
     }
 
     // Validate 10-day constraint unless bypass is checked
@@ -195,8 +215,8 @@ export default function VipTasks({
         username: userProfile.username,
         amountCoins: amountVal,
         amountUsdt: Number((amountVal / 734).toFixed(2)),
-        address: trTrim,
-        network: withdrawalNetwork,
+        address: finalAddress,
+        network: withdrawalNetwork === 'BEP20' ? 'BEP20' : 'Pago Móvil',
         date: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'Pendiente', // starts as pending approval
         txid: randomTxid
@@ -220,6 +240,9 @@ export default function VipTasks({
       setIsSubmittingWithdrawal(false);
       setWithdrawalSuccess(true);
       setWithdrawalAmount('150'); // reset placeholder
+      setPmPhone('');
+      setPmCedula('');
+      setWithdrawalAddress('');
       
       setTimeout(() => {
         setWithdrawalSuccess(false);
@@ -963,60 +986,144 @@ export default function VipTasks({
                 </div>
               ) : (
                 <form onSubmit={handleWithdrawalSubmit} className="space-y-4 text-left">
-                  
-                  {/* Select Network */}
+                  {/* Select Method / Network */}
                   <div className="space-y-1.5">
                     <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-bold block">
-                      Red de Criptoactivos (USDT)
+                      Método de Retiro
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={() => setWithdrawalNetwork('TRC20')}
+                        onClick={() => {
+                          setWithdrawalNetwork('PAGO_MOVIL');
+                          setWithdrawalError('');
+                        }}
                         className={`py-2 px-3 rounded-xl text-xs font-bold font-mono border flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
-                          withdrawalNetwork === 'TRC20'
+                          withdrawalNetwork === 'PAGO_MOVIL'
                             ? 'bg-[#39FF14]/10 text-[#39FF14] border-[#39FF14]/50'
                             : 'bg-zinc-950 border-zinc-805 text-zinc-500 hover:text-zinc-300'
                         }`}
                       >
-                        <span className="font-sans font-black">TRON (TRC-20)</span>
-                        <span className="text-[8px] opacity-80 font-mono text-center">Recomendado - Baja Comisión</span>
+                        <span className="font-sans font-black flex items-center gap-1">🇻🇪 Pago Móvil</span>
+                        <span className="text-[8px] opacity-80 font-mono text-center">Bolívares (Tasa Oficial)</span>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => setWithdrawalNetwork('BEP20')}
+                        onClick={() => {
+                          setWithdrawalNetwork('BEP20');
+                          setWithdrawalError('');
+                        }}
                         className={`py-2 px-3 rounded-xl text-xs font-bold font-mono border flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
                           withdrawalNetwork === 'BEP20'
                             ? 'bg-purple-950/40 text-purple-400 border-purple-500/50'
                             : 'bg-zinc-950 border-zinc-805 text-zinc-500 hover:text-zinc-300'
                         }`}
                       >
-                        <span className="font-sans font-black">BNB CHAIN (BEP-20)</span>
+                        <span className="font-sans font-black">USDT BEP-20</span>
                         <span className="text-[8px] opacity-80 font-mono text-center">Ecológico y Seguro</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* Input Address */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 block font-bold">
-                        Tu Dirección de Retiro USDT ({withdrawalNetwork})
-                      </label>
-                      <span className="text-[8px] text-zinc-500 font-mono">
-                        {withdrawalNetwork === 'TRC20' ? 'Comienza con "T"' : 'Comienza con "0x"'}
-                      </span>
+                  {/* Form fields based on selection */}
+                  {withdrawalNetwork === 'BEP20' ? (
+                    /* BEP-20 Wallet Address Form */
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 block font-bold">
+                          Tu Dirección de Retiro USDT (BEP20)
+                        </label>
+                        <span className="text-[8px] text-zinc-500 font-mono">
+                          Comienza con "0x"
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ej. 0x9f323aCDa84db3..."
+                        value={withdrawalAddress}
+                        onChange={(e) => setWithdrawalAddress(e.target.value)}
+                        className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                      />
                     </div>
-                    <input
-                      type="text"
-                      required
-                      placeholder={withdrawalNetwork === 'TRC20' ? 'Ej. TY5aH2KsqN9pL8z1vE9m4...' : 'Ej. 0x9f323aCDa84db3...'}
-                      value={withdrawalAddress}
-                      onChange={(e) => setWithdrawalAddress(e.target.value)}
-                      className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
-                    />
-                  </div>
+                  ) : (
+                    /* Venezuelan Pago Móvil Form */
+                    <div className="space-y-3 p-3.5 rounded-2xl bg-zinc-950 border border-white/5">
+                      <p className="text-[9px] text-yellow-400 uppercase font-mono tracking-wider font-extrabold flex items-center gap-1 mb-1">
+                        🎯 Datos Obligatorios de Transacción
+                      </p>
+                      
+                      {/* Bank Select */}
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-mono tracking-wider text-zinc-400 block font-bold">
+                          Banco Receptor *
+                        </label>
+                        <select
+                          value={pmBank}
+                          onChange={(e) => setPmBank(e.target.value)}
+                          className="w-full text-xs bg-black border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-yellow-500"
+                        >
+                          <option value="Banco de Venezuela (0102)">Banco de Venezuela (0102)</option>
+                          <option value="Banesco (0134)">Banesco (0134)</option>
+                          <option value="Mercantil (0105)">Mercantil (0105)</option>
+                          <option value="BBVA Provincial (0108)">BBVA Provincial (0108)</option>
+                          <option value="BNC Banco Nacional de Crédito (0191)">BNC (0191)</option>
+                          <option value="Bancamiga (0172)">Bancamiga (0172)</option>
+                          <option value="Banco del Tesoro (0163)">Banco del Tesoro (0163)</option>
+                          <option value="Bancaribe (0114)">Bancaribe (0114)</option>
+                          <option value="Otro">Otro banco...</option>
+                        </select>
+                      </div>
+
+                      {/* Custom Bank input if 'Otro' selected */}
+                      {pmBank === 'Otro' && (
+                        <div className="space-y-1 animate-fade-in">
+                          <label className="text-[9px] uppercase font-mono tracking-wider text-zinc-500 block font-bold">
+                            Escribe el nombre del banco *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Ej. Banco Activo (0171)"
+                            value={pmCustomBank}
+                            onChange={(e) => setPmCustomBank(e.target.value)}
+                            className="w-full text-xs font-semibold bg-black border border-white/10 rounded-xl px-3 py-2 text-white placeholder-zinc-800 focus:outline-none focus:border-yellow-400"
+                          />
+                        </div>
+                      )}
+
+                      {/* Cédula de Identidad */}
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-mono tracking-wider text-zinc-400 block font-bold">
+                          Cédula de Identidad *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ej. V-26304421"
+                          value={pmCedula}
+                          onChange={(e) => setPmCedula(e.target.value)}
+                          className="w-full text-xs font-semibold bg-black border border-white/10 rounded-xl px-3 py-2 text-white placeholder-zinc-800 focus:outline-none focus:border-yellow-400"
+                        />
+                      </div>
+
+                      {/* Teléfono Pago Móvil */}
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-mono tracking-wider text-zinc-400 block font-bold">
+                          Número de Teléfono *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ej. 04262139920"
+                          value={pmPhone}
+                          onChange={(e) => setPmPhone(e.target.value)}
+                          className="w-full text-xs font-semibold bg-black border border-white/10 rounded-xl px-3 py-2 text-white placeholder-zinc-800 focus:outline-none focus:border-yellow-400"
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Amount of coins */}
                   <div className="space-y-1">

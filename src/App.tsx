@@ -63,8 +63,8 @@ export default function App() {
         completedTaskIds: ['task_1', 'task_2'],
         isRegistered: true,
         status: 'active',
-        inviteCount: 2,
-        inviteCommissionsEarned: 3.00
+        inviteCount: 4,
+        inviteCommissionsEarned: 6.00
       }
     ];
   });
@@ -90,8 +90,8 @@ export default function App() {
             completedTaskIds: ['task_1', 'task_2'],
             isRegistered: true,
             status: 'active',
-            inviteCount: 2,
-            inviteCommissionsEarned: 3.00
+            inviteCount: 4,
+            inviteCommissionsEarned: 6.00
           };
           await setDoc(doc(db, 'users', 'kervin'), adminSeed);
         }
@@ -582,8 +582,8 @@ export default function App() {
   const getInviteCount = (): number => {
     const referredUsers = allUsers.filter(u => u.invitedBy && userProfile.username && u.invitedBy.toLowerCase().trim() === userProfile.username.toLowerCase().trim());
     let count = Math.max(userProfile.inviteCount || 0, referredUsers.length);
-    if (userProfile.username && userProfile.username.toLowerCase() === 'kervin' && count < 2) {
-      count = 2;
+    if (userProfile.username && userProfile.username.toLowerCase() === 'kervin' && count < 4) {
+      count = 4;
     }
     return count;
   };
@@ -603,8 +603,8 @@ export default function App() {
     });
 
     let earned = Math.max(userProfile.inviteCommissionsEarned || 0, totalCommissions);
-    if (userProfile.username && userProfile.username.toLowerCase() === 'kervin' && earned < 3.00) {
-      earned = 3.00;
+    if (userProfile.username && userProfile.username.toLowerCase() === 'kervin' && earned < 6.00) {
+      earned = 6.00;
     }
     return earned;
   };
@@ -779,8 +779,8 @@ export default function App() {
           completedTaskIds: [],
           isRegistered: true,
           status: 'active',
-          inviteCount: 2,
-          inviteCommissionsEarned: 3.00
+          inviteCount: 4,
+          inviteCommissionsEarned: 6.00
         };
         try {
           await setDoc(doc(db, 'users', 'kervin'), adminSeed);
