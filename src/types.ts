@@ -79,4 +79,5 @@ export interface UserProfile {
   invitedBy?: string;
   inviteCommissionsEarned?: number;
   inviteCount?: number;
+  lastResetDate?: string;
 }

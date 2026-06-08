@@ -96,16 +96,18 @@ export default function App() {
           await setDoc(doc(db, 'users', 'kervin'), adminSeed);
         }
 
-        // 4 Users Yesterday Progress Migration: Set 367 coins and clear completedTaskIds so they can do tasks today
-        const migrationDone = localStorage.getItem('yesterday_migration_complete_v2');
-        if (!migrationDone && !usersSnap.empty) {
+        // 4 Users Yesterday Progress Migration V3: Set 367 coins once and track it on each user's document
+        if (!usersSnap.empty) {
+          const todayDateStr = new Date().toLocaleDateString('es-ES');
           for (const uDoc of usersSnap.docs) {
-            const u = uDoc.data() as UserProfile;
-            if (u.username && u.username.toLowerCase() !== 'kervin') {
-              const migratedUser: UserProfile = {
+            const u = uDoc.data() as any;
+            if (u.username && u.username.toLowerCase() !== 'kervin' && !u.migratedV3) {
+              const migratedUser: any = {
                 ...u,
                 earnings: 367.0,
-                completedTaskIds: []
+                completedTaskIds: [],
+                lastResetDate: todayDateStr,
+                migratedV3: true
               };
               await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), migratedUser);
               
@@ -122,7 +124,6 @@ export default function App() {
               }
             }
           }
-          localStorage.setItem('yesterday_migration_complete_v2', 'true');
         }
 
         const voicesSnap = await getDocs(collection(db, 'voices'));
@@ -440,6 +441,20 @@ export default function App() {
         setDoc(userDocRef, userProfile).catch(err => {
           console.warn("Background setDoc failed for userProfile:", err);
         });
+      }
+    }
+  }, [userProfile]);
+
+  // Automatic Daily Task Reset Engine
+  useEffect(() => {
+    if (userProfile && userProfile.isRegistered && userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip') {
+      const todayDateStr = new Date().toLocaleDateString('es-ES');
+      if (userProfile.lastResetDate !== todayDateStr) {
+        setUserProfile(prev => ({
+          ...prev,
+          completedTaskIds: [],
+          lastResetDate: todayDateStr
+        }));
       }
     }
   }, [userProfile]);
@@ -2012,15 +2027,18 @@ export default function App() {
                   if (window.confirm("⚠️ ¿Estás seguro de restablecer el progreso de ayer para los 4 registros? Esto les pondrá 367 monedas de saldo, y limpiará sus misiones de hoy para que puedan volver a hacer las tareas y conseguir sus recompensas diarias.")) {
                     try {
                       let count = 0;
+                      const todayDateStr = new Date().toLocaleDateString('es-ES');
                       // Fetch all user accounts directly from Firestore
                       const snap = await getDocs(collection(db, 'users'));
                       for (const uDoc of snap.docs) {
-                        const u = uDoc.data() as UserProfile;
+                        const u = uDoc.data() as any;
                         if (u.username && u.username.toLowerCase() !== 'kervin') {
-                          const updatedUser: UserProfile = {
+                          const updatedUser: any = {
                             ...u,
                             earnings: 367.0,
-                            completedTaskIds: []
+                            completedTaskIds: [],
+                            lastResetDate: todayDateStr,
+                            migratedV3: true
                           };
                           await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), updatedUser);
                           count++;
@@ -2034,7 +2052,9 @@ export default function App() {
                             return {
                               ...u,
                               earnings: 367.0,
-                              completedTaskIds: []
+                              completedTaskIds: [],
+                              lastResetDate: todayDateStr,
+                              migratedV3: true
                             };
                           }
                           return u;
@@ -2046,7 +2066,9 @@ export default function App() {
                         const activeMigrated = {
                           ...userProfile,
                           earnings: 367.0,
-                          completedTaskIds: []
+                          completedTaskIds: [],
+                          lastResetDate: todayDateStr,
+                          migratedV3: true
                         };
                         setUserProfile(activeMigrated);
                         localStorage.setItem('tappmusic_profile', JSON.stringify(activeMigrated));
