@@ -118,7 +118,7 @@ export default function VipTasks({
   const [pmCedula, setPmCedula] = useState('');
   const [pmBank, setPmBank] = useState('Banco de Venezuela (0102)');
   const [pmCustomBank, setPmCustomBank] = useState('');
-  const [withdrawalAmount, setWithdrawalAmount] = useState<string>('150');
+  const [withdrawalAmount, setWithdrawalAmount] = useState<string>('3670');
   const [isSubmittingWithdrawal, setIsSubmittingWithdrawal] = useState(false);
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
   const [withdrawalError, setWithdrawalError] = useState('');
@@ -129,8 +129,8 @@ export default function VipTasks({
     setWithdrawalError('');
 
     const amountVal = parseFloat(withdrawalAmount);
-    if (isNaN(amountVal) || amountVal < 150) {
-      setWithdrawalError('El retiro mínimo es de 150 monedas (5 USDT).');
+    if (isNaN(amountVal) || amountVal < 3670) {
+      setWithdrawalError('El retiro mínimo es de 3670 monedas (5 USDT).');
       return;
     }
 
@@ -239,7 +239,7 @@ export default function VipTasks({
 
       setIsSubmittingWithdrawal(false);
       setWithdrawalSuccess(true);
-      setWithdrawalAmount('150'); // reset placeholder
+      setWithdrawalAmount('3670'); // reset placeholder
       setPmPhone('');
       setPmCedula('');
       setWithdrawalAddress('');
@@ -589,7 +589,7 @@ export default function VipTasks({
             </div>
           </div>
           <p className="text-[9px] text-zinc-500 font-mono leading-none mt-2">
-            Mínimo: 5 USDT (150 monedas)
+            Mínimo: 5 USDT (3670 monedas)
           </p>
         </div>
       </div>
@@ -1135,7 +1135,7 @@ export default function VipTasks({
                         type="button"
                         onClick={() => {
                           const maxRounded = Math.floor(userProfile.earnings);
-                          setWithdrawalAmount(String(maxRounded >= 150 ? maxRounded : 150));
+                          setWithdrawalAmount(String(maxRounded >= 3670 ? maxRounded : 3670));
                         }}
                         className="text-[9px] font-mono text-[#39FF14] hover:underline uppercase cursor-pointer"
                       >
@@ -1146,7 +1146,7 @@ export default function VipTasks({
                     <div className="relative">
                       <input
                         type="number"
-                        min="150"
+                        min="3670"
                         required
                         value={withdrawalAmount}
                         onChange={(e) => setWithdrawalAmount(e.target.value)}
@@ -1158,7 +1158,7 @@ export default function VipTasks({
                     </div>
                     
                     <p className="text-[9px] text-zinc-500 font-mono mt-1">
-                      * Mínimo de retiro: 150 monedas (≈ {(150 / 734).toFixed(2)} USDT). Tasa de Conversión: 734 Monedas = 1 USDT.
+                      * Mínimo de retiro: 3670 monedas (≈ {(3670 / 734).toFixed(2)} USDT). Tasa de Conversión: 734 Monedas = 1 USDT.
                     </p>
                   </div>
 
@@ -1187,7 +1187,7 @@ export default function VipTasks({
                   <div className="flex gap-2.5 pt-2">
                     <button
                       type="submit"
-                      disabled={userProfile.earnings < 150}
+                      disabled={userProfile.earnings < 3670}
                       className="flex-1 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#39FF14] to-emerald-400 hover:from-emerald-400 hover:to-[#39FF14] text-xs font-black uppercase text-black font-sans tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed text-shadow-none cursor-pointer"
                     >
                       <ArrowUpRight className="h-4 w-4 text-black" />
