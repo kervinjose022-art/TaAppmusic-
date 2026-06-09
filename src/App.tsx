@@ -517,7 +517,8 @@ export default function App() {
 
   // Admin section states
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [activeAdminTab, setActiveAdminTab] = useState<'activaciones' | 'retiros' | 'voces'>('activaciones');
+  const [activeAdminTab, setActiveAdminTab] = useState<'activaciones' | 'retiros' | 'voces' | 'usuarios'>('activaciones');
+  const [adminUserSearch, setAdminUserSearch] = useState('');
 
   // Voice database state (initialized with default voices for instant local fallback)
   const [voiceThemes, setVoiceThemes] = useState<any[]>([
@@ -2088,10 +2089,10 @@ export default function App() {
             </div>
 
             {/* Tab switch control */}
-            <div className="grid grid-cols-3 gap-2 p-1 bg-black rounded-xl border border-white/5 font-sans">
+            <div className="grid grid-cols-4 gap-1 p-1 bg-black rounded-xl border border-white/5 font-sans">
               <button
                 onClick={() => setActiveAdminTab('activaciones')}
-                className={`py-2 px-1 rounded-lg text-[10px] sm:text-xs font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-2 ${
+                className={`py-2 px-1 rounded-lg text-[9px] sm:text-[11px] font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
                   activeAdminTab === 'activaciones'
                     ? 'bg-purple-900/55 text-[#39FF14] border border-purple-500/30'
                     : 'text-zinc-400 hover:text-white'
@@ -2103,7 +2104,7 @@ export default function App() {
               
               <button
                 onClick={() => setActiveAdminTab('retiros')}
-                className={`py-2 px-1 rounded-lg text-[10px] sm:text-xs font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-2 ${
+                className={`py-2 px-1 rounded-lg text-[9px] sm:text-[11px] font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
                   activeAdminTab === 'retiros'
                     ? 'bg-purple-900/55 text-[#39FF14] border border-purple-500/30'
                     : 'text-zinc-400 hover:text-white'
@@ -2115,7 +2116,7 @@ export default function App() {
 
               <button
                 onClick={() => setActiveAdminTab('voces')}
-                className={`py-2 px-1 rounded-lg text-[10px] sm:text-xs font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-2 ${
+                className={`py-2 px-1 rounded-lg text-[9px] sm:text-[11px] font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
                   activeAdminTab === 'voces'
                     ? 'bg-purple-900/55 text-[#39FF14] border border-purple-500/30'
                     : 'text-zinc-400 hover:text-white'
@@ -2123,6 +2124,18 @@ export default function App() {
               >
                 <Volume2 className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">Voces ({voiceThemes.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveAdminTab('usuarios')}
+                className={`py-2 px-1 rounded-lg text-[9px] sm:text-[11px] font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                  activeAdminTab === 'usuarios'
+                    ? 'bg-purple-900/55 text-[#39FF14] border border-purple-500/30'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Usuarios ({allUsers.length})</span>
               </button>
             </div>
 
@@ -2593,6 +2606,226 @@ export default function App() {
                         </div>
                       </div>
                     ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT: GESTION DE USUARIOS EN LA BASE DE DATOS */}
+            {activeAdminTab === 'usuarios' && (
+              <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 text-left">
+                <div className="bg-emerald-950/20 rounded-xl p-3 border border-emerald-500/15 flex items-center gap-3 text-xs text-emerald-300">
+                  <div className="h-5 w-5 bg-emerald-500/10 rounded-full flex items-center justify-center font-bold shrink-0">i</div>
+                  <p className="leading-normal font-sans">
+                    <strong>Panel de Control Directo de Usuarios:</strong> Modifica el nivel VIP, edita monedas manualmente, consulta las contraseñas, o elimina cuentas definitivamente de la base de datos de manera inmediata.
+                  </p>
+                </div>
+
+                {/* SEARCH BAR */}
+                <div className="relative font-sans">
+                  <input
+                    type="text"
+                    placeholder="🔍 Buscar por username o correo..."
+                    value={adminUserSearch}
+                    onChange={(e) => setAdminUserSearch(e.target.value)}
+                    className="w-full text-xs font-mono bg-zinc-950 border border-white/10 rounded-xl pl-4 pr-16 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#39FF14]"
+                  />
+                  {adminUserSearch && (
+                    <button 
+                      onClick={() => setAdminUserSearch('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-xs select-none hover:underline cursor-pointer"
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-3 font-mono text-xs">
+                  {allUsers.filter(u => {
+                    if (!u.username) return false;
+                    const query = adminUserSearch.toLowerCase().trim();
+                    if (!query) return true;
+                    return (
+                      u.username.toLowerCase().includes(query) ||
+                      (u.email && u.email.toLowerCase().includes(query))
+                    );
+                  }).length === 0 ? (
+                    <p className="text-center py-8 text-xs text-zinc-500">Ningún usuario coincide con los criterios de búsqueda.</p>
+                  ) : (
+                    allUsers.filter(u => {
+                      if (!u.username) return false;
+                      const query = adminUserSearch.toLowerCase().trim();
+                      if (!query) return true;
+                      return (
+                        u.username.toLowerCase().includes(query) ||
+                        (u.email && u.email.toLowerCase().includes(query))
+                      );
+                    }).map((u) => {
+                      const isOwner = u.username.toLowerCase().trim() === 'kervin';
+                      return (
+                        <div 
+                          key={u.username}
+                          className="p-4 rounded-2xl border border-white/5 bg-black/45 space-y-3 hover:border-white/10 transition-all"
+                        >
+                          <div className="flex justify-between items-start flex-wrap gap-2">
+                            <div>
+                              <span className="text-white font-extrabold text-[13px]">@{u.username}</span>
+                              {u.invitedBy && (
+                                <span className="text-[10px] text-zinc-500 ml-2 font-normal block sm:inline">
+                                  Invitado por: <strong className="text-zinc-400">@{u.invitedBy}</strong>
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              <span className={`text-[9px] font-sans px-2 py-0.5 rounded uppercase font-black ${
+                                u.isRegistered 
+                                  ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' 
+                                  : 'bg-yellow-950 text-yellow-500 border border-yellow-500/20'
+                              }`}>
+                                {u.isRegistered ? 'Aprobado/Activo' : 'Elegible/Registro'}
+                              </span>
+                              {isOwner && (
+                                <span className="bg-purple-950 text-purple-400 border border-purple-500/30 text-[9px] font-sans px-2 py-0.5 rounded font-bold uppercase">
+                                  Propietario
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-zinc-400 bg-zinc-950/40 p-2.5 rounded-lg border border-white/5">
+                            <div>Email: <strong className="text-zinc-300 select-all">{u.email || 'N/A'}</strong></div>
+                            <div>Contraseña: <strong className="text-yellow-500 select-all">{u.password || 'N/A'}</strong></div>
+                            <div>VIP Actual: <strong className="text-purple-300 uppercase font-bold">{u.vipLevel}</strong></div>
+                            <div>Comisiones: <strong className="text-[#39FF14]">{u.inviteCommissionsEarned || 0} USD</strong></div>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row gap-3 bg-zinc-950/80 p-3 rounded-xl border border-white/5 sm:items-end">
+                            {/* VIP Select */}
+                            <div className="flex-1 min-w-[130px]">
+                              <label className="text-[9px] uppercase tracking-wider text-zinc-500 block mb-1">Cambiar Rango VIP</label>
+                              <select
+                                value={u.vipLevel || 'VIP PLATA 10$'}
+                                disabled={isOwner}
+                                onChange={async (e) => {
+                                  const newLvl = e.target.value as VipLevel;
+                                  const updatedUser = { 
+                                    ...u, 
+                                    vipLevel: newLvl,
+                                    isRegistered: true,
+                                    status: 'active' as const
+                                  };
+                                  try {
+                                    await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), updatedUser);
+                                    setAllUsers(prev => prev.map(usr => usr.username.toLowerCase() === u.username.toLowerCase() ? updatedUser : usr));
+                                    if (userProfile.username && u.username && userProfile.username.toLowerCase() === u.username.toLowerCase()) {
+                                      saveProfile(updatedUser);
+                                    }
+                                    alert(`✅ ¡El rango VIP de @${u.username} ha sido cambiado a ${newLvl}!`);
+                                  } catch (err: any) {
+                                    alert("Error actualizando VIP: " + err.message);
+                                  }
+                                }}
+                                className="w-full text-[11px] font-mono bg-black border border-white/10 rounded-lg px-2 py-1.5 text-white focus:outline-none focus:border-purple-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                <option value="VIP PLATA 10$">Cobros Plata (10$)</option>
+                                <option value="VIP ORO 20$">Cobros Oro (20$)</option>
+                                <option value="VIP RUBÍ 40$">Cobros Rubí (40$)</option>
+                                <option value="VIP DIAMANTE 120$">Cobros Diamante (120$)</option>
+                                <option value="VIP PLATINO 420$">Cobros Platino (420$)</option>
+                                <option value="VIP CORONA IMPERIAL 1000$">Corona Imperial (1000$)</option>
+                              </select>
+                            </div>
+
+                            {/* Coins Editor */}
+                            <div className="flex-1 min-w-[140px]">
+                              <label className="text-[9px] uppercase tracking-wider text-zinc-500 block mb-1">Editar Saldo Monedas</label>
+                              <div className="flex gap-1.5">
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  className="w-full text-[11px] font-mono bg-black border border-white/10 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-purple-500"
+                                  defaultValue={u.earnings}
+                                  id={`coins-edit-${u.username.toLowerCase().trim()}`}
+                                />
+                                <button
+                                  onClick={async () => {
+                                    const el = document.getElementById(`coins-edit-${u.username.toLowerCase().trim()}`) as HTMLInputElement;
+                                    if (el) {
+                                      const newCoins = parseFloat(el.value);
+                                      if (!isNaN(newCoins)) {
+                                        const updatedUser = { ...u, earnings: newCoins };
+                                        try {
+                                          await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), updatedUser);
+                                          setAllUsers(prev => prev.map(usr => usr.username.toLowerCase() === u.username.toLowerCase() ? updatedUser : usr));
+                                          if (userProfile.username && u.username && userProfile.username.toLowerCase() === u.username.toLowerCase()) {
+                                            saveProfile(updatedUser);
+                                          }
+                                          alert(`✅ ¡Saldo de @${u.username} actualizado a ${newCoins} monedas!`);
+                                        } catch (err: any) {
+                                          alert("Error actualizando saldo: " + err.message);
+                                        }
+                                      }
+                                    }
+                                  }}
+                                  className="h-8 px-3 bg-[#39FF14] text-black font-sans font-bold text-[10px] uppercase rounded-lg hover:bg-[#34e512] transition-all cursor-pointer whitespace-nowrap flex items-center justify-center font-sans font-bold text-[9px]"
+                                >
+                                  Guardar
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Quick Actions (such as activation details or delete account) */}
+                          <div className="flex justify-between items-center bg-zinc-950/40 p-2.5 rounded-lg border border-white/5 gap-2 flex-wrap">
+                            <span className="text-[10px] text-zinc-500">Acciones rápidas para este usuario:</span>
+                            <div className="flex gap-2">
+                              {!u.isRegistered && (
+                                <button
+                                  onClick={async () => {
+                                    const updatedUser = { 
+                                      ...u, 
+                                      isRegistered: true,
+                                      status: 'active' as const
+                                    };
+                                    try {
+                                      await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), updatedUser);
+                                      setAllUsers(prev => prev.map(usr => usr.username.toLowerCase() === u.username.toLowerCase() ? updatedUser : usr));
+                                      alert(`✅ @${u.username} ha sido ACTIVADO exitosamente sin necesidad de comprobantes.`);
+                                    } catch (err: any) {
+                                      alert("Error de activación: " + err.message);
+                                    }
+                                  }}
+                                  className="h-7 px-2.5 bg-purple-900 border border-purple-500/40 text-purple-200 text-[10px] font-bold uppercase rounded hover:bg-purple-800 transition-all cursor-pointer"
+                                >
+                                  Activar Manualmente
+                                </button>
+                              )}
+                              
+                              {!isOwner && (
+                                <button
+                                  onClick={async () => {
+                                    if (window.confirm(`⚠️ ¿Estás COMPLETAMENTE seguro de ELIMINAR al usuario @${u.username}? Esta acción es irreversible y borrará su cuenta y sus datos de Firestore.`)) {
+                                      if (window.confirm(`⚠️ Escribe el nombre del usuario ("${u.username}") para confirmar la eliminación definitiva:`)) {
+                                        try {
+                                          await deleteDoc(doc(db, 'users', u.username.toLowerCase().trim()));
+                                          setAllUsers(prev => prev.filter(usr => usr.username.toLowerCase() !== u.username.toLowerCase()));
+                                          alert(`✅ ¡Usuario @${u.username} eliminado de la base de datos!`);
+                                        } catch (err: any) {
+                                          alert("Error al eliminar usuario: " + err.message);
+                                        }
+                                      }
+                                    }
+                                  }}
+                                  className="h-7 px-2.5 bg-red-950/20 text-red-400 border border-red-500/10 text-[9px] uppercase rounded font-bold hover:bg-red-900 hover:text-white transition-all cursor-pointer whitespace-nowrap"
+                                >
+                                  Eliminar Cuenta
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
