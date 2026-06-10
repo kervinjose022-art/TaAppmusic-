@@ -2678,11 +2678,17 @@ export default function App() {
                             </div>
                             <div className="flex gap-1">
                               <span className={`text-[9px] font-sans px-2 py-0.5 rounded uppercase font-black ${
-                                u.isRegistered 
+                                (u.isRegistered && u.status === 'active')
                                   ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' 
-                                  : 'bg-yellow-950 text-yellow-500 border border-yellow-500/20'
+                                  : u.isRegistered
+                                    ? 'bg-yellow-950 text-yellow-500 border border-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.15)]'
+                                    : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
                               }`}>
-                                {u.isRegistered ? 'Aprobado/Activo' : 'Elegible/Registro'}
+                                {(u.isRegistered && u.status === 'active')
+                                  ? 'Aprobado/Activo'
+                                  : u.isRegistered
+                                    ? 'Pendiente de Activación ⌛'
+                                    : 'Elegible/Registro'}
                               </span>
                               {isOwner && (
                                 <span className="bg-purple-950 text-purple-400 border border-purple-500/30 text-[9px] font-sans px-2 py-0.5 rounded font-bold uppercase">
@@ -2779,7 +2785,7 @@ export default function App() {
                           <div className="flex justify-between items-center bg-zinc-950/40 p-2.5 rounded-lg border border-white/5 gap-2 flex-wrap">
                             <span className="text-[10px] text-zinc-500">Acciones rápidas para este usuario:</span>
                             <div className="flex gap-2">
-                              {!u.isRegistered && (
+                              {(!u.isRegistered || u.status !== 'active') && (
                                 <button
                                   onClick={async () => {
                                     const updatedUser = { 
@@ -2795,9 +2801,9 @@ export default function App() {
                                       alert("Error de activación: " + err.message);
                                     }
                                   }}
-                                  className="h-7 px-2.5 bg-purple-900 border border-purple-500/40 text-purple-200 text-[10px] font-bold uppercase rounded hover:bg-purple-800 transition-all cursor-pointer"
+                                  className="h-7 px-2.5 bg-[#39FF14] text-black font-extrabold text-[10px] uppercase rounded hover:bg-[#34e512] transition-all cursor-pointer flex items-center justify-center shadow-[0_0_10px_rgba(57,255,20,0.2)]"
                                 >
-                                  Activar Manualmente
+                                  {u.isRegistered ? 'Activar Cuenta' : 'Activar Manualmente'}
                                 </button>
                               )}
                               
