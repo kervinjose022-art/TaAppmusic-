@@ -372,7 +372,8 @@ export default function VipTasks({
   const currentFilteredTasks = tasks.filter(task => {
     const isCompleted = userProfile.completedTaskIds.includes(task.id);
     const matchesTab = activeTab === 'completadas' ? isCompleted : !isCompleted;
-    return matchesTab;
+    const matchesVip = task.vipRequired === userProfile.vipLevel;
+    return matchesTab && matchesVip;
   });
 
   // VIP numbers to check locker status
@@ -395,11 +396,9 @@ export default function VipTasks({
       return;
     }
 
-    const requiredRank = getVipRank(task.vipRequired);
-    
-    // Guard of VIP level
-    if (userVipRank < requiredRank) {
-      alert(`⚠️ Esta tarea requiere nivel ${task.vipRequired} o superior. ¡Por favor mejora tu nivel VIP en el selector o regístrate para iniciar!`);
+    // Guard of VIP level: Check exact level match
+    if (task.vipRequired !== userProfile.vipLevel) {
+      alert(`⚠️ Tu cuenta se encuentra en el rango ${userProfile.vipLevel}. Solo puedes realizar tareas correspondientes a tu nivel exacto.`);
       return;
     }
 
@@ -604,7 +603,7 @@ export default function VipTasks({
               : 'text-gray-500 hover:text-white'
           }`}
         >
-          Disponibles ({tasks.filter(t => !userProfile.completedTaskIds.includes(t.id)).length})
+          Disponibles ({tasks.filter(t => t.vipRequired === userProfile.vipLevel && !userProfile.completedTaskIds.includes(t.id)).length})
         </button>
 
         <button
@@ -615,7 +614,7 @@ export default function VipTasks({
               : 'text-gray-500 hover:text-white'
           }`}
         >
-          Completadas ({userProfile.completedTaskIds.length})
+          Completadas ({tasks.filter(t => t.vipRequired === userProfile.vipLevel && userProfile.completedTaskIds.includes(t.id)).length})
         </button>
       </div>
 
