@@ -129,65 +129,88 @@ export default function App() {
           }
         }
 
-        const voicesSnap = await getDocs(collection(db, 'voices'));
-        if (voicesSnap.empty) {
-          const defaultVoices = [
-            {
-              id: 'jesus',
-              key: 'jesus',
-              speaker: 'Jesucristo Salvador',
-              avatar: '✝️',
-              description: 'Voz de Amor y Redención',
-              intro: 'Hijo mío, recibe mi paz protectora. Anda, contempla esta promesa y compártela: ',
-              color: 'border-purple-500/30 text-purple-300 bg-purple-500/5',
-              badgeColor: 'bg-purple-950/40 text-purple-300 border-purple-500/30',
-              shadow: 'shadow-[0_0_15px_rgba(168,85,247,0.3)]',
-              pitch: 1.02,
-              rate: 0.82
-            },
-            {
-              id: 'dios',
-              key: 'dios',
-              speaker: 'Dios Padre Celestial',
-              avatar: '🌿',
-              description: 'Voz Omnipotente y Calma',
-              intro: 'Yo soy tu refugio en la tormenta. Escucha con reverencia mi mensaje sagrado para ti: ',
-              color: 'border-amber-500/30 text-amber-300 bg-amber-500/5',
-              badgeColor: 'bg-amber-950/40 text-amber-300 border-amber-500/30',
-              shadow: 'shadow-[0_0_15px_rgba(245,158,11,0.3)]',
-              pitch: 0.84,
-              rate: 0.75
-            },
-            {
-              id: 'familia',
-              key: 'familia',
-              speaker: 'La Voz de la Familia',
-              avatar: '🏠',
-              description: 'Unión y Valores Puros',
-              intro: 'Edifica tu bendito hogar sobre la roca del amor. Este es el consejo protector para tu mesa: ',
-              color: 'border-pink-500/30 text-pink-300 bg-pink-500/5',
-              badgeColor: 'bg-pink-950/40 text-pink-300 border-pink-500/30',
-              shadow: 'shadow-[0_0_15px_rgba(236,72,153,0.3)]',
-              pitch: 1.14,
-              rate: 0.88
-            },
-            {
-              id: 'mentalidad',
-              key: 'mentalidad',
-              speaker: 'Mentalidad de Reino',
-              avatar: '💎',
-              description: 'Éxito y Provisión Divina',
-              intro: '¡Declara abundancia en el nombre del Creador! Rompe la escasez y recibe tu prosperidad: ',
-              color: 'border-[#39FF14]/30 text-[#39FF14] bg-[#39FF14]/5',
-              badgeColor: 'bg-zinc-900 text-[#39FF14] border-[#39FF14]/40',
-              shadow: 'shadow-[0_0_15px_rgba(57,255,20,0.3)]',
-              pitch: 1.0,
-              rate: 0.94
-            }
-          ];
-          for (const v of defaultVoices) {
-            await setDoc(doc(db, 'voices', v.id), v);
+        const latestVoices = [
+          {
+            id: 'jesus',
+            key: 'jesus',
+            speaker: 'Jesucristo Salvador',
+            avatar: '✝️',
+            description: 'Voz Sagrada de Redención y Amor',
+            intro: 'Hijo mío, recibe mi paz protectora. Anda, contempla esta promesa y compártela: ',
+            color: 'border-purple-500/30 text-purple-300 bg-purple-500/5',
+            badgeColor: 'bg-purple-950/40 text-purple-300 border-purple-500/30',
+            shadow: 'shadow-[0_0_15px_rgba(168,85,247,0.3)]',
+            pitch: 1.02,
+            rate: 0.82
+          },
+          {
+            id: 'dios',
+            key: 'dios',
+            speaker: 'Dios Padre Celestial',
+            avatar: '🌿',
+            description: 'Voz Omnipotente, Calma y Solemne',
+            intro: 'Yo soy tu refugio en la tormenta. Escucha con reverencia mi mensaje sagrado para ti: ',
+            color: 'border-amber-500/30 text-amber-300 bg-amber-500/5',
+            badgeColor: 'bg-amber-950/40 text-amber-300 border-amber-500/30',
+            shadow: 'shadow-[0_0_15px_rgba(245,158,11,0.3)]',
+            pitch: 0.84,
+            rate: 0.75
+          },
+          {
+            id: 'espiritu_santo',
+            key: 'espiritu_santo',
+            speaker: 'Espíritu Santo Consolador',
+            avatar: '🕊️',
+            description: 'Paz Absoluta y Unción Celestial',
+            intro: 'Siente mi dulce presencia llenándote de fe y de abundancia celestial. Escucha esta palabra eterna: ',
+            color: 'border-emerald-500/30 text-emerald-300 bg-emerald-500/5',
+            badgeColor: 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30',
+            shadow: 'shadow-[0_0_15px_rgba(16,185,129,0.3)]',
+            pitch: 1.08,
+            rate: 0.74
+          },
+          {
+            id: 'angel',
+            key: 'angel',
+            speaker: 'Ángel de la Revelación',
+            avatar: '🌟',
+            description: 'Mensajero Divino de Nuevas de Fe',
+            intro: '¡Gloria a Dios en las alturas! Recibe la maravillosa promesa que tengo revelada para ti hoy: ',
+            color: 'border-sky-500/30 text-sky-300 bg-sky-500/5',
+            badgeColor: 'bg-sky-950/40 text-sky-300 border-sky-500/30',
+            shadow: 'shadow-[0_0_15px_rgba(14,165,233,0.3)]',
+            pitch: 1.15,
+            rate: 0.85
+          },
+          {
+            id: 'familia',
+            key: 'familia',
+            speaker: 'La Voz de la Familia',
+            avatar: '🏠',
+            description: 'Unión, Pureza y Valores Sagrados',
+            intro: 'Edifica tu bendito hogar sobre la roca del amor. Este es el consejo protector para tu mesa: ',
+            color: 'border-pink-500/30 text-pink-300 bg-pink-500/5',
+            badgeColor: 'bg-pink-950/40 text-pink-300 border-pink-500/30',
+            shadow: 'shadow-[0_0_15px_rgba(236,72,153,0.3)]',
+            pitch: 1.14,
+            rate: 0.88
+          },
+          {
+            id: 'mentalidad',
+            key: 'mentalidad',
+            speaker: 'Mentalidad de Reino',
+            avatar: '💎',
+            description: 'Éxito, Fuerza y Provisión Divina',
+            intro: '¡Declara abundancia en el nombre del Creador! Rompe la escasez y recibe tu prosperidad: ',
+            color: 'border-[#39FF14]/30 text-[#39FF14] bg-[#39FF14]/5',
+            badgeColor: 'bg-zinc-900 text-[#39FF14] border-[#39FF14]/40',
+            shadow: 'shadow-[0_0_15px_rgba(57,255,20,0.3)]',
+            pitch: 1.0,
+            rate: 0.94
           }
+        ];
+        for (const v of latestVoices) {
+          await setDoc(doc(db, 'voices', v.id), v, { merge: true });
         }
       } catch (err) {
         console.warn("Background database seed warning:", err);
