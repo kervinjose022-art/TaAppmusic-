@@ -395,13 +395,16 @@ export default function VipReels({ currentVip }: VipReelsProps) {
       <div className="mb-6 rounded-xl border border-[#39FF14]/20 bg-emerald-950/20 p-4 text-left space-y-2">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-yellow-500 animate-bounce" />
-          <h4 className="text-xs font-bold uppercase tracking-wider text-white">Guía de Voces y Acceso VIP:</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-white">Guía de Voces, TikTok / Reels y Acceso:</h4>
         </div>
         <p className="text-[11px] leading-relaxed text-gray-300">
           Para cantar y proclamar en voz alta los versículos, testimonios y afirmaciones de <strong className="text-[#39FF14]">DIOS, FAMILIA Y MENTALIDAD MILLONARIA</strong>, haz clic arriba en <strong className="text-white">Voz Real Activa</strong> y luego dale al botón <strong className="text-purple-400">Play (▶)</strong> de cualquiera de las Reels. Escucharás una narración solemne en vivo.
         </p>
+        <p className="text-[11px] leading-relaxed text-gray-300">
+          🎵 <strong className="text-[#39FF14]">¿Cómo usar enlaces de Reels o TikTok?</strong> Para agregar o reproducir tus propios videos de TikTok o Instagram Reels con la máxima calidad y sincronización de voz, simplemente pega el enlace de compartir del video en plataformas gratuitas como <strong className="text-white">SnapTik.app</strong>, <strong className="text-white">ssstik.io</strong> o <strong className="text-white">TikMate.online</strong> para extraer el link directo sin marca de agua (formato <strong className="text-yellow-400">.mp4</strong>), y pégalo aquí. ¡Eso garantiza la reproducción fluida en vivo con la voz celestial y el sintetizador de fondo!
+        </p>
         <p className="text-[11px] leading-relaxed text-gray-400 pt-1 border-t border-white/5">
-          🔑 <strong className="text-white">¿Quieres crear otro usuario o ver la pantalla de Registro vacía?</strong> Simplemente haz clic en el botón <strong className="text-red-500 font-black uppercase">Salir</strong> ubicado en la esquina superior derecha para cerrar sesión y volver al formulario de registro limpio en cualquier enlace.
+          🔑 <strong className="text-white">¿Quieres crear otro usuario o ver la pantalla de Registro vacía?</strong> Simplemente haz clic en el botón <strong className="text-red-500 font-black uppercase">Salir</strong> ubicado en la esquina superior derecha para cerrar sesión y volver al formulario de registro limpio en any enlace.
         </p>
       </div>
 
