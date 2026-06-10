@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import PromoShareCard from './components/PromoShareCard';
 import BrainLogo from './components/BrainLogo';
@@ -17,6 +17,9 @@ export default function App() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [copiedModalLink, setCopiedModalLink] = useState(false);
   const [isVipSelectorOpen, setIsVipSelectorOpen] = useState(false);
+  
+  // Track if we have synced the active user profile with Firestore in this page session
+  const hasSyncedWithFirestore = useRef(false);
 
   // App URLs & Constants
   const sharedUrl = 'https://ais-pre-efepkfwykzkok6uvpgwtks-582716975968.us-east1.run.app';
@@ -279,6 +282,7 @@ export default function App() {
             const parsed = JSON.parse(currentLocal) as UserProfile;
             const updatedProfile = items.find(u => u.username && parsed.username && u.username.toLowerCase().trim() === parsed.username.toLowerCase().trim());
             if (updatedProfile) {
+              hasSyncedWithFirestore.current = true;
               setUserProfile(prevProfile => {
                 const earningsChanged = prevProfile.earnings !== updatedProfile.earnings;
                 const vipLevelChanged = prevProfile.vipLevel !== updatedProfile.vipLevel;
@@ -436,7 +440,9 @@ export default function App() {
       });
 
       // Synchronize in real-time with Firestore so coins/tasks are never lost on updates or refresh
-      if (userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip') {
+      // Only write to firestore if we have synced with Firestore at least once in this session.
+      // This prevents local stale state on start-up from overwriting updated database values (e.g. status approvals).
+      if (hasSyncedWithFirestore.current && userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip') {
         const userDocRef = doc(db, 'users', userProfile.username.toLowerCase().trim());
         setDoc(userDocRef, userProfile).catch(err => {
           console.warn("Background setDoc failed for userProfile:", err);
@@ -461,6 +467,7 @@ export default function App() {
 
   // Save profile to local storage helper & live Firestore database
   const saveProfile = (newProfile: UserProfile) => {
+    hasSyncedWithFirestore.current = true;
     setUserProfile(newProfile);
     localStorage.setItem('tappmusic_profile', JSON.stringify(newProfile));
     if (newProfile && newProfile.username && newProfile.username !== 'usuario_vip') {
