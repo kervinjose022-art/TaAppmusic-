@@ -4,14 +4,15 @@ import PromoShareCard from './components/PromoShareCard';
 import BrainLogo from './components/BrainLogo';
 import VipTasks from './components/VipTasks';
 import VipReels from './components/VipReels';
-import { UserProfile, VipLevel } from './types';
+import { UserProfile, VipLevel, Reel } from './types';
 import { 
   Sparkles, ShieldCheck, Share2, CircleAlert, Globe, X, 
-  Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock, Eye, EyeOff, Users, CreditCard, Volume2
+  Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock, Eye, EyeOff, Users, CreditCard, Volume2, Film, PlusCircle, Trash2, Edit2
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from './firebase';
 import { collection, doc, onSnapshot, setDoc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { signInAnonymously } from 'firebase/auth';
+import { REELS_DATABASE } from './data';
 
 export default function App() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -212,6 +213,14 @@ export default function App() {
         for (const v of latestVoices) {
           await setDoc(doc(db, 'voices', v.id), v, { merge: true });
         }
+
+        // Seed Reels if collection is empty
+        const reelsSnap = await getDocs(collection(db, 'reels'));
+        if (reelsSnap.empty) {
+          for (const reel of REELS_DATABASE) {
+            await setDoc(doc(db, 'reels', reel.id), reel);
+          }
+        }
       } catch (err) {
         console.warn("Background database seed warning:", err);
       }
@@ -357,11 +366,25 @@ export default function App() {
       console.error("Firestore listening voices error:", error);
     });
 
+    // 6. Setup real-time listener for reels collection
+    const unsubReels = onSnapshot(collection(db, 'reels'), (snapshot) => {
+      const items: Reel[] = [];
+      snapshot.forEach((doc) => {
+        items.push({ id: doc.id, ...doc.data() } as Reel);
+      });
+      if (items.length > 0) {
+        setReels(items);
+      }
+    }, (error) => {
+      console.error("Firestore listening reels error:", error);
+    });
+
     return () => {
       unsubRegistrations();
       unsubWithdrawals();
       unsubUsers();
       unsubVoices();
+      unsubReels();
     };
   }, []);
 
@@ -547,7 +570,7 @@ export default function App() {
 
   // Admin section states
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [activeAdminTab, setActiveAdminTab] = useState<'activaciones' | 'retiros' | 'voces' | 'usuarios'>('activaciones');
+  const [activeAdminTab, setActiveAdminTab] = useState<'activaciones' | 'retiros' | 'voces' | 'usuarios' | 'videos'>('activaciones');
   const [adminUserSearch, setAdminUserSearch] = useState('');
 
   // Voice database state (initialized with default voices for instant local fallback)
@@ -642,6 +665,18 @@ export default function App() {
   const [voiceFormIntro, setVoiceFormIntro] = useState<string>('');
   const [voiceFormPitch, setVoiceFormPitch] = useState<number>(1.0);
   const [voiceFormRate, setVoiceFormRate] = useState<number>(0.8);
+
+  // Reels state representing dynamic videos from Firestore
+  const [reels, setReels] = useState<Reel[]>([]);
+  const [isEditingReel, setIsEditingReel] = useState<boolean>(false);
+  const [editingReelId, setEditingReelId] = useState<string>('');
+  const [reelFormTitle, setReelFormTitle] = useState<string>('');
+  const [reelFormCaption, setReelFormCaption] = useState<string>('');
+  const [reelFormArtist, setReelFormArtist] = useState<string>('');
+  const [reelFormCoverUrl, setReelFormCoverUrl] = useState<string>('');
+  const [reelFormVideoUrl, setReelFormVideoUrl] = useState<string>('');
+  const [reelFormVipLevel, setReelFormVipLevel] = useState<VipLevel>('VIP PLATA 10$');
+  const [reelFormCategory, setReelFormCategory] = useState<'Video de Fe' | 'Familia' | 'Mentalidad' | 'Video Musical'>('Video de Fe');
 
   // Registrations Pool to sync approvals
   const [registrations, setRegistrations] = useState<any[]>(() => {
@@ -1466,6 +1501,7 @@ export default function App() {
                 withdrawHistory={withdrawHistory}
                 setWithdrawHistory={setWithdrawHistory}
                 voiceThemes={voiceThemes}
+                reels={reels}
               />
             </div>
 
@@ -2146,7 +2182,7 @@ export default function App() {
             </div>
 
             {/* Tab switch control */}
-            <div className="grid grid-cols-4 gap-1 p-1 bg-black rounded-xl border border-white/5 font-sans">
+            <div className="grid grid-cols-5 gap-1 p-1 bg-black rounded-xl border border-white/5 font-sans">
               <button
                 onClick={() => setActiveAdminTab('activaciones')}
                 className={`py-2 px-1 rounded-lg text-[9px] sm:text-[11px] font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
@@ -2155,7 +2191,7 @@ export default function App() {
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                <UserCheck className="h-3.5 w-3.5 shrink-0" />
+                <UserCheck className="h-3.5 w-3.5 shrink-0 text-purple-400" />
                 <span className="truncate">Activas ({registrations.filter(r => r.status === 'pending').length})</span>
               </button>
               
@@ -2167,7 +2203,7 @@ export default function App() {
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                <Trophy className="h-3.5 w-3.5 shrink-0" />
+                <Trophy className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
                 <span className="truncate">Retiros ({withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').length})</span>
               </button>
 
@@ -2179,8 +2215,21 @@ export default function App() {
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                <Volume2 className="h-3.5 w-3.5 shrink-0" />
+                <Volume2 className="h-3.5 w-3.5 shrink-0 text-blue-400" />
                 <span className="truncate">Voces ({voiceThemes.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveAdminTab('videos')}
+                className={`py-2 px-1 rounded-lg text-[9px] sm:text-[11px] font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                  activeAdminTab === 'videos'
+                    ? 'bg-purple-900/55 text-[#39FF14] border border-purple-500/30'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+                title="Gestión de Reels/Vídeos de TikTok de la Base de Datos"
+              >
+                <Film className="h-3.5 w-3.5 shrink-0 text-[#39FF14]" />
+                <span className="truncate">Vídeos ({reels.length})</span>
               </button>
 
               <button
@@ -2191,7 +2240,7 @@ export default function App() {
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                <Users className="h-3.5 w-3.5 shrink-0" />
+                <Users className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
                 <span className="truncate">Usuarios ({allUsers.length})</span>
               </button>
             </div>
@@ -2659,6 +2708,273 @@ export default function App() {
                             className="h-7 px-2.5 rounded bg-red-950/30 text-red-400 border border-red-500/10 text-[10px] font-bold hover:bg-red-900 hover:text-white transition-all cursor-pointer"
                           >
                             Eliminar
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT: GESTION DE VIDEOS/REELS EN LA BASE DE DATOS */}
+            {activeAdminTab === 'videos' && (
+              <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 text-left">
+                <div className="bg-purple-950/20 rounded-xl p-3.5 border border-purple-500/15 text-xs text-purple-300">
+                  <h4 className="font-extrabold uppercase text-[#39FF14] tracking-wider mb-1 flex items-center gap-1.5">
+                    <Sparkles className="h-4 w-4 animate-pulse text-yellow-300" />
+                    Guía de Enlaces de TikTok y Reels
+                  </h4>
+                  <p className="leading-relaxed font-sans">
+                    Hermanito, para colocar videos de TikTok sin marca de agua: descarga el video en algún sitio como <strong className="text-white">ssstik.io</strong> o <strong className="text-white">snaptik.app</strong>, copia el enlace del botón de "Descargar sin marca de agua" (que termina en <code className="text-yellow-400 font-mono">.mp4</code> o es un CDN directo) y pégalo aquí abajo en <strong>Enlace de Video (MP4)</strong>. ¡Se reproducirá en tiempo real para todos los usuarios de ese nivel VIP!
+                  </p>
+                </div>
+
+                {/* TOGGLE FORM BUTTON */}
+                <div className="flex justify-between items-center bg-zinc-950/40 p-2 rounded-xl border border-white/5">
+                  <span className="text-[11px] text-zinc-400 font-mono">Total de videos en la nube: <strong className="text-white">{reels.length}</strong></span>
+                  <button
+                    onClick={() => {
+                      if (isEditingReel) {
+                        setIsEditingReel(false);
+                      } else {
+                        setIsEditingReel(true);
+                        setEditingReelId('');
+                        setReelFormTitle('');
+                        setReelFormCaption('');
+                        setReelFormArtist('Tappmusic Divine');
+                        setReelFormCoverUrl('https://images.unsplash.com/photo-1509021436665-8f07dbf5bf1d?w=400&q=80');
+                        setReelFormVideoUrl('');
+                        setReelFormVipLevel('VIP PLATA 10$');
+                        setReelFormCategory('Video de Fe');
+                      }
+                    }}
+                    className="flex items-center gap-1 h-8 px-3 rounded-lg bg-[#39FF14]/10 hover:bg-[#39FF14]/20 border border-[#39FF14]/30 text-[#39FF14] text-[10px] font-black uppercase transition-all cursor-pointer"
+                  >
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span>{isEditingReel && !editingReelId ? 'Cerrar Registro' : 'Nuevo Video / Reel'}</span>
+                  </button>
+                </div>
+
+                {/* REEL REGISTRATION/EDIT FORM */}
+                {isEditingReel && (
+                  <div className="p-4 rounded-xl border border-purple-500/20 bg-zinc-950/80 space-y-4 animate-fade-in text-xs font-mono">
+                    <h4 className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-black border-b border-white/5 pb-2">
+                      {editingReelId ? `✏️ EDITAR VIDEO VIP (ID: ${editingReelId})` : '✨ REGISTRAR ENLACE DE VIDEO TIKTOK'}
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Title */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 font-bold block">Título del Video / Mensaje</label>
+                        <input
+                          type="text"
+                          placeholder="Ej. Fe Inquebrantable 🕊️"
+                          value={reelFormTitle}
+                          onChange={(e) => setReelFormTitle(e.target.value)}
+                          className="w-full text-[11px] bg-black border border-white/10 rounded-lg px-3 py-2 text-[#39FF14] focus:outline-none focus:border-[#39FF14]"
+                        />
+                      </div>
+
+                      {/* Artist */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 font-bold block">Creador / Predicador</label>
+                        <input
+                          type="text"
+                          placeholder="Ej. Hermano Kervin"
+                          value={reelFormArtist}
+                          onChange={(e) => setReelFormArtist(e.target.value)}
+                          className="w-full text-[11px] bg-black border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#39FF14]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Caption */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 font-bold block">Revelación del Video / Versículo / Subtítulo</label>
+                      <input
+                        type="text"
+                        placeholder="Ej. Aunque pases por el fuego, yo estaré contigo. No temas, porque yo soy tu Dios."
+                        value={reelFormCaption}
+                        onChange={(e) => setReelFormCaption(e.target.value)}
+                        className="w-full text-[11px] bg-black border border-white/10 rounded-lg px-3 py-2 text-zinc-300 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* VIP Required */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 font-bold block">Rango VIP Requerido</label>
+                        <select
+                          value={reelFormVipLevel}
+                          onChange={(e) => setReelFormVipLevel(e.target.value as VipLevel)}
+                          className="w-full h-8 px-2 bg-black border border-white/10 rounded-lg text-white font-sans text-xs focus:outline-none animate-none"
+                        >
+                          <option value="VIP PLATA 10$">VIP PLATA 10$</option>
+                          <option value="VIP ORO 20$">VIP ORO 20$</option>
+                          <option value="VIP RUBÍ 40$">VIP RUBÍ 40$</option>
+                          <option value="VIP DIAMANTE 120$">VIP DIAMANTE 120$</option>
+                          <option value="VIP PLATINO 420$">VIP PLATINO 420$</option>
+                          <option value="VIP CORONA IMPERIAL 1000$">VIP CORONA IMPERIAL 1000$</option>
+                        </select>
+                      </div>
+
+                      {/* Category */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 font-bold block">Categoría Vocal / Tema</label>
+                        <select
+                          value={reelFormCategory}
+                          onChange={(e) => setReelFormCategory(e.target.value as any)}
+                          className="w-full h-8 px-2 bg-black border border-white/10 rounded-lg text-white font-sans text-xs focus:outline-none animate-none"
+                        >
+                          <option value="Video de Fe">Video de Fe (Solemne / Dios)</option>
+                          <option value="Familia">Familia (Hogar / Valores)</option>
+                          <option value="Mentalidad">Mentalidad (Abundancia / Éxito)</option>
+                          <option value="Video Musical">Video Musical (Alabanzas / Ritmos)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Image URL & Video URL */}
+                    <div className="space-y-3">
+                      {/* Cover URL */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 font-bold block">Enlace de Imagen de Portada (Miniatura)</label>
+                        <input
+                          type="text"
+                          placeholder="Ej. https://images.unsplash.com/photo-..."
+                          value={reelFormCoverUrl}
+                          onChange={(e) => setReelFormCoverUrl(e.target.value)}
+                          className="w-full text-[11px] bg-black border border-white/10 rounded-lg px-3 py-2 text-zinc-300 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Video URL */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase font-mono tracking-wider text-[#39FF14] font-black block">💡 Enlace de Video (URL Directa MP4 de TikTok)</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ej. https://v16-webapp-prime.tiktokcdn-us.com/video.mp4"
+                          value={reelFormVideoUrl}
+                          onChange={(e) => setReelFormVideoUrl(e.target.value)}
+                          className="w-full text-[11px] bg-black border border-purple-500/50 rounded-lg px-3 py-2 text-[#39FF14] focus:outline-none focus:border-[#39FF14] font-bold"
+                        />
+                        <span className="text-[9px] text-zinc-500 font-sans block mt-1">
+                          Pega aquí el enlace de descarga MP4 directo que obtienes al descargar sin marca de agua.
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!reelFormVideoUrl.trim() || !reelFormTitle.trim()) {
+                            alert("Por favor rellene el título y el enlace directo de video (MP4).");
+                            return;
+                          }
+                          const rId = editingReelId || `reel_${Date.now()}`;
+                          const newReel: Reel = {
+                            id: rId,
+                            title: reelFormTitle.trim(),
+                            caption: reelFormCaption.trim(),
+                            artist: reelFormArtist.trim() || 'Tappmusic Divine',
+                            coverUrl: reelFormCoverUrl.trim() || 'https://images.unsplash.com/photo-1509021436665-8f07dbf5bf1d?w=400&q=80',
+                            videoUrl: reelFormVideoUrl.trim(),
+                            vipLevel: reelFormVipLevel,
+                            category: reelFormCategory,
+                            likes: 124,
+                            commentsCount: 12,
+                            duration: '0:30'
+                          };
+                          try {
+                            await setDoc(doc(db, 'reels', rId), newReel);
+                            setIsEditingReel(false);
+                            setEditingReelId('');
+                            alert("✅ ¡Éxito! El video/reel de TikTok ha sido guardado perfectamente en Firebase.");
+                          } catch (err: any) {
+                            console.error("Error saving reel:", err);
+                            alert("Error al guardar reel: " + err.message);
+                          }
+                        }}
+                        className="flex-1 h-9 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold uppercase transition-all cursor-pointer font-sans"
+                      >
+                        {editingReelId ? 'Guardar Cambios' : 'Registrar Nuevo Video'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditingReel(false);
+                          setEditingReelId('');
+                        }}
+                        className="px-4 h-9 rounded-xl bg-zinc-900 border border-white/5 text-zinc-400 font-bold uppercase hover:text-white transition-all cursor-pointer font-sans"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* REELS LIST TABLE */}
+                <div className="space-y-3 font-mono text-xs">
+                  {reels.length === 0 ? (
+                    <p className="text-center py-8 text-zinc-500 font-sans">Cargando base de datos de videos...</p>
+                  ) : (
+                    reels.map((r) => (
+                      <div 
+                        key={r.id} 
+                        className="p-3 rounded-xl border border-white/5 bg-zinc-950/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div 
+                            className="h-10 w-10 rounded-lg bg-cover bg-center border border-white/10 shrink-0"
+                            style={{ backgroundImage: `url(${r.coverUrl})` }}
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-white font-black text-xs truncate max-w-xs">{r.title}</h4>
+                              <span className="text-[8px] bg-purple-950/80 text-purple-300 border border-purple-500/30 px-1.5 py-0.2 rounded-full font-sans font-bold">
+                                {r.vipLevel}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-zinc-400 truncate max-w-sm">Texto de fe: {r.caption || 'Ninguno'}</p>
+                            <p className="text-[8px] text-[#39FF14] truncate max-w-xs block select-all font-mono">Url: {r.videoUrl}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0 font-sans self-end sm:self-auto">
+                          <button
+                            onClick={() => {
+                              setIsEditingReel(true);
+                              setEditingReelId(r.id);
+                              setReelFormTitle(r.title);
+                              setReelFormCaption(r.caption || '');
+                              setReelFormArtist(r.artist || '');
+                              setReelFormCoverUrl(r.coverUrl || '');
+                              setReelFormVideoUrl(r.videoUrl);
+                              setReelFormVipLevel(r.vipLevel);
+                              setReelFormCategory(r.category || 'Video de Fe');
+                            }}
+                            className="h-7 px-2.5 rounded bg-zinc-950 hover:bg-zinc-900 text-zinc-300 font-bold text-[10px] transition-all border border-white/10 cursor-pointer flex items-center gap-1"
+                          >
+                            <Edit2 className="h-3 w-3" />
+                            <span>Editar Link</span>
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (confirm("¿Estás seguro de que quieres eliminar este video/reel de la base de datos de la plataforma?")) {
+                                try {
+                                  await deleteDoc(doc(db, 'reels', r.id));
+                                  alert("Video eliminado con éxito.");
+                                } catch (err: any) {
+                                  alert("Error: " + err.message);
+                                }
+                              }
+                            }}
+                            className="h-7 px-2.5 rounded bg-red-950/30 text-red-400 border border-red-500/10 text-[10px] font-bold hover:bg-red-900 hover:text-white transition-all cursor-pointer flex items-center gap-1"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            <span>Eliminar</span>
                           </button>
                         </div>
                       </div>

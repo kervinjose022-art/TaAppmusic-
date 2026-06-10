@@ -4,7 +4,7 @@ import {
   Sparkles, Volume2, VolumeX, X, Disc, Tv, ArrowUpRight, Wallet, 
   ArrowRight, History, RefreshCw, Loader2 
 } from 'lucide-react';
-import { UserTask, UserProfile, VipLevel } from '../types';
+import { UserTask, UserProfile, VipLevel, Reel } from '../types';
 import { TASKS_DATABASE, REELS_DATABASE } from '../data';
 import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -15,6 +15,7 @@ interface VipTasksProps {
   withdrawHistory: any[];
   setWithdrawHistory: React.Dispatch<React.SetStateAction<any[]>>;
   voiceThemes?: any[];
+  reels?: Reel[];
 }
 
 export default function VipTasks({ 
@@ -22,7 +23,8 @@ export default function VipTasks({
   setUserProfile, 
   withdrawHistory, 
   setWithdrawHistory,
-  voiceThemes = []
+  voiceThemes = [],
+  reels = []
 }: VipTasksProps) {
   const [tasks, setTasks] = useState<UserTask[]>(() => {
     // Check if task IDs already stored in user profile to mark as completed
@@ -251,6 +253,8 @@ export default function VipTasks({
     }, 3000); // 3 sec delay
   };
 
+  const REELS_POOL = reels && reels.length > 0 ? reels : REELS_DATABASE;
+
   const VOICE_THEMES = voiceThemes.length > 0 ? voiceThemes : [
     {
       key: 'jesus',
@@ -348,44 +352,56 @@ export default function VipTasks({
       const voices = window.speechSynthesis.getVoices();
       const spanishVoices = voices.filter(v => v.lang.startsWith('es-MX') || v.lang.startsWith('es-ES') || v.lang.startsWith('es-') || v.lang.startsWith('es'));
       
-      // Look for beautiful Spanish/Latin voices (Google, Natural, Neural)
-      let chosenVoice = spanishVoices.find(v => 
-        v.name.toLowerCase().includes('google') || 
-        v.name.toLowerCase().includes('natural') || 
-        v.name.toLowerCase().includes('neural')
-      );
+      const maleKeywords = [
+        'eed', 'dfz', 'esf', 'ycg', 'prd', 'isa', 'male', 'hombre', 'boy', 'jorge', 'david',
+        'juan', 'diego', 'raul', 'raúl', 'carlos', 'santiago', 'mateo', 'julio', 'antonio',
+        'alonso', 'enrique', 'miguel', 'pablo', 'pedro', 'tomas', 'tomás', 'francisco', 'guy'
+      ];
+      const femaleKeywords = [
+        'female', 'mujer', 'girl', 'ana', 'sabina', 'helena', 'zira', 'pilar', 'lucia', 'lucía',
+        'marisol', 'monica', 'mónica', 'paulina', 'soledad', 'carmit', 'bna', 'mma', 'lisa',
+        'lorena', 'conchita'
+      ];
 
-      // Preferred masculine/divine/resonant/authoritative voices for Jesucristo, Dios, and Mentalidad
-      if (voiceTheme.key === 'jesus' || voiceTheme.key === 'dios' || voiceTheme.key === 'mentalidad' || voiceTheme.key === 'espiritu_santo' || voiceTheme.key === 'angel') {
-        const maleVoice = spanishVoices.find(v => 
-          v.name.toLowerCase().includes('male') || 
-          v.name.toLowerCase().includes('hombre') || 
-          v.name.toLowerCase().includes('jorge') || 
-          v.name.toLowerCase().includes('david') || 
-          v.name.toLowerCase().includes('juan') ||
-          v.name.toLowerCase().includes('carlos') ||
-          v.name.toLowerCase().includes('santiago') ||
-          v.name.toLowerCase().includes('mateo') ||
-          v.name.toLowerCase().includes('julio') ||
-          v.name.toLowerCase().includes('júlio') ||
-          v.name.toLowerCase().includes('antonio') ||
-          v.name.toLowerCase().includes('alonso') ||
-          v.name.toLowerCase().includes('enrique') ||
-          v.name.toLowerCase().includes('miguel')
-        );
-        if (maleVoice) {
-          chosenVoice = maleVoice;
-        }
+      const isProbablyMale = (v: SpeechSynthesisVoice) => {
+        const name = v.name.toLowerCase();
+        const matchesMale = maleKeywords.some(kw => name.includes(kw));
+        const matchesFemale = femaleKeywords.some(kw => name.includes(kw));
+        if (matchesMale && !matchesFemale) return true;
+        if (matchesFemale) return false;
+        return false;
+      };
+
+      // Try male voice first if the theme asks for it
+      let maleVoice = spanishVoices.find(isProbablyMale);
+      if (!maleVoice && (voiceTheme.key === 'jesus' || voiceTheme.key === 'dios' || voiceTheme.key === 'mentalidad' || voiceTheme.key === 'espiritu_santo' || voiceTheme.key === 'angel')) {
+        // Fallback: any voice that is not explicitly female
+        maleVoice = spanishVoices.find(v => {
+          const name = v.name.toLowerCase();
+          return !femaleKeywords.some(kw => name.includes(kw));
+        });
       }
 
-      const finalVoice = chosenVoice || spanishVoices[0] || voices[0];
-      if (finalVoice) {
-        utterance.voice = finalVoice;
+      let chosenVoice = maleVoice || spanishVoices.find(v => v.name.toLowerCase().includes('google')) || spanishVoices[0] || voices[0];
+      if (chosenVoice) {
+        utterance.voice = chosenVoice;
       }
 
       // Dynamic custom rate & pitch override from voiceTheme configuration
-      utterance.rate = typeof voiceTheme.rate === 'number' ? voiceTheme.rate : 0.8;
-      utterance.pitch = typeof voiceTheme.pitch === 'number' ? voiceTheme.pitch : 1.0;
+      let finalRate = typeof voiceTheme.rate === 'number' ? voiceTheme.rate : 0.8;
+      let finalPitch = typeof voiceTheme.pitch === 'number' ? voiceTheme.pitch : 1.0;
+
+      // Pitch shifting to ultra-deep bass if we fell back to a female voice for solemn masculine categories
+      if (voiceTheme.key === 'jesus' || voiceTheme.key === 'dios' || voiceTheme.key === 'mentalidad' || voiceTheme.key === 'espiritu_santo' || voiceTheme.key === 'angel') {
+        const isFemale = chosenVoice ? femaleKeywords.some(kw => chosenVoice.name.toLowerCase().includes(kw)) : true;
+        if (isFemale) {
+          finalPitch = 0.65; // Warm, heavy sub-bass solemn sermon pitch
+          finalRate = 0.72; // Make it slow and majestic
+        }
+      }
+
+      utterance.rate = finalRate;
+      utterance.pitch = finalPitch;
 
       utterance.onstart = () => {
         if (audioRef.current && !isAudioMuted) {
@@ -439,7 +455,7 @@ export default function VipTasks({
     }
 
     // Direct interactive video correspondientes lookup based on task's required level
-    const matchedReel = REELS_DATABASE.find(r => r.vipLevel === task.vipRequired) || REELS_DATABASE[0];
+    const matchedReel = REELS_POOL.find(r => r.vipLevel === task.vipRequired) || REELS_POOL[0];
 
     // Detect ideal default voice thematic category
     const titleLower = task.title.toLowerCase();
