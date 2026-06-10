@@ -362,7 +362,16 @@ export default function VipTasks({
           v.name.toLowerCase().includes('hombre') || 
           v.name.toLowerCase().includes('jorge') || 
           v.name.toLowerCase().includes('david') || 
-          v.name.toLowerCase().includes('juan')
+          v.name.toLowerCase().includes('juan') ||
+          v.name.toLowerCase().includes('carlos') ||
+          v.name.toLowerCase().includes('santiago') ||
+          v.name.toLowerCase().includes('mateo') ||
+          v.name.toLowerCase().includes('julio') ||
+          v.name.toLowerCase().includes('júlio') ||
+          v.name.toLowerCase().includes('antonio') ||
+          v.name.toLowerCase().includes('alonso') ||
+          v.name.toLowerCase().includes('enrique') ||
+          v.name.toLowerCase().includes('miguel')
         );
         if (maleVoice) {
           chosenVoice = maleVoice;
