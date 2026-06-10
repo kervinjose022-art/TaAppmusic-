@@ -534,7 +534,7 @@ export default function App() {
       key: 'jesus',
       speaker: 'Jesucristo Salvador',
       avatar: '✝️',
-      description: 'Voz de Amor y Redención',
+      description: 'Voz Sagrada de Redención y Amor',
       intro: 'Hijo mío, recibe mi paz protectora. Anda, contempla esta promesa y compártela: ',
       color: 'border-purple-500/30 text-purple-300 bg-purple-500/5',
       badgeColor: 'bg-purple-950/40 text-purple-300 border-purple-500/30',
@@ -547,7 +547,7 @@ export default function App() {
       key: 'dios',
       speaker: 'Dios Padre Celestial',
       avatar: '🌿',
-      description: 'Voz Omnipotente y Calma',
+      description: 'Voz Omnipotente, Calma y Solemne',
       intro: 'Yo soy tu refugio en la tormenta. Escucha con reverencia mi mensaje sagrado para ti: ',
       color: 'border-amber-500/30 text-amber-300 bg-amber-500/5',
       badgeColor: 'bg-amber-950/40 text-amber-300 border-amber-500/30',
@@ -556,11 +556,37 @@ export default function App() {
       rate: 0.75
     },
     {
+      id: 'espiritu_santo',
+      key: 'espiritu_santo',
+      speaker: 'Espíritu Santo Consolador',
+      avatar: '🕊️',
+      description: 'Paz Absoluta y Unción Celestial',
+      intro: 'Siente mi dulce presencia llenándote de fe y de abundancia celestial. Escucha esta palabra eterna: ',
+      color: 'border-emerald-500/30 text-emerald-300 bg-emerald-500/5',
+      badgeColor: 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30',
+      shadow: 'shadow-[0_0_15px_rgba(16,185,129,0.3)]',
+      pitch: 1.08,
+      rate: 0.74
+    },
+    {
+      id: 'angel',
+      key: 'angel',
+      speaker: 'Ángel de la Revelación',
+      avatar: '🌟',
+      description: 'Mensajero Divino de Nuevas de Fe',
+      intro: '¡Gloria a Dios en las alturas! Recibe la maravillosa promesa que tengo revelada para ti hoy: ',
+      color: 'border-sky-500/30 text-sky-300 bg-sky-500/5',
+      badgeColor: 'bg-sky-950/40 text-sky-300 border-sky-500/30',
+      shadow: 'shadow-[0_0_15px_rgba(14,165,233,0.3)]',
+      pitch: 1.15,
+      rate: 0.85
+    },
+    {
       id: 'familia',
       key: 'familia',
       speaker: 'La Voz de la Familia',
       avatar: '🏠',
-      description: 'Unión y Valores Puros',
+      description: 'Unión, Pureza y Valores Sagrados',
       intro: 'Edifica tu bendito hogar sobre la roca del amor. Este es el consejo protector para tu mesa: ',
       color: 'border-pink-500/30 text-pink-300 bg-pink-500/5',
       badgeColor: 'bg-pink-950/40 text-pink-300 border-pink-500/30',
@@ -573,7 +599,7 @@ export default function App() {
       key: 'mentalidad',
       speaker: 'Mentalidad de Reino',
       avatar: '💎',
-      description: 'Éxito y Provisión Divina',
+      description: 'Éxito, Fuerza y Provisión Divina',
       intro: '¡Declara abundancia en el nombre del Creador! Rompe la escasez y recibe tu prosperidad: ',
       color: 'border-[#39FF14]/30 text-[#39FF14] bg-[#39FF14]/5',
       badgeColor: 'bg-zinc-900 text-[#39FF14] border-[#39FF14]/40',
@@ -1288,20 +1314,21 @@ export default function App() {
               <div className="absolute inset-0 bg-[#39FF14]/[0.01] pointer-events-none" />
               
               <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6">
-                <div className="space-y-2 max-w-2xl">
-                  <div className="flex items-center gap-2">
+                <div className="space-y-3 max-w-2xl">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="inline-flex items-center gap-1 rounded bg-[#39FF14]/10 border border-[#39FF14]/30 px-2.5 py-0.5 text-[9px] font-black text-[#39FF14] uppercase tracking-widest">
-                      Lanzamiento Oficial Activo
+                      Misión, Visión y Objetivo
                     </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-400">
-                      <ShieldCheck className="h-3.5 w-3.5" /> Enlace de Difusión Optimizado
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-yellow-400">
+                      ✨ Mentalidad Millonaria de Dios
                     </span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white uppercase">
-                    ¡Está listo nuestro proyecto, hermano! 🚀
+                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white uppercase font-sans">
+                    NUESTROS SUEÑOS SE HACEN REALIDAD 🙏🏽🌞
                   </h2>
-                  <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">
-                    Hemos subido todo a producción. Ya puedes compartir el enlace definitivo <strong className="text-white lower">Tappmusic.com</strong> con tus fanáticos para que realicen tareas VIP de fe, familia y mentalidad millonaria, ganen regalías y disfruten de los mejores Reels de motivación en vivo.
+                  <p className="text-zinc-200 text-xs sm:text-sm leading-relaxed font-sans font-medium">
+                    <strong className="text-[#39FF14] block mb-1">Tappmusic.com — Mensaje del Liderazgo:</strong>
+                    "Tappmusic. Mentalidad millonaria, los sueños se hacen realidad con esfuerzo y dedicación todo agarrado de la mano de Dios, pon tus proyectos en él. Él te ayudará☝🏼🙏🏽🌞 No importa que creas que es imposible, él lo hace posible. Con fe."
                   </p>
                 </div>
 

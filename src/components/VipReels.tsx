@@ -131,19 +131,37 @@ export default function VipReels({ currentVip }: VipReelsProps) {
       const cleanArtist = artist.replace(/^@/, ''); // Natural name reading instead of "@" technical symbol
 
       if (category === 'Video de Fe' || category === 'Voz de Dios') {
-        finalSpeechText = `Mensaje de Fe Celestial. El Dios Todopoderoso y Jesucristo de Nazaret te proclaman para tu vida hoy: "${caption}". Amén y bendiciones hoy y siempre.`;
+        let verse = "";
+        const lowerTitle = title.toLowerCase();
+        if (lowerTitle.includes('caminando') || lowerTitle.includes('jesús') || lowerTitle.includes('jesus')) {
+          verse = "La Palabra del Señor nos dice en Josué 1:9 - Mira que te mando que te esfuerces y seas valiente; no temas ni desmayes, porque Jehová tu Dios estará contigo en dondequiera que vayas.";
+        } else if (lowerTitle.includes('control') || lowerTitle.includes('absoluto') || lowerTitle.includes('padre')) {
+          verse = "La Sagrada Escritura nos enseña en Filipenses 4:13 - Todo lo puedo en Cristo que me fortalece.";
+        } else if (lowerTitle.includes('maestro') || lowerTitle.includes('venció') || lowerTitle.includes('corazón')) {
+          verse = "La Palabra de Dios nos recuerda en Mateo 17:20 - Si tuvierais fe como un grano de mostaza, nada os será imposible.";
+        } else if (lowerTitle.includes('gloria') || lowerTitle.includes('lluvia') || lowerTitle.includes('postrera')) {
+          verse = "El Espíritu Santo nos revela en Jeremías 29:11 - Porque yo sé los pensamientos que tengo acerca de vosotros, dice el Señor, pensamientos de paz, y no de mal.";
+        } else if (lowerTitle.includes('cima') || lowerTitle.includes('bendición') || lowerTitle.includes('corona')) {
+          verse = "El Señor Altísimo nos proclama en el Salmo 23:1 - Jehová es mi pastor, nada me faltará.";
+        } else {
+          verse = "Como está escrito en Hebreos 11:1 - Es pues, la fe, la certeza de lo que se espera, la convicción de lo que no se ve.";
+        }
+
+        finalSpeechText = `Predicación celestial de fe y palabra de vida eterna. ${verse} Ahora escucha esta revelación para tu vida hoy: "${caption}". Amén.`;
       } else if (category === 'Familia') {
-        finalSpeechText = `Mensaje bendecido para la Familia y el Hogar Sagrado de parte del hermano ${cleanArtist}: "${caption}".`;
+        finalSpeechText = `Mensaje de edificación para el hogar y la familia de parte del hermano ${cleanArtist}: "${caption}".`;
       } else if (category === 'Mentalidad') {
-        finalSpeechText = `Declaración de Mentalidad Millonaria y el camino al Éxito, para el Nivel VIP: "${title}". Recuerda y graba esta regla de oro: "${caption}". Éxito rotundo.`;
+        finalSpeechText = `Instrucción de Mentalidad Millonaria y provisión divina: "${title}". Guarda esta regla de oro: "${caption}". Éxito con la bendición de Dios.`;
       } else {
-        finalSpeechText = `Mensaje de ${title}. Presentado con poder por ${cleanArtist}: "${caption}".`;
+        finalSpeechText = `Mensaje de ${title}. Presentado por ${cleanArtist}: "${caption}".`;
       }
 
       // Clean emojis and symbols for elegant text narration
       const cleaned = finalSpeechText
         .replace(/#/g, '')
-        .replace(/🕊️|❤️|🏠|📈|💼|✨|🙌|✝️|🔥|🛡️|👑|💎|🌟|🌍/g, '');
+        .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26EF]|\uD83E[\uDD10-\uDFFF]/g, '')
+        .replace(/[^\x00-\x7F\u00C0-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF.,;:!¿?¡\s]/g, '')
+        .trim();
 
       const utterance = new SpeechSynthesisUtterance(cleaned);
       utterance.lang = 'es-MX'; // Deep Latin American accent
@@ -166,7 +184,16 @@ export default function VipReels({ currentVip }: VipReelsProps) {
           v.name.toLowerCase().includes('hombre') || 
           v.name.toLowerCase().includes('jorge') || 
           v.name.toLowerCase().includes('david') || 
-          v.name.toLowerCase().includes('juan')
+          v.name.toLowerCase().includes('juan') ||
+          v.name.toLowerCase().includes('carlos') ||
+          v.name.toLowerCase().includes('santiago') ||
+          v.name.toLowerCase().includes('mateo') ||
+          v.name.toLowerCase().includes('julio') ||
+          v.name.toLowerCase().includes('júlio') ||
+          v.name.toLowerCase().includes('antonio') ||
+          v.name.toLowerCase().includes('alonso') ||
+          v.name.toLowerCase().includes('enrique') ||
+          v.name.toLowerCase().includes('miguel')
         );
         if (maleVoice) {
           chosenVoice = maleVoice;
@@ -180,8 +207,8 @@ export default function VipReels({ currentVip }: VipReelsProps) {
 
       // Customize rates and pitches for specialized preaching / teaching / motivational flows
       if (category === 'Video de Fe' || category === 'Voz de Dios') {
-        utterance.rate = 0.69; // Extremely slow, majestic, and heavy sermon tempo
-        utterance.pitch = 0.72; // Warm, authoritative, divine bass tone
+        utterance.rate = 0.74; // Extremely slow, majestic, and heavy sermon tempo
+        utterance.pitch = 0.82; // Warm, authoritative, divine bass tone
       } else if (category === 'Familia') {
         utterance.rate = 0.82; // Warm, loving pacing
         utterance.pitch = 0.95; // Friendly and wise parental tone

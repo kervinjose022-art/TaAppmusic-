@@ -277,6 +277,30 @@ export default function VipTasks({
       rate: 0.75
     },
     {
+      key: 'espiritu_santo',
+      speaker: 'Espíritu Santo Consolador',
+      avatar: '🕊️',
+      description: 'Paz Absoluta y Unción Celestial',
+      intro: 'Siente mi dulce presencia llenándote de fe y de abundancia celestial. Escucha esta palabra eterna: ',
+      color: 'border-emerald-500/30 text-emerald-300 bg-emerald-500/5',
+      badgeColor: 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30',
+      shadow: 'shadow-[0_0_15px_rgba(16,185,129,0.3)]',
+      pitch: 1.08,
+      rate: 0.74
+    },
+    {
+      key: 'angel',
+      speaker: 'Ángel de la Revelación',
+      avatar: '🌟',
+      description: 'Mensajero Divino de Nuevas de Fe',
+      intro: '¡Gloria a Dios en las alturas! Recibe la maravillosa promesa que tengo revelada para ti hoy: ',
+      color: 'border-sky-500/30 text-sky-300 bg-sky-500/5',
+      badgeColor: 'bg-sky-950/40 text-sky-300 border-sky-500/30',
+      shadow: 'shadow-[0_0_15px_rgba(14,165,233,0.3)]',
+      pitch: 1.15,
+      rate: 0.85
+    },
+    {
       key: 'familia',
       speaker: 'La Voz de la Familia',
       avatar: '🏠',
@@ -311,9 +335,12 @@ export default function VipTasks({
   const startVoiceover = (text: string, voiceTheme: typeof VOICE_THEMES[0]) => {
     stopVoiceover();
     if (typeof window !== 'undefined' && window.speechSynthesis && !isAudioMuted) {
+      // Robust filtering of emojis, hashes, and non-alphanumeric text so TTS never says 'hashtag' or stutter-names emojis
       const cleaned = text
         .replace(/#/g, '')
-        .replace(/🕊️|❤️|🏠|📈|💼|✨|🙌|✝️|🔥|🛡️|👑|💎|🌟|🌍/g, '');
+        .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26EF]|\uD83E[\uDD10-\uDFFF]/g, '')
+        .replace(/[^\x00-\x7F\u00C0-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF.,;:!¿?¡\s]/g, '')
+        .trim();
 
       const utterance = new SpeechSynthesisUtterance(cleaned);
       utterance.lang = 'es-MX';
@@ -329,7 +356,7 @@ export default function VipTasks({
       );
 
       // Preferred masculine/divine/resonant/authoritative voices for Jesucristo, Dios, and Mentalidad
-      if (voiceTheme.key === 'jesus' || voiceTheme.key === 'dios' || voiceTheme.key === 'mentalidad') {
+      if (voiceTheme.key === 'jesus' || voiceTheme.key === 'dios' || voiceTheme.key === 'mentalidad' || voiceTheme.key === 'espiritu_santo' || voiceTheme.key === 'angel') {
         const maleVoice = spanishVoices.find(v => 
           v.name.toLowerCase().includes('male') || 
           v.name.toLowerCase().includes('hombre') || 
