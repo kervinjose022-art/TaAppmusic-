@@ -1152,7 +1152,7 @@ export default function VipTasks({
                         <input
                           type="text"
                           required
-                          placeholder="Ej. V-26304421"
+                          placeholder="Ej. V-12345678"
                           value={pmCedula}
                           onChange={(e) => setPmCedula(e.target.value)}
                           className="w-full text-xs font-semibold bg-black border border-white/10 rounded-xl px-3 py-2 text-white placeholder-zinc-800 focus:outline-none focus:border-yellow-400"
@@ -1167,7 +1167,7 @@ export default function VipTasks({
                         <input
                           type="text"
                           required
-                          placeholder="Ej. 04262139920"
+                          placeholder="Ej. 04121234567"
                           value={pmPhone}
                           onChange={(e) => setPmPhone(e.target.value)}
                           className="w-full text-xs font-semibold bg-black border border-white/10 rounded-xl px-3 py-2 text-white placeholder-zinc-800 focus:outline-none focus:border-yellow-400"

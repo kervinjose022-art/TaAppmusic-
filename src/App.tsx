@@ -59,8 +59,8 @@ export default function App() {
     }
     return [
       {
-        username: 'kervin',
-        email: 'kervinjose022@gmail.com',
+        username: 'admin_tapp',
+        email: 'admin@tappmusic.com',
         password: '7340',
         vipLevel: 'VIP CORONA IMPERIAL 1000$',
         earnings: 1545.00,
@@ -86,8 +86,8 @@ export default function App() {
         const usersSnap = await getDocs(collection(db, 'users'));
         if (usersSnap.empty) {
           const adminSeed: UserProfile = {
-            username: 'kervin',
-            email: 'kervinjose022@gmail.com',
+            username: 'admin_tapp',
+            email: 'admin@tappmusic.com',
             password: '7340',
             vipLevel: 'VIP CORONA IMPERIAL 1000$',
             earnings: 1545.00,
@@ -97,7 +97,7 @@ export default function App() {
             inviteCount: 4,
             inviteCommissionsEarned: 6.00
           };
-          await setDoc(doc(db, 'users', 'kervin'), adminSeed);
+          await setDoc(doc(db, 'users', 'admin_tapp'), adminSeed);
         }
 
         // 4 Users Yesterday Progress Migration V3: Set 367 coins once and track it on each user's document
@@ -105,7 +105,7 @@ export default function App() {
           const todayDateStr = new Date().toLocaleDateString('es-ES');
           for (const uDoc of usersSnap.docs) {
             const u = uDoc.data() as any;
-            if (u.username && u.username.toLowerCase() !== 'kervin' && !u.migratedV3) {
+            if (u.username && u.username.toLowerCase() !== 'admin_tapp' && !u.migratedV3) {
               const migratedUser: any = {
                 ...u,
                 earnings: 367.0,
@@ -405,7 +405,7 @@ export default function App() {
     if (cur) {
       try {
         const u = JSON.parse(cur);
-        if (u.email === 'kervinjose022@gmail.com' || u.username === 'kervin') return true;
+        if (u.email === 'admin@tappmusic.com' || u.username === 'admin_tapp') return true;
       } catch (e) {}
     }
     return false;
@@ -741,7 +741,7 @@ export default function App() {
   const getInviteCount = (): number => {
     const referredUsers = allUsers.filter(u => u.invitedBy && userProfile.username && u.invitedBy.toLowerCase().trim() === userProfile.username.toLowerCase().trim());
     let count = Math.max(userProfile.inviteCount || 0, referredUsers.length);
-    if (userProfile.username && userProfile.username.toLowerCase() === 'kervin' && count < 4) {
+    if (userProfile.username && userProfile.username.toLowerCase() === 'admin_tapp' && count < 4) {
       count = 4;
     }
     return count;
@@ -762,7 +762,7 @@ export default function App() {
     });
 
     let earned = Math.max(userProfile.inviteCommissionsEarned || 0, totalCommissions);
-    if (userProfile.username && userProfile.username.toLowerCase() === 'kervin' && earned < 6.00) {
+    if (userProfile.username && userProfile.username.toLowerCase() === 'admin_tapp' && earned < 6.00) {
       earned = 6.00;
     }
     return earned;
@@ -928,11 +928,11 @@ export default function App() {
     }
 
     if (!foundUser) {
-      if (inputVal === 'kervin' || inputVal === 'kervinjose022@gmail.com') {
+      if (inputVal === 'admin_tapp' || inputVal === 'admin@tappmusic.com') {
         const adminSeed: UserProfile = {
-          username: 'kervin',
-          email: 'kervinjose022@gmail.com',
-          password: passVal || '26394421',
+          username: 'admin_tapp',
+          email: 'admin@tappmusic.com',
+          password: passVal || '7340',
           vipLevel: 'VIP CORONA IMPERIAL 1000$',
           earnings: 1545.00,
           completedTaskIds: [],
@@ -942,7 +942,7 @@ export default function App() {
           inviteCommissionsEarned: 6.00
         };
         try {
-          await setDoc(doc(db, 'users', 'kervin'), adminSeed);
+          await setDoc(doc(db, 'users', 'admin_tapp'), adminSeed);
         } catch (e) {}
         setAllUsers(prev => [...prev, adminSeed]);
         saveProfile(adminSeed);
@@ -954,15 +954,15 @@ export default function App() {
       return;
     }
 
-    const isKervin = (foundUser.username && foundUser.username.toLowerCase() === 'kervin') || (foundUser.email && foundUser.email.toLowerCase() === 'kervinjose022@gmail.com');
+    const isAdminUser = (foundUser.username && foundUser.username.toLowerCase() === 'admin_tapp') || (foundUser.email && foundUser.email.toLowerCase() === 'admin@tappmusic.com');
 
-    if (foundUser.password !== passVal && !(isKervin && (passVal === '26394421' || passVal === '7340' || passVal === '26304421'))) {
+    if (foundUser.password !== passVal && !(isAdminUser && (passVal === '7340' || passVal === '26394421'))) {
       setLoginError('❌ Contraseña incorrecta.');
       return;
     }
 
     // Ensure status is active and update password preferred choice
-    if (isKervin) {
+    if (isAdminUser) {
       foundUser.password = passVal;
       foundUser.status = 'active';
       foundUser.vipLevel = 'VIP CORONA IMPERIAL 1000$';
@@ -977,7 +977,7 @@ export default function App() {
     setLoginInput('');
     setLoginPassword('');
     
-    if (isKervin) {
+    if (isAdminUser) {
       setIsAdminVerified(true);
     }
   };
@@ -1049,7 +1049,7 @@ export default function App() {
 
   const handleUpgradeVip = (lvl: VipLevel) => {
     // Admin/propietario can instantly upgrade for easy tests
-    const isAdmin = (userProfile.username && userProfile.username.toLowerCase() === 'kervin') || userProfile.email === 'kervinjose022@gmail.com';
+    const isAdmin = (userProfile.username && userProfile.username.toLowerCase() === 'admin_tapp') || userProfile.email === 'admin@tappmusic.com';
     if (isAdmin) {
       const backup = { ...userProfile, vipLevel: lvl };
       saveProfile(backup);
@@ -1232,7 +1232,7 @@ export default function App() {
                     <input
                       type="text"
                       required
-                      placeholder="Ej. melodia_tapp o kervin"
+                      placeholder="Ej. melodia_tapp o admin_tapp"
                       value={loginInput}
                       onChange={(e) => setLoginInput(e.target.value)}
                       className="w-full text-xs font-semibold bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
@@ -1768,9 +1768,9 @@ export default function App() {
                   {registrationPayMethod === 'Pago Móvil' ? (
                     <div className="p-3 rounded-xl bg-zinc-950 border border-yellow-500/10 space-y-2 text-[11px] font-mono leading-relaxed text-zinc-350">
                       <p className="text-zinc-400 uppercase text-[9px] tracking-wider font-extrabold text-yellow-500">Datos Pago Móvil Venezuela:</p>
-                      <div>Banco: <strong className="text-white font-black">Banco de Venezuela (0102)</strong></div>
-                      <div>Cédula: <strong className="text-white font-black">26304421</strong></div>
-                      <div>Teléfono BDV: <strong className="text-white font-black">04262139920</strong></div>
+                      <div>Banco: <strong className="text-white font-black">Consulte al Administrador</strong></div>
+                      <div>Cédula: <strong className="text-white font-black">V-00000000</strong></div>
+                      <div>Teléfono BDV: <strong className="text-white font-black">Verifique en el Soporte</strong></div>
                       <div className="pt-1 border-t border-white/5 text-[9px] text-zinc-550">
                         * Tasa Calculada: 1 USDT = 734 Bs. Transfiera <strong className="text-yellow-500 font-extrabold">{getLevelPriceInBs(selectedInitialVip).toLocaleString()} Bs</strong>.
                       </div>
@@ -1955,9 +1955,9 @@ export default function App() {
                   {/* Payment details content info */}
                   {upgradePayMethod === 'Pago Móvil' ? (
                     <div className="p-2.5 rounded-xl bg-black border border-yellow-500/10 space-y-1 font-mono text-[10px] leading-relaxed text-zinc-350">
-                      <div>Banco: <strong className="text-white">Banco de Venezuela (0102)</strong></div>
-                      <div>Cédula: <strong className="text-white">26304421</strong></div>
-                      <div>Teléfono: <strong className="text-white">04262139920</strong></div>
+                      <div>Banco: <strong className="text-white">Consulte al Administrador</strong></div>
+                      <div>Cédula: <strong className="text-white">V-00000000</strong></div>
+                      <div>Teléfono: <strong className="text-white">Verifique en el Soporte</strong></div>
                     </div>
                   ) : (
                     <div className="p-2.5 rounded-xl bg-black border border-purple-500/10 space-y-1.5 font-mono text-[9px] leading-normal text-zinc-350 font-sans">
@@ -2073,19 +2073,19 @@ export default function App() {
                           }
                         } catch (e) {}
                       }
-                      // 3. Clear users from Firestore (except kervin)
+                      // 3. Clear users from Firestore (except admin_tapp)
                       for (const u of allUsers) {
-                        if (u.username && u.username.toLowerCase() !== 'kervin') {
+                        if (u.username && u.username.toLowerCase() !== 'admin_tapp') {
                           try {
                             await deleteDoc(doc(db, 'users', u.username.toLowerCase()));
                           } catch (e) {}
                         }
                       }
                       
-                      // 4. Reset kervin's counts locally and in Firestore
-                      const resetKervin = {
-                        username: 'kervin',
-                        email: 'kervinjose022@gmail.com',
+                      // 4. Reset admin_tapp's counts locally and in Firestore
+                      const resetAdmin = {
+                        username: 'admin_tapp',
+                        email: 'admin@tappmusic.com',
                         password: '7340',
                         vipLevel: 'VIP CORONA IMPERIAL 1000$' as VipLevel,
                         earnings: 1545.00,
@@ -2095,13 +2095,13 @@ export default function App() {
                         inviteCount: 0,
                         inviteCommissionsEarned: 0
                       };
-                      await setDoc(doc(db, 'users', 'kervin'), resetKervin);
+                      await setDoc(doc(db, 'users', 'admin_tapp'), resetAdmin);
                       
                       // Clear local react states & LocalStorage
                       setRegistrations([]);
                       setWithdrawHistory([]);
-                      setAllUsers([resetKervin]);
-                      saveProfile(resetKervin);
+                      setAllUsers([resetAdmin]);
+                      saveProfile(resetAdmin);
                       alert("🎉 ¡Base de datos limpia y lista para usar en producción real en tiempo real con 0 registrados!");
                     } catch (err: any) {
                       console.error(err);
@@ -2126,7 +2126,7 @@ export default function App() {
                       const snap = await getDocs(collection(db, 'users'));
                       for (const uDoc of snap.docs) {
                         const u = uDoc.data() as any;
-                        if (u.username && u.username.toLowerCase() !== 'kervin') {
+                        if (u.username && u.username.toLowerCase() !== 'admin_tapp') {
                           const updatedUser: any = {
                             ...u,
                             earnings: 367.0,
@@ -2142,7 +2142,7 @@ export default function App() {
                       // Synchronize local states instantly
                       setAllUsers(prev => {
                         return prev.map(u => {
-                          if (u.username && u.username.toLowerCase() !== 'kervin') {
+                          if (u.username && u.username.toLowerCase() !== 'admin_tapp') {
                             return {
                               ...u,
                               earnings: 367.0,
@@ -2156,7 +2156,7 @@ export default function App() {
                       });
 
                       // If current active session is a registered user, update it
-                      if (userProfile.username && userProfile.username.toLowerCase() !== 'kervin') {
+                      if (userProfile.username && userProfile.username.toLowerCase() !== 'admin_tapp') {
                         const activeMigrated = {
                           ...userProfile,
                           earnings: 367.0,
@@ -3034,7 +3034,7 @@ export default function App() {
                         (u.email && u.email.toLowerCase().includes(query))
                       );
                     }).map((u) => {
-                      const isOwner = u.username.toLowerCase().trim() === 'kervin';
+                      const isOwner = u.username.toLowerCase().trim() === 'admin_tapp';
                       return (
                         <div 
                           key={u.username}
