@@ -895,7 +895,7 @@ export default function App() {
       setPreviewBlob('');
       
       setIsVipSelectorOpen(false);
-      alert("⚡ ¡Registro de Membresía VIP Enviado! Tu solicitud de depósito está siendo verificada por el propietario (Hermanito Kervin) para activar tu casilla VIP.");
+      alert("⚡ ¡Registro de Membresía VIP Enviado! Tu solicitud de depósito está siendo verificada por el Administrador para activar tu casilla VIP.");
     } catch (err) {
       console.error("Critical error in handleRegister:", err);
       alert("⚠️ Error al registrarse: " + (err instanceof Error ? err.message : String(err)));
@@ -1150,7 +1150,7 @@ export default function App() {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
             <span className="text-[10px] leading-tight select-none text-zinc-355 text-zinc-300">
-              SESIÓN DE HERMANITO ACTIVA • <strong className="text-emerald-400 font-bold uppercase tracking-widest">PROPIETARIO ORIGINAL</strong>
+              SESIÓN DE ADMINISTRADOR ACTIVA • <strong className="text-emerald-400 font-bold uppercase tracking-widest">SOPORTE PRINCIPAL</strong>
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -1293,9 +1293,9 @@ export default function App() {
                   <div className="pt-1.5 text-center">
                     <button
                       onClick={() => setShowAdminCodePrompt(true)}
-                      className="text-[10px] text-zinc-650 hover:text-purple-400 transition-all uppercase font-mono font-bold tracking-tight bg-transparent border-none pointer-events-auto"
+                      className="text-[10px] text-zinc-650 hover:text-[#39FF14] transition-all uppercase font-mono font-bold tracking-tight bg-transparent border-none pointer-events-auto"
                     >
-                      🛠️ Acceso Propietario (Hermanito Kervin)
+                      🛠️ Acceso de Administrador
                     </button>
                   </div>
                 </div>
@@ -1321,7 +1321,7 @@ export default function App() {
                     ¡Bienvenido a <strong>Tappmusic.com</strong>! Tienes acceso gratuito para navegar en la plataforma, disfrutar de reels motivacionales de fe, sintonizar sermones y poner a prueba los sistemas.
                   </p>
                   <p className="text-[#39FF14] text-[11px] leading-relaxed font-mono font-bold">
-                    ⚠️ NOTA: El cobro y realización de tareas VIP remuneradas se activará una vez que el propietario (Hermanito Kervin) verifique tu depósito.
+                    ⚠️ NOTA: El cobro y realización de tareas VIP remuneradas se activará una vez que el Administrador verifique tu depósito.
                   </p>
                 </div>
 
@@ -2048,8 +2048,8 @@ export default function App() {
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-1.5">
-                    <span>Panel de Control de Kervin</span>
-                    <span className="text-[9px] font-mono bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded-full border border-purple-500/20 lowercase">propietario</span>
+                    <span>Panel de Control de Administrador</span>
+                    <span className="text-[9px] font-mono bg-[#39FF14]/10 text-[#39FF14] px-2 py-0.5 rounded-full border border-[#39FF14]/20 lowercase">administrador</span>
                   </h3>
                   <p className="text-[11px] text-zinc-500 leading-normal">Manejo centralizado de verificaciones, cobros y voces reales.</p>
                 </div>
@@ -3219,6 +3219,74 @@ export default function App() {
               >
                 Cerrar Panel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE AUTENTICACIÓN RÁPIDA DE ADMINISTRADOR */}
+      {showAdminCodePrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm">
+          <div className="relative w-full max-w-sm rounded-[24px] border border-purple-500/30 bg-zinc-950 p-6 shadow-[0_0_50px_rgba(168,85,247,0.2)] space-y-4 text-left animate-fade-in font-sans">
+            <div className="text-center space-y-2">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-950/40 border border-purple-500/30 text-purple-400">
+                <Lock className="h-5 w-5" />
+              </div>
+              <h3 className="text-sm font-black text-white uppercase tracking-wider">Código de Administrador</h3>
+              <p className="text-[11px] text-zinc-400 leading-normal">
+                Ingresa la clave maestra para verificar tu acceso administrativo y habilitar las herramientas de control.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <input
+                type="password"
+                placeholder="Clave de 4 dígitos"
+                value={adminUnlockCode}
+                onChange={(e) => setAdminUnlockCode(e.target.value)}
+                className="w-full text-center text-xs font-semibold bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] tracking-widest focus:outline-none focus:border-[#39FF14]"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (adminUnlockCode === '7340' || adminUnlockCode === '26394421') {
+                      setIsAdminVerified(true);
+                      setShowAdminCodePrompt(false);
+                      setAdminUnlockCode('');
+                      alert("🔓 ¡Sesión administrativa verificada exitosamente! El panel superior de control ha sido habilitado.");
+                    } else {
+                      alert("❌ Código incorrecto.");
+                    }
+                  }
+                }}
+              />
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAdminCodePrompt(false);
+                    setAdminUnlockCode('');
+                  }}
+                  className="w-1/2 py-2.5 bg-zinc-900 border border-white/5 hover:bg-zinc-805 text-[10px] text-zinc-400 font-bold uppercase rounded-xl transition-all cursor-pointer text-center"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (adminUnlockCode === '7340' || adminUnlockCode === '26394421') {
+                      setIsAdminVerified(true);
+                      setShowAdminCodePrompt(false);
+                      setAdminUnlockCode('');
+                      alert("🔓 ¡Sesión administrativa verificada exitosamente! El panel superior de control ha sido habilitado.");
+                    } else {
+                      alert("❌ Código incorrecto.");
+                    }
+                  }}
+                  className="w-1/2 py-2.5 bg-[#39FF14] text-black text-[10px] font-black uppercase rounded-xl transition-all cursor-pointer hover:bg-[#34e512] text-center"
+                >
+                  Confirmar
+                </button>
+              </div>
             </div>
           </div>
         </div>
