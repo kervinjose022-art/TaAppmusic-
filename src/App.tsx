@@ -243,19 +243,8 @@ export default function App() {
       snapshot.forEach((doc) => {
         items.push(doc.data());
       });
-      // Merge with registrations state to avoid clearing out newer local elements
-      setRegistrations(prev => {
-        const merged = [...prev];
-        items.forEach(item => {
-          const index = merged.findIndex(r => r.id === item.id);
-          if (index !== -1) {
-            merged[index] = item;
-          } else {
-            merged.push(item);
-          }
-        });
-        return merged;
-      });
+      // Direct assignment ensures deleted registrations are instantly cleared from local state
+      setRegistrations(items);
     }, (error) => {
       console.error("Firestore listening registrations error:", error);
     });
@@ -266,19 +255,8 @@ export default function App() {
       snapshot.forEach((doc) => {
         items.push(doc.data());
       });
-      // Merge with withdrawals history state
-      setWithdrawHistory(prev => {
-        const merged = [...prev];
-        items.forEach(item => {
-          const index = merged.findIndex(w => w.id === item.id);
-          if (index !== -1) {
-            merged[index] = item;
-          } else {
-            merged.push(item);
-          }
-        });
-        return merged;
-      });
+      // Direct assignment ensures deleted/completed withdrawals are perfectly in sync
+      setWithdrawHistory(items);
     }, (error) => {
       console.error("Firestore listening withdrawals error:", error);
     });
@@ -291,8 +269,15 @@ export default function App() {
       });
       if (items.length > 0) {
         setAllUsers(prev => {
-          // Merge local master users pool with Firestore users so offline-registered users are kept
-          const merged = [...prev];
+          // Filter local master users pool to keep only users that exist in the database (or the default admin_tapp)
+          const filtered = prev.filter(u => {
+            if (!u.username) return false;
+            if (u.username.toLowerCase().trim() === 'admin_tapp') return true;
+            return items.some(item => item.username && item.username.toLowerCase().trim() === u.username.toLowerCase().trim());
+          });
+
+          // Merge Firestore users' updated values
+          const merged = [...filtered];
           items.forEach(item => {
             const index = merged.findIndex(u => u.username && item.username && u.username.toLowerCase().trim() === item.username.toLowerCase().trim());
             if (index !== -1) {
@@ -739,7 +724,12 @@ export default function App() {
   };
 
   const getInviteCount = (): number => {
-    const referredUsers = allUsers.filter(u => u.invitedBy && userProfile.username && u.invitedBy.toLowerCase().trim() === userProfile.username.toLowerCase().trim());
+    const cleanProfileUser = userProfile.username ? userProfile.username.replace(/^@/, '').toLowerCase().trim() : '';
+    const referredUsers = allUsers.filter(u => {
+      if (!u.invitedBy) return false;
+      const cleanInviter = u.invitedBy.replace(/^@/, '').toLowerCase().trim();
+      return cleanInviter === cleanProfileUser;
+    });
     let count = Math.max(userProfile.inviteCount || 0, referredUsers.length);
     if (userProfile.username && userProfile.username.toLowerCase() === 'admin_tapp' && count < 4) {
       count = 4;
@@ -748,12 +738,12 @@ export default function App() {
   };
 
   const getInviteCommissions = (): number => {
-    const referredActiveUsers = allUsers.filter(u => 
-      u.invitedBy && 
-      userProfile.username && 
-      u.invitedBy.toLowerCase().trim() === userProfile.username.toLowerCase().trim() &&
-      u.status === 'active'
-    );
+    const cleanProfileUser = userProfile.username ? userProfile.username.replace(/^@/, '').toLowerCase().trim() : '';
+    const referredActiveUsers = allUsers.filter(u => {
+      if (!u.invitedBy || u.status !== 'active') return false;
+      const cleanInviter = u.invitedBy.replace(/^@/, '').toLowerCase().trim();
+      return cleanInviter === cleanProfileUser;
+    });
     
     let totalCommissions = 0;
     referredActiveUsers.forEach(u => {
@@ -868,6 +858,7 @@ export default function App() {
         referenceNo: newReg.referenceNo,
         inviteCommissionsEarned: 0,
         inviteCount: 0,
+        createdAt: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         ...(referredBy ? { invitedBy: referredBy } : {})
       };
 
@@ -1027,7 +1018,8 @@ export default function App() {
           referenceNo: matchedReg ? matchedReg.referenceNo : '',
           inviteCommissionsEarned: 0,
           inviteCount: 0,
-          invitedBy: matchedReg ? matchedReg.invitedBy : undefined
+          invitedBy: matchedReg ? matchedReg.invitedBy : undefined,
+          createdAt: matchedReg && matchedReg.date ? matchedReg.date : new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
       }
       
@@ -3029,9 +3021,14 @@ export default function App() {
                         >
                           <div className="flex justify-between items-start flex-wrap gap-2">
                             <div>
-                              <span className="text-white font-extrabold text-[13px]">@{u.username}</span>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-white font-extrabold text-[13px]">@{u.username}</span>
+                                <span className="text-[10px] text-zinc-500 font-mono bg-zinc-900 px-1.5 py-0.5 rounded border border-white/5">
+                                  📅 {u.createdAt || registrations.find(r => r.username && r.username.toLowerCase().trim() === u.username.toLowerCase().trim())?.date || '11/06/2026'}
+                                </span>
+                              </div>
                               {u.invitedBy && (
-                                <span className="text-[10px] text-zinc-500 ml-2 font-normal block sm:inline">
+                                <span className="text-[10px] text-zinc-500 font-normal block mt-1">
                                   Invitado por: <strong className="text-zinc-400">@{u.invitedBy}</strong>
                                 </span>
                               )}
@@ -3063,6 +3060,7 @@ export default function App() {
                             <div>Contraseña: <strong className="text-yellow-500 select-all">{u.password || 'N/A'}</strong></div>
                             <div>VIP Actual: <strong className="text-purple-300 uppercase font-bold">{u.vipLevel}</strong></div>
                             <div>Comisiones: <strong className="text-[#39FF14]">{u.inviteCommissionsEarned || 0} USD</strong></div>
+                            <div className="sm:col-span-2 text-zinc-500 border-t border-white/5 pt-1.5 mt-0.5">📅 Fecha de Ingreso: <strong className="text-zinc-300 font-mono">{u.createdAt || registrations.find(r => r.username && r.username.toLowerCase().trim() === u.username.toLowerCase().trim())?.date || '11/06/2026'}</strong></div>
                           </div>
 
                           <div className="flex flex-col sm:flex-row gap-3 bg-zinc-950/80 p-3 rounded-xl border border-white/5 sm:items-end">
