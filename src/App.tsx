@@ -1000,6 +1000,37 @@ export default function App() {
         }
       }
       
+      // If user profile does not exist, reconstruct it from matched registration data
+      if (!userData) {
+        const matchedReg = registrations.find(r => r.username && r.username.toLowerCase().trim() === targetName);
+        
+        let startEarnings = 10.00;
+        const targetVip = regVipLevel ? (regVipLevel as VipLevel) : ('VIP PLATA 10$' as VipLevel);
+        if (targetVip === 'VIP ORO 20$') startEarnings = 20.00;
+        else if (targetVip === 'VIP RUBÍ 40$') startEarnings = 40.00;
+        else if (targetVip === 'VIP DIAMANTE 120$') startEarnings = 120.00;
+        else if (targetVip === 'VIP PLATINO 420$') startEarnings = 420.00;
+        else if (targetVip === 'VIP CORONA IMPERIAL 1000$') startEarnings = 1000.00;
+
+        userData = {
+          username: regUsername.trim(),
+          email: matchedReg ? matchedReg.email : `${targetName}@gmail.com`,
+          password: '12345', // Standard default password fallback
+          vipLevel: targetVip,
+          earnings: startEarnings,
+          completedTaskIds: [],
+          isRegistered: true,
+          status: 'pending',
+          paymentMethodUsed: matchedReg ? matchedReg.paymentMethodUsed : 'USDT BEP-20',
+          proofFileName: matchedReg ? matchedReg.proofFileName : '',
+          proofFileBlob: matchedReg ? matchedReg.proofFileBlob : '',
+          referenceNo: matchedReg ? matchedReg.referenceNo : '',
+          inviteCommissionsEarned: 0,
+          inviteCount: 0,
+          invitedBy: matchedReg ? matchedReg.invitedBy : undefined
+        };
+      }
+      
       if (userData) {
         // 1. Activate approved user and promote tier if specified
         const targetVip = regVipLevel ? (regVipLevel as VipLevel) : userData.vipLevel;
@@ -1010,8 +1041,15 @@ export default function App() {
         };
         await setDoc(userRef, activatedTarget);
 
-        // Update allUsers local state for reactive display updates
-        setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase() === targetName ? activatedTarget : u));
+        // Update allUsers local state for reactive display updates (ensuring the user is appended if they are new)
+        setAllUsers(prev => {
+          const index = prev.findIndex(u => u.username && u.username.toLowerCase().trim() === targetName);
+          if (index !== -1) {
+            return prev.map((u, idx) => idx === index ? activatedTarget : u);
+          } else {
+            return [...prev, activatedTarget];
+          }
+        });
         
         // 2. Pay 15% commission if referrer exists
         if (userData.invitedBy) {
@@ -1038,7 +1076,7 @@ export default function App() {
               inviteCount: (referrerUser.inviteCount || 0) + 1
             };
             await setDoc(referrerRef, updatedReferrer);
-            setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase() === referrerName ? updatedReferrer : u));
+            setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase().trim() === referrerName ? updatedReferrer : u));
           }
         }
       }
@@ -1046,6 +1084,28 @@ export default function App() {
       console.error("handleApproveUser error:", err);
     }
   };
+
+  // Self-healing check for approved registrations with missing/inactive user accounts in the master database
+  useEffect(() => {
+    let active = true;
+    const healApprovedUsers = async () => {
+      if (registrations.length === 0 || allUsers.length === 0) return;
+      const approvedRegs = registrations.filter(r => r.status === 'approved' && r.username);
+      for (const reg of approvedRegs) {
+        if (!active) break;
+        const targetLower = reg.username.toLowerCase().trim();
+        const existing = allUsers.find(u => u.username && u.username.toLowerCase().trim() === targetLower);
+        if (!existing || existing.status !== 'active') {
+          console.log(`Auto-healing and activating profile for approved user: @${reg.username}`);
+          await handleApproveUser(reg.username, reg.amountUsd || 10, reg.vipLevel);
+        }
+      }
+    };
+    healApprovedUsers();
+    return () => {
+      active = false;
+    };
+  }, [registrations, allUsers]);
 
   const handleUpgradeVip = (lvl: VipLevel) => {
     // Admin/propietario can instantly upgrade for easy tests
