@@ -4,6 +4,7 @@ import PromoShareCard from './components/PromoShareCard';
 import BrainLogo from './components/BrainLogo';
 import VipTasks from './components/VipTasks';
 import VipReels from './components/VipReels';
+import WithdrawalCalendar from './components/WithdrawalCalendar';
 import { UserProfile, VipLevel, Reel } from './types';
 import { 
   Sparkles, ShieldCheck, Share2, CircleAlert, Globe, X, 
@@ -71,6 +72,13 @@ export default function App() {
         inviteCommissionsEarned: 6.00
       }
     ];
+  });
+
+  // State for real-time withdraw calendar configuration
+  const [withdrawConfig, setWithdrawConfig] = useState<any>({
+    enabled: true,
+    allowedDays: [1, 5], // default Monday (1) and Friday (5)
+    allowedDates: []
   });
 
   // Persist master users pool & Listen to Firestore in Real-Time
@@ -364,12 +372,32 @@ export default function App() {
       console.error("Firestore listening reels error:", error);
     });
 
+    // 7. Setup real-time listener for withdrawals calendar configuration
+    const unsubWithdrawalConfig = onSnapshot(doc(db, 'config', 'withdrawals'), (docSnap) => {
+      if (docSnap.exists()) {
+        setWithdrawConfig(docSnap.data());
+      } else {
+        const defaultVal = {
+          enabled: true,
+          allowedDays: [1, 5], // default Monday (1) and Friday (5)
+          allowedDates: []
+        };
+        setDoc(doc(db, 'config', 'withdrawals'), defaultVal).catch(err => {
+          console.warn("Could not seed config/withdrawals in Firestore:", err);
+        });
+        setWithdrawConfig(defaultVal);
+      }
+    }, (error) => {
+      console.error("Firestore listening config/withdrawals error:", error);
+    });
+
     return () => {
       unsubRegistrations();
       unsubWithdrawals();
       unsubUsers();
       unsubVoices();
       unsubReels();
+      unsubWithdrawalConfig();
     };
   }, []);
 
@@ -1554,6 +1582,7 @@ export default function App() {
                 setWithdrawHistory={setWithdrawHistory}
                 voiceThemes={voiceThemes}
                 reels={reels}
+                withdrawConfig={withdrawConfig}
               />
             </div>
 
@@ -2353,7 +2382,7 @@ export default function App() {
 
             {/* TAB CONTENT: WITHDRAWALS */}
             {activeAdminTab === 'retiros' && (
-              <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1">
+              <div className="space-y-4 max-h-[550px] overflow-y-auto pr-1">
                 <div className="bg-indigo-950/20 rounded-xl p-3 border border-indigo-500/15 flex items-center gap-3 text-xs text-indigo-300">
                   <div className="h-5 w-5 bg-indigo-500/10 rounded-full flex items-center justify-center font-bold shrink-0">i</div>
                   <p className="leading-normal font-sans">
@@ -2361,10 +2390,26 @@ export default function App() {
                   </p>
                 </div>
 
-                {withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').length === 0 ? (
-                  <p className="text-center py-8 text-xs font-mono text-zinc-500">No hay solicitudes de retiro pendientes.</p>
-                ) : (
-                  <div className="space-y-3">
+                {/* Real-time Withdrawal Calendar integrated beautifully for administrator */}
+                <WithdrawalCalendar
+                  mode="admin"
+                  config={withdrawConfig}
+                  onUpdateConfig={async (newConfig) => {
+                    try {
+                      await setDoc(doc(db, 'config', 'withdrawals'), newConfig);
+                    } catch (err: any) {
+                      console.error("Error updating config/withdrawals:", err);
+                      alert("Error al actualizar calendario en Firestore: " + err.message);
+                    }
+                  }}
+                />
+
+                <div className="border-t border-white/5 pt-4">
+                  <h4 className="text-xs font-black tracking-widest text-[#39FF14] uppercase font-mono mb-3">📋 Listado de Solicitudes Pendientes</h4>
+                  {withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').length === 0 ? (
+                    <p className="text-center py-6 text-xs font-mono text-zinc-500 bg-zinc-950/20 border border-white/5 rounded-2xl">No hay solicitudes de retiro pendientes actualmente.</p>
+                  ) : (
+                    <div className="space-y-3">
                     {withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').map((item) => (
                       <div 
                         key={item.id} 
@@ -2469,6 +2514,7 @@ export default function App() {
                     ))}
                   </div>
                 )}
+                </div> {/* Close of border-t border-white/5 pt-4 */}
               </div>
             )}
 
@@ -3169,11 +3215,21 @@ export default function App() {
                                 <button
                                   onClick={async () => {
                                     if (window.confirm(`⚠️ ¿Estás COMPLETAMENTE seguro de ELIMINAR al usuario @${u.username}? Esta acción es irreversible y borrará su cuenta y sus datos de Firestore.`)) {
-                                      if (window.confirm(`⚠️ Escribe el nombre del usuario ("${u.username}") para confirmar la eliminación definitiva:`)) {
+                                      if (window.confirm(`⚠️ Por favor, confirma nuevamente la eliminación definitiva de @${u.username}:`)) {
                                         try {
-                                          await deleteDoc(doc(db, 'users', u.username.toLowerCase().trim()));
+                                          const targetUsernameClean = u.username.toLowerCase().trim();
+                                          
+                                          // 1. Delete user from 'users'
+                                          await deleteDoc(doc(db, 'users', targetUsernameClean));
+                                          
+                                          // 2. Clear out any registrations matching this user to prevent auto-healing recreate loops
+                                          const matchedRegs = registrations.filter(r => r.username && r.username.toLowerCase().trim() === targetUsernameClean);
+                                          for (const reg of matchedRegs) {
+                                            await deleteDoc(doc(db, 'registrations', reg.id));
+                                          }
+                                          
                                           setAllUsers(prev => prev.filter(usr => usr.username.toLowerCase() !== u.username.toLowerCase()));
-                                          alert(`✅ ¡Usuario @${u.username} eliminado de la base de datos!`);
+                                          alert(`✅ ¡Usuario @${u.username} y sus registros de activación fueron eliminados de la base de datos!`);
                                         } catch (err: any) {
                                           alert("Error al eliminar usuario: " + err.message);
                                         }

@@ -8,6 +8,7 @@ import { UserTask, UserProfile, VipLevel, Reel } from '../types';
 import { TASKS_DATABASE, REELS_DATABASE } from '../data';
 import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
+import WithdrawalCalendar from './WithdrawalCalendar';
 
 interface VipTasksProps {
   userProfile: UserProfile;
@@ -16,6 +17,11 @@ interface VipTasksProps {
   setWithdrawHistory: React.Dispatch<React.SetStateAction<any[]>>;
   voiceThemes?: any[];
   reels?: Reel[];
+  withdrawConfig?: {
+    enabled: boolean;
+    allowedDays: number[];
+    allowedDates: string[];
+  };
 }
 
 export default function VipTasks({ 
@@ -24,7 +30,8 @@ export default function VipTasks({
   withdrawHistory, 
   setWithdrawHistory,
   voiceThemes = [],
-  reels = []
+  reels = [],
+  withdrawConfig = { enabled: true, allowedDays: [1, 5], allowedDates: [] }
 }: VipTasksProps) {
   const [tasks, setTasks] = useState<UserTask[]>(() => {
     // Check if task IDs already stored in user profile to mark as completed
@@ -171,6 +178,21 @@ export default function VipTasks({
         return;
       }
       finalAddress = `Pago Móvil: Tel: ${pTrim} • CI: ${cTrim} • Banco: ${chosenBank}`;
+    }
+
+    // Validate custom calendar date constraints unless bypass is checked
+    if (withdrawConfig && withdrawConfig.enabled && !bypass10Days) {
+      const today = new Date();
+      const todayDayOfWeek = today.getDay(); // 0-6
+      const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      
+      const isDayAllowed = withdrawConfig.allowedDays.includes(todayDayOfWeek);
+      const isDateAllowed = withdrawConfig.allowedDates.includes(todayDateStr);
+      
+      if (!isDayAllowed && !isDateAllowed) {
+        setWithdrawalError('La solicitud de retiro ha sido bloqueada porque hoy no es un día de retiro habilitado en el calendario virtual. Revisa las fechas en verde.');
+        return;
+      }
     }
 
     // Validate 10-day constraint unless bypass is checked
@@ -1013,6 +1035,9 @@ export default function VipTasks({
                   <span className="text-[9px] text-zinc-400 ml-1.5 uppercase font-sans">USDT</span>
                 </div>
               </div>
+
+              {/* Render 4D Interactive Calendar of eligible withdrawal dates */}
+              <WithdrawalCalendar mode="user" config={withdrawConfig} />
 
               {/* Submitting step */}
               {isSubmittingWithdrawal ? (
