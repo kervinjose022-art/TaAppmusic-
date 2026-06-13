@@ -2722,10 +2722,21 @@ export default function App() {
               <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="url"
-                  placeholder="Pega aquí tu enlace (Ej. https://drive.google.com/uc?export=download&id=...)"
+                  placeholder="Pega aquí tu enlace (Ej. https://drive.google.com/file/d/... o enlace de Mediafire)"
                   value={withdrawConfig?.apkDownloadUrl || ''}
                   onChange={async (e) => {
-                    const val = e.target.value;
+                    let val = e.target.value.trim();
+                    
+                    // Auto-convert Google Drive viewing links to direct 1-click download links
+                    if (val.includes('drive.google.com')) {
+                      const driveIdMatch = val.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || val.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                      if (driveIdMatch && driveIdMatch[1]) {
+                        const fileId = driveIdMatch[1];
+                        val = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                        alert("⚡ ¡Detectamos un enlace de Google Drive! Lo hemos convertido automáticamente en Descarga Directa para que tus usuarios se la bajen en un solo click. No te olvides de poner el archivo de Drive como público (Cualquier persona con el enlace).");
+                      }
+                    }
+
                     const updated = {
                       ...withdrawConfig,
                       apkDownloadUrl: val
