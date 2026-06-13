@@ -239,11 +239,17 @@ export default function VipTasks({
       const generatedId = `TAPP-WD-${Math.floor(1000 + Math.random() * 9000)}`;
       const randomTxid = Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
       
+      const rawUsdt = Number((amountVal / 734).toFixed(2));
+      const feeUsdt = Number((rawUsdt * 0.1).toFixed(2));
+      const netUsdt = Number((rawUsdt - feeUsdt).toFixed(2));
+
       const newWithdrawal = {
         id: generatedId,
         username: userProfile.username,
         amountCoins: amountVal,
-        amountUsdt: Number((amountVal / 734).toFixed(2)),
+        amountUsdt: rawUsdt,
+        feeUsdt: feeUsdt,
+        netUsdt: netUsdt,
         address: finalAddress,
         network: withdrawalNetwork === 'BEP20' ? 'BEP20' : 'Pago Móvil',
         date: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -1231,15 +1237,35 @@ export default function VipTasks({
                         required
                         value={withdrawalAmount}
                         onChange={(e) => setWithdrawalAmount(e.target.value)}
-                        className="w-full text-xs font-mono bg-zinc-950 border border-white/10 rounded-xl pl-4 pr-24 py-2.5 text-white placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                        className="w-full text-xs font-mono bg-zinc-950 border border-white/10 rounded-xl pl-4 pr-24 py-2.5 text-white placeholder-zinc-805 focus:outline-none focus:border-[#39FF14]"
                       />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-900 border border-white/5 text-[9px] text-[#39FF14] px-2 py-1 rounded font-bold font-mono">
                         ≈ {isNaN(parseFloat(withdrawalAmount)) ? '0.00' : (parseFloat(withdrawalAmount) / 734).toFixed(2)} USDT
                       </div>
                     </div>
+
+                    {/* Breakdown ticket card */}
+                    {!isNaN(parseFloat(withdrawalAmount)) && parseFloat(withdrawalAmount) >= 3670 && (
+                      <div className="bg-black/40 border border-white/5 rounded-xl p-3 space-y-1.5 font-mono text-[9px] text-zinc-400">
+                        <div className="flex justify-between items-center">
+                          <span>Monto de Retiro (Bruto):</span>
+                          <span className="text-white">{(parseFloat(withdrawalAmount) / 734).toFixed(2)} USDT</span>
+                        </div>
+                        <div className="flex justify-between items-center text-red-400">
+                          <span>Comisión de Retiro (10% Fee):</span>
+                          <span>- {((parseFloat(withdrawalAmount) / 734) * 0.1).toFixed(2)} USDT</span>
+                        </div>
+                        <div className="border-t border-white/5 my-1.5 pt-1.5 flex justify-between items-center text-[#39FF14] font-bold text-[10px]">
+                          <span>Recibes Netos en tu Billetera:</span>
+                          <span className="text-shadow-[0_0_8px_rgba(57,255,20,0.2)]">
+                            {((parseFloat(withdrawalAmount) / 734) * 0.9).toFixed(2)} USDT
+                          </span>
+                        </div>
+                      </div>
+                    )}
                     
                     <p className="text-[9px] text-zinc-500 font-mono mt-1">
-                      * Mínimo de retiro: 3670 monedas (≈ {(3670 / 734).toFixed(2)} USDT). Tasa de Conversión: 734 Monedas = 1 USDT.
+                      * Mínimo de retiro: 3670 monedas (≈ {(3670 / 734).toFixed(2)} USDT). Comisión de Retiro: 10%. Conversión: 734 Monedas = 1 USDT.
                     </p>
                   </div>
 
@@ -1298,13 +1324,16 @@ export default function VipTasks({
                         <div className="space-y-1 font-mono min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[10px] text-white font-extrabold">{item.amountCoins} MONEDAS</span>
-                            <span className="text-[9px] text-zinc-500">({item.amountUsdt} USDT)</span>
+                            <span className="text-[9px] text-[#39FF14]">
+                              {item.netUsdt !== undefined ? `${item.netUsdt} USDT netos` : `${(item.amountUsdt * 0.9).toFixed(2)} USDT netos`}
+                            </span>
+                            <span className="text-[8px] bg-[#39FF14]/10 text-zinc-400 px-1 rounded">Bruto: {item.amountUsdt} USDT</span>
                             <span className="text-[8px] bg-[#39FF14]/10 text-[#39FF14] px-1 rounded font-black">{item.network}</span>
                           </div>
                           <div className="text-[8px] text-zinc-500 truncate select-all" title={item.address}>
                             Dir: {item.address.slice(0, 8)}...{item.address.slice(-6)}
                           </div>
-                          <p className="text-[8px] text-zinc-600 leading-none">{item.date} • ID: {item.id}</p>
+                          <p className="text-[8px] text-zinc-650 leading-none">{item.date} • ID: {item.id}</p>
                         </div>
 
                         <div className="text-right shrink-0">

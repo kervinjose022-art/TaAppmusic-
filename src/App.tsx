@@ -2442,9 +2442,20 @@ export default function App() {
                         <div className="space-y-1.5 min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-white font-extrabold text-[12px]">Retiro #{item.id.replace('TAPP-WD-', '')}</span>
-                            <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-2 py-0.5 rounded font-sans font-bold text-[10px]">
-                              {item.amountCoins} Monedas (${item.amountUsdt.toFixed(2)} USDT)
-                            </span>
+                             <div className="flex items-center gap-1.5 flex-wrap">
+                               <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/25 px-2 py-0.5 rounded font-sans font-bold text-[10px]">
+                                 {item.amountCoins} Monedas
+                               </span>
+                               <span className="bg-purple-500/10 text-purple-400 border border-purple-500/25 px-2 py-0.5 rounded font-sans font-medium text-[10px]">
+                                 Bruto: {item.amountUsdt.toFixed(2)} USDT
+                               </span>
+                               <span className="bg-red-500/10 text-red-400 border border-red-500/25 px-2 py-0.5 rounded font-sans font-medium text-[10px]">
+                                 Fee (10%): -{item.feeUsdt !== undefined ? item.feeUsdt.toFixed(2) : (item.amountUsdt * 0.1).toFixed(2)} USDT
+                               </span>
+                               <span className="bg-[#39FF14]/15 text-[#39FF14] border border-[#39FF14]/30 px-2 py-0.5 rounded font-sans font-extrabold text-[10px] animate-pulse">
+                                 A Pagar Neto: {item.netUsdt !== undefined ? item.netUsdt.toFixed(2) : (item.amountUsdt * 0.9).toFixed(2)} USDT
+                               </span>
+                             </div>
                             
                             {/* status pill */}
                             <span className={`text-[9px] font-sans px-2 py-0.5 rounded-full font-bold uppercase leading-none ${
