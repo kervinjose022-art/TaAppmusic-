@@ -5,10 +5,11 @@ import BrainLogo from './components/BrainLogo';
 import VipTasks from './components/VipTasks';
 import VipReels from './components/VipReels';
 import WithdrawalCalendar from './components/WithdrawalCalendar';
-import { UserProfile, VipLevel, Reel } from './types';
+import { UserProfile, VipLevel, Reel, RecoveryRequest } from './types';
 import { 
   Sparkles, ShieldCheck, Share2, CircleAlert, Globe, X, 
-  Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock, Eye, EyeOff, Users, CreditCard, Volume2, Film, PlusCircle, Trash2, Edit2
+  Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock, Eye, EyeOff, Users, CreditCard, Volume2, Film, PlusCircle, Trash2, Edit2,
+  Smartphone, Download
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from './firebase';
 import { collection, doc, onSnapshot, setDoc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
@@ -409,6 +410,17 @@ export default function App() {
       console.error("Firestore listening config/withdrawals error:", error);
     });
 
+    // 8. Setup real-time listener for recovery_requests collection
+    const unsubRecoveryRequests = onSnapshot(collection(db, 'recovery_requests'), (snapshot) => {
+      const items: RecoveryRequest[] = [];
+      snapshot.forEach((doc) => {
+        items.push({ id: doc.id, ...doc.data() } as RecoveryRequest);
+      });
+      setRecoveryRequests(items);
+    }, (error) => {
+      console.error("Firestore listening recovery_requests error:", error);
+    });
+
     return () => {
       unsubRegistrations();
       unsubWithdrawals();
@@ -416,6 +428,7 @@ export default function App() {
       unsubVoices();
       unsubReels();
       unsubWithdrawalConfig();
+      unsubRecoveryRequests();
     };
   }, []);
 
@@ -498,6 +511,17 @@ export default function App() {
   const [loginInput, setLoginInput] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+
+  // Password Recovery States
+  const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
+  const [recoverUsername, setRecoverUsername] = useState('');
+  const [recoverEmailConfirm, setRecoverEmailConfirm] = useState('');
+  const [foundRecoverUser, setFoundRecoverUser] = useState<UserProfile | null>(null);
+  const [recoverStep, setRecoverStep] = useState(1); // 1 = input username, 2 = confirm email, 3 = show/reset password, 4 = complete
+  const [recoverError, setRecoverError] = useState('');
+  const [recoverSuccess, setRecoverSuccess] = useState('');
+  const [newRecoverPassword, setNewRecoverPassword] = useState('');
+  const [isRecoverSubmitting, setIsRecoverSubmitting] = useState(false);
 
   // Automated persistence whenever userProfile updates
   useEffect(() => {
@@ -601,7 +625,8 @@ export default function App() {
 
   // Admin section states
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [activeAdminTab, setActiveAdminTab] = useState<'activaciones' | 'retiros' | 'voces' | 'usuarios' | 'videos'>('activaciones');
+  const [activeAdminTab, setActiveAdminTab] = useState<'activaciones' | 'retiros' | 'voces' | 'usuarios' | 'videos' | 'recuperaciones'>('activaciones');
+  const [recoveryRequests, setRecoveryRequests] = useState<RecoveryRequest[]>([]);
   const [adminUserSearch, setAdminUserSearch] = useState('');
 
   // Voice database state (initialized with default voices for instant local fallback)
@@ -1019,6 +1044,223 @@ export default function App() {
     }
   };
 
+  const handleVerifyRecoveryUsername = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRecoverError('');
+    setIsRecoverSubmitting(true);
+    
+    const userKey = recoverUsername.toLowerCase().trim();
+    if (!userKey) {
+      setRecoverError('❌ Por favor, ingresa tu usuario o correo electrónico.');
+      setIsRecoverSubmitting(false);
+      return;
+    }
+
+    try {
+      // Find in local react cached users first or fetch from Firestore
+      let dbUser = allUsers.find(u => 
+        (u.username && u.username.toLowerCase().trim() === userKey) || 
+        (u.email && u.email.toLowerCase().trim() === userKey)
+      );
+      
+      if (!dbUser) {
+        // Fallback check Firestore directly by username
+        const userSnap = await getDoc(doc(db, 'users', userKey));
+        if (userSnap.exists()) {
+          dbUser = userSnap.data() as UserProfile;
+        }
+      }
+      
+      if (!dbUser) {
+        setRecoverError('❌ No se encontró ninguna cuenta con ese usuario o correo.');
+      } else {
+        setFoundRecoverUser(dbUser);
+        setRecoverStep(2); // Move directly to validation & new password input
+      }
+    } catch (err) {
+      console.error("Error retrieving user for recovery:", err);
+      setRecoverError('❌ El servidor está ocupado. Inténtalo de nuevo en unos momentos.');
+    } finally {
+      setIsRecoverSubmitting(false);
+    }
+  };
+
+  const handleConfirmEmailAndSubmitRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRecoverError('');
+    setRecoverSuccess('');
+    setIsRecoverSubmitting(true);
+    
+    if (!foundRecoverUser) {
+      setRecoverError('❌ Cuenta de usuario no cargada.');
+      setIsRecoverSubmitting(false);
+      return;
+    }
+    
+    const enteredEmail = recoverEmailConfirm.trim().toLowerCase();
+    const storedEmail = (foundRecoverUser.email || '').trim().toLowerCase();
+    const desiredPass = newRecoverPassword.trim();
+    
+    if (!enteredEmail) {
+      setRecoverError('❌ Por favor, ingresa el correo de la cuenta.');
+      setIsRecoverSubmitting(false);
+      return;
+    }
+    
+    if (!desiredPass || desiredPass.length < 4) {
+      setRecoverError('❌ La nueva clave debe tener al menos 4 caracteres.');
+      setIsRecoverSubmitting(false);
+      return;
+    }
+    
+    if (enteredEmail !== storedEmail) {
+      setRecoverError('❌ El correo electrónico ingresado no coincide con el registrado en esta cuenta.');
+      setIsRecoverSubmitting(false);
+      return;
+    }
+
+    try {
+      const usernameLower = foundRecoverUser.username.toLowerCase().trim();
+      const requestRef = doc(db, 'recovery_requests', usernameLower);
+      const requestData = {
+        id: usernameLower,
+        username: foundRecoverUser.username,
+        email: enteredEmail,
+        requestedAt: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'pending',
+        requestedNewPassword: desiredPass,
+        oldPassword: foundRecoverUser.password || 'N/A'
+      };
+      
+      await setDoc(requestRef, requestData);
+      setRecoverSuccess('⚡ ¡Solicitud enviada con éxito al Panel de Kervin! Tu correo coincide con nuestros registros. Tan pronto como el administrador verifique y apruebe tu solicitud en su panel, tu nueva clave se activará al instante.');
+      setRecoverStep(4);
+    } catch (err) {
+      console.error("Error creating recovery request:", err);
+      setRecoverError('❌ Error al registrar solicitud. Comprueba tu conexión de red.');
+    } finally {
+      setIsRecoverSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRecoverError('');
+    setRecoverSuccess('');
+    setIsRecoverSubmitting(true);
+    
+    if (!foundRecoverUser) return;
+    
+    const passwordToSet = newRecoverPassword.trim();
+    if (!passwordToSet || passwordToSet.length < 4) {
+      setRecoverError('❌ La contraseña debe tener al menos 4 caracteres.');
+      setIsRecoverSubmitting(false);
+      return;
+    }
+
+    try {
+      const userKey = foundRecoverUser.username.toLowerCase().trim();
+      const updatedUser: UserProfile = {
+        ...foundRecoverUser,
+        password: passwordToSet
+      };
+      
+      // Clean any undefined fields before writing to Firestore
+      Object.keys(updatedUser).forEach(key => {
+        if ((updatedUser as any)[key] === undefined) {
+          delete (updatedUser as any)[key];
+        }
+      });
+
+      await setDoc(doc(db, 'users', userKey), updatedUser);
+      
+      // Update local react states
+      setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase().trim() === userKey ? updatedUser : u));
+      
+      // If original logged in profile matches, update localstorage / profile state
+      if (userProfile && userProfile.username.toLowerCase().trim() === userKey) {
+        saveProfile(updatedUser);
+      }
+      
+      setRecoverSuccess('🎉 ¡Contraseña actualizada con éxito! Ahora puedes iniciar sesión.');
+      setRecoverStep(4); // completion screen
+    } catch (err) {
+      console.error("Error setting new password in Firestore:", err);
+      setRecoverError('❌ Error al actualizar en la base de datos. Inténtalo de nuevo.');
+    } finally {
+      setIsRecoverSubmitting(false);
+    }
+  };
+
+  const resetRecoveryStates = () => {
+    setIsRecoveringPassword(false);
+    setRecoverUsername('');
+    setRecoverEmailConfirm('');
+    setFoundRecoverUser(null);
+    setRecoverStep(1);
+    setRecoverError('');
+    setRecoverSuccess('');
+    setNewRecoverPassword('');
+  };
+
+  const handleRequestAdminRecovery = async () => {
+    if (!foundRecoverUser) return;
+    setRecoverError('');
+    setIsRecoverSubmitting(true);
+    
+    try {
+      const usernameLower = foundRecoverUser.username.toLowerCase().trim();
+      const requestRef = doc(db, 'recovery_requests', usernameLower);
+      const requestData = {
+        id: usernameLower,
+        username: foundRecoverUser.username,
+        email: foundRecoverUser.email || 'N/A',
+        requestedAt: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'pending',
+        oldPassword: foundRecoverUser.password || 'N/A'
+      };
+      
+      await setDoc(requestRef, requestData);
+      setRecoverSuccess('⚡ ¡Solicitud de ayuda enviada con éxito! Tu petición ha sido registrada en el panel del administrador. Él podrá visualizar tu clave actual o cambiarla por ti.');
+      setRecoverStep(4);
+    } catch (err) {
+      console.error("Error creating recovery request:", err);
+      setRecoverError('❌ Error del servidor al registrar la solicitud. Comunícate directamente con soporte.');
+    } finally {
+      setIsRecoverSubmitting(false);
+    }
+  };
+
+  const handleResolveRecovery = async (username: string, newPass: string) => {
+    if (!newPass.trim()) {
+      alert("⚠️ Por favor ingresa una nueva contraseña válida.");
+      return;
+    }
+    try {
+      const usernameLower = username.toLowerCase().trim();
+      const userRef = doc(db, 'users', usernameLower);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const uData = userSnap.data() as UserProfile;
+        const updatedUser = { ...uData, password: newPass.trim() };
+        await setDoc(userRef, updatedUser);
+        
+        // Also remove the recovery request from queue
+        await deleteDoc(doc(db, 'recovery_requests', usernameLower));
+        
+        // Update local users list state
+        setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase().trim() === usernameLower ? updatedUser : u));
+        
+        alert(`✅ Contraseña de @${username} restablecida con éxito a "${newPass}" y solicitud resuelta.`);
+      } else {
+        alert("⚠️ El usuario no existe en la colección de perfiles.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert("Error al restablecer la contraseña en Firestore: " + err.message);
+    }
+  };
+
   const handleApproveUser = async (regUsername: string, regAmountUsd: number, regVipLevel?: string) => {
     const targetName = regUsername.toLowerCase().trim();
     
@@ -1051,20 +1293,20 @@ export default function App() {
 
         userData = {
           username: regUsername.trim(),
-          email: matchedReg ? matchedReg.email : `${targetName}@gmail.com`,
+          email: matchedReg && matchedReg.email ? matchedReg.email : `${targetName}@gmail.com`,
           password: '12345', // Standard default password fallback
           vipLevel: targetVip,
           earnings: startEarnings,
           completedTaskIds: [],
           isRegistered: true,
           status: 'pending',
-          paymentMethodUsed: matchedReg ? matchedReg.paymentMethodUsed : 'USDT BEP-20',
-          proofFileName: matchedReg ? matchedReg.proofFileName : '',
-          proofFileBlob: matchedReg ? matchedReg.proofFileBlob : '',
-          referenceNo: matchedReg ? matchedReg.referenceNo : '',
+          paymentMethodUsed: matchedReg && matchedReg.paymentMethodUsed ? matchedReg.paymentMethodUsed : 'USDT BEP-20',
+          proofFileName: matchedReg && matchedReg.proofFileName ? matchedReg.proofFileName : '',
+          proofFileBlob: matchedReg && matchedReg.proofFileBlob ? matchedReg.proofFileBlob : '',
+          referenceNo: matchedReg && matchedReg.referenceNo ? matchedReg.referenceNo : '',
           inviteCommissionsEarned: 0,
           inviteCount: 0,
-          invitedBy: matchedReg ? matchedReg.invitedBy : undefined,
+          invitedBy: matchedReg && matchedReg.invitedBy ? matchedReg.invitedBy : '',
           createdAt: matchedReg && matchedReg.date ? matchedReg.date : new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
       }
@@ -1077,6 +1319,14 @@ export default function App() {
           status: 'active' as const,
           vipLevel: targetVip
         };
+        
+        // Clean any undefined properties to satisfy Firestore setDoc constraints
+        Object.keys(activatedTarget).forEach(key => {
+          if ((activatedTarget as any)[key] === undefined) {
+            delete (activatedTarget as any)[key];
+          }
+        });
+
         await setDoc(userRef, activatedTarget);
 
         // Update allUsers local state for reactive display updates (ensuring the user is appended if they are new)
@@ -1113,6 +1363,14 @@ export default function App() {
               inviteCommissionsEarned: Number(((referrerUser.inviteCommissionsEarned || 0) + commissionEarned).toFixed(2)),
               inviteCount: (referrerUser.inviteCount || 0) + 1
             };
+
+            // Clean any undefined properties to satisfy Firestore setDoc constraints
+            Object.keys(updatedReferrer).forEach(key => {
+              if ((updatedReferrer as any)[key] === undefined) {
+                delete (updatedReferrer as any)[key];
+              }
+            });
+
             await setDoc(referrerRef, updatedReferrer);
             setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase().trim() === referrerName ? updatedReferrer : u));
           }
@@ -1339,9 +1597,23 @@ export default function App() {
 
                   {/* Password Input */}
                   <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 font-black block">
-                      Contraseña de Acceso *
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 font-black block">
+                        Contraseña de Acceso *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRecoverError('');
+                          setRecoverSuccess('');
+                          setRecoverStep(1);
+                          setIsRecoveringPassword(true);
+                        }}
+                        className="text-[9px] uppercase font-mono tracking-widest text-[#39FF14] hover:underline font-extrabold cursor-pointer bg-transparent border-none outline-none focus:outline-none"
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </button>
+                    </div>
                     <div className="relative">
                       <input
                         type={showPassword ? 'text' : 'password'}
@@ -1388,12 +1660,25 @@ export default function App() {
                       REGISTRARME Y ACTIVAR CASILLA VIP ⚡
                     </button>
                   </p>
-                  <div className="pt-1.5 text-center">
+                  <div className="pt-1.5 text-center flex flex-col items-center gap-1.5">
                     <button
                       onClick={() => setShowAdminCodePrompt(true)}
-                      className="text-[10px] text-zinc-650 hover:text-[#39FF14] transition-all uppercase font-mono font-bold tracking-tight bg-transparent border-none pointer-events-auto"
+                      className="text-[10px] text-zinc-650 hover:text-[#39FF14] transition-all uppercase font-mono font-bold tracking-tight bg-transparent border-none pointer-events-auto cursor-pointer"
                     >
                       🛠️ Acceso de Administrador
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRecoverError('');
+                        setRecoverSuccess('');
+                        setRecoverStep(1);
+                        setIsRecoveringPassword(true);
+                      }}
+                      className="w-full flex h-10 items-center justify-center gap-2 rounded-xl bg-purple-950/10 border border-purple-500/35 hover:bg-purple-950/30 hover:border-[#39FF14] text-purple-400 hover:text-[#39FF14] text-[11px] font-black uppercase tracking-widest transition-all cursor-pointer active:scale-95 shadow-[0_0_12px_rgba(168,85,247,0.15)] mt-3.5"
+                    >
+                      🔑 Recuperar contraseña
                     </button>
                   </div>
                 </div>
@@ -1488,32 +1773,59 @@ export default function App() {
                   </p>
                 </div>
 
-                {/* Quick copy widget for deployment link */}
-                <div className="w-full lg:w-auto shrink-0 bg-black border border-[#39FF14]/20 rounded-2xl p-4 flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-start gap-4">
-                  <div className="text-left">
-                    <p className="text-[9px] font-bold text-[#39FF14] tracking-wider uppercase">Link de Lanzamiento</p>
-                    <p className="text-xs font-mono text-zinc-300 truncate max-w-[180px] select-all lowercase">{sharedUrl}</p>
+                {/* Quick actions row */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full lg:w-auto">
+                  {/* Quick copy widget for deployment link */}
+                  <div className="shrink-0 bg-black border border-white/10 rounded-2xl p-4 flex flex-col items-start gap-3">
+                    <div className="text-left text-ellipsis overflow-hidden">
+                      <p className="text-[9px] font-bold text-[#39FF14] tracking-wider uppercase">Link de Lanzamiento</p>
+                      <p className="text-xs font-mono text-zinc-300 truncate max-w-[160px] select-all lowercase">{sharedUrl}</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 w-full">
+                      <button
+                        onClick={copyModalLink}
+                        className={`flex-1 flex h-8 items-center justify-center gap-1 rounded-xl px-3 text-[11px] font-bold transition-all cursor-pointer ${
+                          copiedModalLink 
+                            ? 'bg-emerald-600 text-white border-none' 
+                            : 'bg-black border border-[#39FF14]/40 hover:bg-[#39FF14]/15 text-[#39FF14] active:scale-95'
+                        }`}
+                      >
+                        {copiedModalLink ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                        <span>{copiedModalLink ? 'Copiado!' : 'Copiar'}</span>
+                      </button>
+                      <button
+                        onClick={() => setIsShareModalOpen(true)}
+                        className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#39FF14]/5 hover:bg-[#39FF14]/15 text-[#39FF14] border border-[#39FF14]/20 transition-all cursor-pointer"
+                        title="Difundir plataforma"
+                      >
+                        <Share2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
-                  
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <button
-                      onClick={copyModalLink}
-                      className={`flex-1 sm:flex-initial flex h-9 items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-bold transition-all cursor-pointer ${
-                        copiedModalLink 
-                          ? 'bg-emerald-600 text-white border-none' 
-                          : 'bg-black border border-[#39FF14]/40 hover:bg-[#39FF14]/15 text-[#39FF14] active:scale-95'
-                      }`}
-                    >
-                      {copiedModalLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      <span>{copiedModalLink ? 'Copiado!' : 'Copiar'}</span>
-                    </button>
-                    <button
-                      onClick={() => setIsShareModalOpen(true)}
-                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#39FF14]/5 hover:bg-[#39FF14]/15 text-[#39FF14] border border-[#39FF14]/20 transition-all cursor-pointer"
-                      title="Difundir plataforma"
-                    >
-                      <Share2 className="h-4 w-4" />
-                    </button>
+
+                  {/* APK Download helper widget */}
+                  <div className="shrink-0 bg-black border border-[#39FF14]/25 rounded-2xl p-4 flex flex-col items-start gap-3">
+                    <div className="text-left">
+                      <p className="text-[9px] font-black text-neon-green tracking-wider uppercase flex items-center gap-1">
+                        <Smartphone className="h-2.5 w-2.5 text-[#39FF14]" /> APP OFICIAL ANDROID
+                      </p>
+                      <p className="text-xs font-sans font-bold text-zinc-300">Tappmusic v1.0.apk</p>
+                    </div>
+                    
+                    <div className="w-full">
+                      <a
+                        href="/assets/tappmusic.apk"
+                        download="tappmusic.apk"
+                        onClick={() => {
+                          alert("📲 Iniciando descarga del APK de Tappmusic v1.0 original de forma segura...");
+                        }}
+                        className="w-full flex h-8 items-center justify-center gap-1.5 rounded-xl bg-[#39FF14] hover:bg-[#39FF14]/85 text-black text-[11px] font-extrabold transition-all cursor-pointer filter saturate-120 hover:scale-[1.02] active:scale-95 shadow-[0_0_10px_rgba(57,255,20,0.2)]"
+                      >
+                        <Download className="h-3.5 w-3.5 text-black" />
+                        <span>DESCARGAR APK</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1680,6 +1992,180 @@ export default function App() {
                   <span>Compartir por Telegram</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PASSWORD RECOVERY DIALOG / MODAL */}
+      {isRecoveringPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-sm rounded-3xl border border-[#39FF14]/30 bg-black p-6 shadow-2xl text-center">
+            
+            {/* Corner Close Button */}
+            <div className="absolute top-4 right-4">
+              <button 
+                onClick={resetRecoveryStates}
+                className="h-8 w-8 rounded-lg bg-zinc-950 hover:bg-zinc-900 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-all cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-5 text-left font-sans">
+              <div className="text-center space-y-2">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-950/40 border border-emerald-500/30 text-[#39FF14]">
+                  <Lock className="h-6 w-6 text-[#39FF14] animate-pulse" />
+                </div>
+                <h3 className="text-md font-black tracking-widest text-white uppercase">Recuperar Contraseña</h3>
+                <p className="text-[11px] text-zinc-400">
+                  Sigue los pasos para restablecer la contraseña de tu cuenta.
+                </p>
+              </div>
+
+              {/* Steps Progress bar */}
+              <div className="flex items-center justify-between gap-1 pb-2">
+                {[1, 2, 3].map((step) => {
+                  let stepLabel = '';
+                  if (step === 1) stepLabel = 'Usuario';
+                  if (step === 2) stepLabel = 'Validación';
+                  if (step === 3) stepLabel = 'Nueva Clave';
+
+                  const isActive = recoverStep >= step;
+                  const isCurrent = recoverStep === step;
+
+                  return (
+                    <div key={step} className="flex-1 flex flex-col items-center gap-1.5">
+                      <div className={`h-1 w-full rounded-full transition-all duration-300 ${
+                        isActive ? 'bg-[#39FF14]' : 'bg-zinc-800'
+                      }`} />
+                      <span className={`text-[9px] font-mono tracking-wider transition-all uppercase ${
+                        isCurrent ? 'text-[#39FF14] font-bold' : isActive ? 'text-zinc-300' : 'text-zinc-650'
+                      }`}>
+                        {stepLabel}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {recoverError && (
+                <div className="text-[11px] text-red-400 font-mono text-center font-bold bg-red-950/20 border border-red-500/20 p-2.5 rounded-xl">
+                  {recoverError}
+                </div>
+              )}
+
+              {recoverSuccess && (
+                <div className="text-[11px] text-[#39FF14] font-mono text-center font-bold bg-emerald-950/40 border border-[#39FF14]/20 p-2.5 rounded-xl">
+                  {recoverSuccess}
+                </div>
+              )}
+
+              {/* STEP 1: Username validation */}
+              {recoverStep === 1 && (
+                <form onSubmit={handleVerifyRecoveryUsername} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] uppercase font-mono tracking-widest text-zinc-400 font-bold block">
+                      Ingresa tu Usuario o Correo Registrado *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej. melodia_tapp o correo@ejemplo.com"
+                      value={recoverUsername}
+                      onChange={(e) => setRecoverUsername(e.target.value)}
+                      className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isRecoverSubmitting}
+                    className="w-full flex h-10 items-center justify-center gap-2 rounded-xl bg-[#39FF14]/15 hover:bg-[#39FF14]/25 text-xs font-extrabold uppercase text-[#39FF14] border border-[#39FF14]/40 transition-all cursor-pointer active:scale-95 disabled:opacity-50 font-sans"
+                  >
+                    {isRecoverSubmitting ? 'Verificando...' : 'Comprobar Cuenta ⚡'}
+                  </button>
+                </form>
+              )}
+
+              {/* STEP 2: Unified Email confirmation & New Password choice */}
+              {(recoverStep === 2 || recoverStep === 3) && foundRecoverUser && (
+                <form onSubmit={handleConfirmEmailAndSubmitRequest} className="space-y-4">
+                  <div className="bg-[#39FF14]/5 border border-[#39FF14]/20 rounded-xl p-3 text-[10px] text-zinc-300 leading-normal font-sans">
+                    👋 ¡Hola <strong className="text-white">@{foundRecoverUser.username}</strong>! Para enviar tu solicitud de recuperación, confirma tu correo y escribe tu nueva contraseña.
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] uppercase font-mono tracking-widest text-zinc-400 font-bold block">
+                      Confirma tu Correo Registrado *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="Ej. usuario@ejemplo.com"
+                      value={recoverEmailConfirm}
+                      onChange={(e) => setRecoverEmailConfirm(e.target.value)}
+                      className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] uppercase font-mono tracking-widest text-[#39FF14] font-bold block">
+                      Nueva Contraseña Deseada * (Mín. 4 caracteres)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Escribe tu nueva clave favorita de ingreso"
+                      value={newRecoverPassword}
+                      onChange={(e) => setNewRecoverPassword(e.target.value)}
+                      className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRecoverStep(1)}
+                      className="flex-1 h-10 rounded-xl bg-zinc-950 border border-white/5 hover:bg-zinc-900 text-xs text-zinc-400 font-bold transition-all cursor-pointer"
+                    >
+                      Atrás
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isRecoverSubmitting}
+                      className="flex-1 h-10 rounded-xl bg-[#39FF14] text-black hover:bg-[#34e512] text-xs font-black uppercase transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                    >
+                      {isRecoverSubmitting ? 'Enviando...' : 'Pedir Recuperación 🔑'}
+                    </button>
+                  </div>
+
+                  <div className="border-t border-white/5 pt-3 text-center">
+                    <p className="text-[9.5px] text-zinc-500 font-sans leading-relaxed">
+                      ¿Tienes problemas con tu usuario de registro? Escríbenos a nuestro Gmail de Soporte Técnico Oficial: <br />
+                      <strong className="text-purple-300 font-semibold block mt-0.5">tappmusicsupport@gmail.com</strong>
+                    </p>
+                  </div>
+                </form>
+              )}
+
+              {/* STEP 4: Success Completion */}
+              {recoverStep === 4 && (
+                <div className="space-y-4 pt-2">
+                  <p className="text-xs text-zinc-300 leading-relaxed text-center font-sans">
+                    Tu contraseña ha sido actualizada con éxito en la base de datos de <strong>Tappmusic.com</strong>. Ya puedes ingresar a tu cuenta de inmediato.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={resetRecoveryStates}
+                    className="w-full flex h-10 items-center justify-center gap-2 rounded-xl bg-[#39FF14] text-black hover:bg-[#39FF14]/90 text-xs font-black uppercase transition-all cursor-pointer active:scale-95"
+                  >
+                    Volver al Inicio de Sesión
+                  </button>
+                </div>
+              )}
+
             </div>
           </div>
         </div>
@@ -2208,7 +2694,7 @@ export default function App() {
             </div>
 
             {/* Tab switch control */}
-            <div className="grid grid-cols-5 gap-1 p-1 bg-black rounded-xl border border-white/5 font-sans">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 p-1 bg-black rounded-xl border border-white/5 font-sans">
               <button
                 onClick={() => setActiveAdminTab('activaciones')}
                 className={`py-2 px-1 rounded-lg text-[9px] sm:text-[11px] font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
@@ -2268,6 +2754,19 @@ export default function App() {
               >
                 <Users className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
                 <span className="truncate">Usuarios ({allUsers.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveAdminTab('recuperaciones')}
+                className={`py-2 px-1 rounded-lg text-[9px] sm:text-[11px] font-black uppercase text-center transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                  activeAdminTab === 'recuperaciones'
+                    ? 'bg-purple-900/55 text-[#39FF14] border border-purple-500/30'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+                title="Solicitudes de recuperación de contraseña de usuarios"
+              >
+                <Lock className="h-3.5 w-3.5 shrink-0 text-red-400" />
+                <span className="truncate">Soporte ({recoveryRequests.filter(r => r.status === 'pending').length})</span>
               </button>
             </div>
 
@@ -3271,6 +3770,116 @@ export default function App() {
                                 </button>
                               )}
                             </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT: SOPORTE DE RECOVERY REQUESTS */}
+            {activeAdminTab === 'recuperaciones' && (
+              <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 text-left">
+                <div className="bg-purple-950/20 rounded-xl p-3 border border-purple-500/15 flex items-center gap-3 text-xs text-purple-300">
+                  <div className="h-5 w-5 bg-purple-500/10 rounded-full flex items-center justify-center font-bold shrink-0">i</div>
+                  <p className="leading-normal font-sans">
+                    <strong>Solicitudes de Soporte (Recuperación de Claves):</strong> Aquí puedes ver los usuarios del sistema que han solicitado recuperar/cambiar su contraseña. Revisa su contraseña actual o escribe una nueva clave para activarla al instante.
+                  </p>
+                </div>
+
+                <div className="space-y-3 font-mono text-xs">
+                  {recoveryRequests.filter(r => r.status === 'pending').length === 0 ? (
+                    <div className="py-12 text-center text-zinc-500 space-y-2">
+                      <p className="text-sm">🎉 ¡Todo controlado!</p>
+                      <p className="text-[10px]">No hay solicitudes pendientes de recuperación de clave.</p>
+                    </div>
+                  ) : (
+                    recoveryRequests.filter(r => r.status === 'pending').map((r) => {
+                      return (
+                        <div 
+                          key={r.id}
+                          className="p-4 rounded-2xl border border-[#39FF14]/25 bg-black/45 space-y-3 hover:border-[#39FF14]/40 transition-all font-mono animate-fade-in"
+                        >
+                          <div className="flex justify-between items-start flex-wrap gap-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[#39FF14] font-extrabold text-[13px]">@{r.username}</span>
+                                <span className="text-[8px] uppercase bg-purple-950 text-purple-300 font-bold px-1.5 py-0.5 rounded border border-purple-500/20 animate-pulse">
+                                  Pendiente
+                                </span>
+                              </div>
+                              <p className="text-[9px] text-zinc-500 mt-1">📅 Solicitado: {r.requestedAt}</p>
+                              <p className="text-[10px] text-zinc-400 mt-1">Correo Registrado: <strong className="text-white">{r.email}</strong></p>
+                            </div>
+                            
+                            <div className="bg-zinc-950/80 px-2.5 py-1 rounded border border-white/5 text-[10px] text-right">
+                              <span className="text-zinc-500 font-sans block text-[8px] uppercase">Contraseña actual:</span>
+                              <span className="text-yellow-400 font-black tracking-widest">{r.oldPassword}</span>
+                            </div>
+                          </div>
+
+                          {/* Quick Approval for Requested Password */}
+                          {r.requestedNewPassword && (
+                            <div className="bg-[#39FF14]/5 border border-[#39FF14]/15 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs my-2">
+                              <div>
+                                <span className="text-zinc-400 font-sans block text-[8.5px] uppercase tracking-wider">Nueva Contraseña Solicitada por el Usuario:</span>
+                                <span className="text-[#39FF14] text-[14px] font-extrabold tracking-wide">{r.requestedNewPassword}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleResolveRecovery(r.username, r.requestedNewPassword!)}
+                                className="h-8 px-4 rounded-xl bg-[#39FF14] text-black font-sans font-black text-[10px] uppercase hover:bg-[#34e512] transition-all cursor-pointer whitespace-nowrap active:scale-95 shadow-[0_0_15px_rgba(57,255,20,0.25)] border-none shrink-0"
+                              >
+                                Aprobar Nueva Clave ✅
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Action Form */}
+                          <div className="border-t border-white/5 pt-3 mt-2">
+                            <form 
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+                                const newPass = formData.get('newPass') as string;
+                                handleResolveRecovery(r.username, newPass);
+                              }}
+                              className="flex gap-2 flex-wrap sm:flex-nowrap"
+                            >
+                              <input
+                                name="newPass"
+                                type="text"
+                                required
+                                placeholder="O escribe otra clave manualmente si deseas cambiarla..."
+                                className="flex-1 text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl px-4 py-2 text-[#39FF14] placeholder-zinc-700 focus:outline-none focus:border-[#39FF14]"
+                              />
+                              <div className="flex gap-1.5 shrink-0">
+                                <button
+                                  type="submit"
+                                  className="h-8 px-3 rounded-lg bg-zinc-800 text-white font-sans font-black text-[9px] uppercase hover:bg-zinc-750 transition-all cursor-pointer whitespace-nowrap border border-white/10"
+                                >
+                                  Forzar Clave Alterna 🔑
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (window.confirm(`¿Seguro que deseas descartar la solicitud de recuperación de @${r.username}?`)) {
+                                      try {
+                                        await deleteDoc(doc(db, 'recovery_requests', r.id));
+                                        alert("Solicitud eliminada con éxito.");
+                                      } catch (err: any) {
+                                        alert("Error al eliminar: " + err.message);
+                                      }
+                                    }
+                                  }}
+                                  className="h-8 px-2.5 rounded-lg bg-red-950/40 text-red-400 border border-red-500/10 hover:bg-red-900 hover:text-white transition-all text-[9px] uppercase cursor-pointer"
+                                >
+                                  Descartar
+                                </button>
+                              </div>
+                            </form>
                           </div>
                         </div>
                       );

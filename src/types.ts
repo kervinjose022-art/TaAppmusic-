@@ -82,3 +82,13 @@ export interface UserProfile {
   lastResetDate?: string;
   createdAt?: string;
 }
+
+export interface RecoveryRequest {
+  id: string;
+  username: string;
+  email?: string;
+  requestedAt: string;
+  status: 'pending' | 'resolved';
+  requestedNewPassword?: string;
+  oldPassword?: string;
+}

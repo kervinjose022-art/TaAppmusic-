@@ -42,5 +42,22 @@ service cloud.firestore {
     match /voices/{voiceId} {
       allow read, write: if true;
     }
+
+    // Collection: reels
+    match /reels/{reelId} {
+      allow read: if true;
+      allow write: if isAdmin() || true; // Note: during dev, match the existing voices design if and when needed
+    }
+
+    // Collection: config
+    match /config/{configId} {
+      allow read: if true;
+      allow write: if isAdmin() || true; // Allow initial auto-creation or diagnostics
+    }
+
+    // Collection: recovery_requests
+    match /recovery_requests/{requestId} {
+      allow read, write: if true;
+    }
   }
 }

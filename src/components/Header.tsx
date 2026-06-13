@@ -1,4 +1,4 @@
-import { Sparkles, Share2, ShieldCheck, Heart, Crown } from 'lucide-react';
+import { Sparkles, Share2, ShieldCheck, Heart, Crown, Smartphone } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface HeaderProps {
@@ -11,15 +11,27 @@ interface HeaderProps {
 export default function Header({ userProfile, onOpenShareModal, onOpenVipSelector, onLogout }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[#39FF14]/20 bg-black/95 px-6 py-4 backdrop-blur-md">
-      {/* Left items - Live status LED indicator */}
-      <div className="flex items-center gap-3">
-        <div className="hidden sm:flex items-center gap-2 rounded-full border border-[#39FF14]/20 bg-black px-3 py-1.5 text-xs text-gray-400">
-          <span className="relative flex h-2 w-2">
+      {/* Left items - Live status LED indicator and APK Download */}
+      <div className="flex items-center gap-2">
+        <div className="hidden lg:flex items-center gap-2 rounded-full border border-[#39FF14]/20 bg-black px-2.5 py-1.5 text-xs text-gray-400">
+          <span className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#39FF14] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#39FF14]"></span>
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#39FF14]"></span>
           </span>
-          <span className="text-[#39FF14] font-mono tracking-widest text-[10px]">LED: LIVE</span>
+          <span className="text-[#39FF14] font-mono tracking-widest text-[9px]">LED: LIVE</span>
         </div>
+
+        <a
+          href="/assets/tappmusic.apk"
+          download="tappmusic.apk"
+          className="flex items-center gap-1.5 rounded-full border border-[#39FF14]/50 bg-gradient-to-r from-emerald-950/50 to-black px-3 py-1.5 text-[9px] font-mono font-black text-[#39FF14] hover:bg-[#39FF14]/15 hover:border-[#39FF14] transition-all shadow-[0_0_8px_rgba(57,255,20,0.1)] active:scale-95"
+          onClick={() => {
+            alert("📲 Iniciando descarga de la versión oficial Tappmusic APK para Android. ¡Instálala para disfrutar de la experiencia móvil nativa original!");
+          }}
+        >
+          <Smartphone className="h-3 w-3 text-neon-green animate-pulse" />
+          <span className="animate-pulse">DESCARGAR APK</span>
+        </a>
       </div>
 
       {/* Centered Tappmusic.com Name with headphones branding */}

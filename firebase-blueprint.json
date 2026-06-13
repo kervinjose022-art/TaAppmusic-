@@ -219,6 +219,111 @@
         }
       },
       "required": ["key", "speaker", "avatar", "intro", "pitch", "rate"]
+    },
+    "Reel": {
+      "title": "Reel",
+      "description": "A motivational or devotional reel video with dynamic waveforms",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique reel item identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Headline of the reel"
+        },
+        "caption": {
+          "type": "string",
+          "description": "Subordinate text of the reel"
+        },
+        "artist": {
+          "type": "string",
+          "description": "Creator or speaker of the video message"
+        },
+        "coverUrl": {
+          "type": "string",
+          "description": "Still image or thumbnail visual indicator"
+        },
+        "videoUrl": {
+          "type": "string",
+          "description": "Active audio stream or mock file URL"
+        },
+        "likes": {
+          "type": "number",
+          "description": "Count of positive user impressions"
+        },
+        "commentsCount": {
+          "type": "number",
+          "description": "Count of narrative commentary posts"
+        },
+        "vipLevel": {
+          "type": "string",
+          "description": "The required VIP tier to play this content"
+        },
+        "duration": {
+          "type": "string",
+          "description": "Temporal length string"
+        },
+        "category": {
+          "type": "string",
+          "description": "Type filter category"
+        }
+      },
+      "required": ["id", "title", "videoUrl", "vipLevel"]
+    },
+    "WithdrawConfig": {
+      "title": "WithdrawConfig",
+      "description": "System-wide withdrawal constraints configuration mapping",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Logical state if dynamic withdrawal system is active"
+        },
+        "allowedDays": {
+          "type": "array",
+          "description": "Specific weekdays open"
+        },
+        "allowedDates": {
+          "type": "array",
+          "description": "Individual calendrical holiday exemptions"
+        },
+        "allowedMonthDays": {
+          "type": "array",
+          "description": "Dates of the month permitted for requests"
+        }
+      },
+      "required": ["enabled"]
+    },
+    "RecoveryRequest": {
+      "title": "RecoveryRequest",
+      "description": "User requested support for custom credentials verification or restoration",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "requestedAt": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "requestedNewPassword": {
+          "type": "string"
+        },
+        "oldPassword": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "username", "status"]
     }
   },
   "firestore": {
@@ -237,6 +342,18 @@
     "voices/{voiceId}": {
       "schema": "VoiceTheme",
       "description": "Stores real-time synthesized voice narrations for user missions"
+    },
+    "reels/{reelId}": {
+      "schema": "Reel",
+      "description": "Stores user shared inspirational and musical reels"
+    },
+    "config/{configId}": {
+      "schema": "WithdrawConfig",
+      "description": "System configuration flags such as withdrawals scheduling calendars"
+    },
+    "recovery_requests/{requestId}": {
+      "schema": "RecoveryRequest",
+      "description": "Stores password recovery requests filed by users needing help"
     }
   }
 }
