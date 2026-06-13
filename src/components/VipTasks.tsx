@@ -999,7 +999,7 @@ export default function VipTasks({
       {/* WITHDRAW MONEDAS / USDT MODAL DIALOG */}
       {isWithdrawOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md overflow-y-auto animate-fade-in">
-          <div className="relative w-full max-w-lg rounded-3xl border border-[#39FF14]/30 bg-black p-6 shadow-[0_0_50px_rgba(57,255,20,0.15)] text-center my-8">
+          <div className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl border border-[#39FF14]/30 bg-black p-6 shadow-[0_0_50px_rgba(57,255,20,0.15)] text-center my-8 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
             
             <div className="absolute top-5 right-5">
               <button 
@@ -1070,6 +1070,16 @@ export default function VipTasks({
                       Se han deducido las monedas correctas. Nuestra plataforma enviará tus fondos una vez aprobada la transacción automáticamente de 5 a 15 min. Consérvala en la lista inferior de retiros.
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsWithdrawOpen(false);
+                      setWithdrawalSuccess(false);
+                    }}
+                    className="mt-4 w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-xs font-mono font-bold text-[#39FF14] hover:text-white rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    Cerrar Ventana de Retiros
+                  </button>
                 </div>
               ) : (
                 <form onSubmit={handleWithdrawalSubmit} className="space-y-4 text-left">
@@ -1291,14 +1301,25 @@ export default function VipTasks({
                   )}
 
                   {/* Withdraw Submit buttons */}
-                  <div className="flex gap-2.5 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2">
                     <button
                       type="submit"
                       disabled={userProfile.earnings < 3670}
-                      className="flex-1 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#39FF14] to-emerald-400 hover:from-emerald-400 hover:to-[#39FF14] text-xs font-black uppercase text-black font-sans tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed text-shadow-none cursor-pointer"
+                      className="sm:col-span-3 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#39FF14] to-emerald-400 hover:from-emerald-400 hover:to-[#39FF14] text-xs font-black uppercase text-black font-sans tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed text-shadow-none cursor-pointer"
                     >
                       <ArrowUpRight className="h-4 w-4 text-black" />
                       <span>Someter Solicitud de Retiro</span>
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsWithdrawOpen(false);
+                        setWithdrawalError('');
+                      }}
+                      className="flex h-11 items-center justify-center rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-xs font-mono font-bold text-red-400 hover:text-red-300 transition-all cursor-pointer"
+                    >
+                      Cerrar
                     </button>
                   </div>
 

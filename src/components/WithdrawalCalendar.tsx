@@ -190,30 +190,7 @@ export default function WithdrawalCalendar({
         </div>
       </div>
 
-      {/* TODAY STATUS EXPLAINER CARD */}
-      <div className={`p-3 rounded-2xl border text-left text-[11px] leading-relaxed transition-all ${
-        isWithdrawOpenToday
-          ? 'bg-emerald-950/10 border-emerald-500/20 text-emerald-300'
-          : 'bg-yellow-950/10 border-yellow-500/20 text-yellow-300'
-      }`}>
-        <div className="flex gap-2 items-start font-mono">
-          {isWithdrawOpenToday ? (
-            <>
-              <CheckCircle className="h-4 w-4 shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-white">RETIROS ACTIVO:</strong> El portal de retiro está <span className="text-[#39FF14] font-black uppercase">Abierto</span>. Hoy es un día elegible de retiro según las normativas del administrador. ¡Disfruta de tus regalías de fe sintonizadas!
-              </div>
-            </>
-          ) : (
-            <>
-              <Clock className="h-4 w-4 shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-white">PORTAL CERRADO TEMPORALMENTE:</strong> Hoy no es día de retiros. Puedes contemplar tareas diariamente, acumular tu saldo, y procesar sus retiros en los días resaltados en <span className="text-[#39FF14] font-bold">Verde Brillante</span> en el calendario interactivo.
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+
 
       {/* MAIN CAROUSEL CALENDAR CONTAINER */}
       <div className="space-y-3.5">
