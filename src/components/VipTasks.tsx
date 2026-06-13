@@ -10,6 +10,15 @@ import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import WithdrawalCalendar from './WithdrawalCalendar';
 
+const WITHDRAW_OPTIONS = [
+  { coins: 3670, usdt: 5 },
+  { coins: 7340, usdt: 10 },
+  { coins: 11010, usdt: 15 },
+  { coins: 36700, usdt: 50 },
+  { coins: 146800, usdt: 200 },
+  { coins: 367000, usdt: 500 }
+];
+
 interface VipTasksProps {
   userProfile: UserProfile;
   setUserProfile: (profile: UserProfile | ((prev: UserProfile) => UserProfile)) => void;
@@ -999,6 +1008,24 @@ export default function VipTasks({
       {/* WITHDRAW MONEDAS / USDT MODAL DIALOG */}
       {isWithdrawOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md overflow-y-auto animate-fade-in">
+          
+          {/* Floating always-visible close button outside the scrolling content card (perfect for physical devices) */}
+          <div className="fixed top-4 right-4 z-55">
+            <button 
+              onClick={() => {
+                if (!isSubmittingWithdrawal) {
+                  setIsWithdrawOpen(false);
+                  setWithdrawalError('');
+                }
+              }}
+              disabled={isSubmittingWithdrawal}
+              className="h-10 w-10 rounded-full bg-zinc-900/90 hover:bg-zinc-805 border border-white/10 flex items-center justify-center text-zinc-450 hover:text-white transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(0,0,0,0.5)] active:scale-95"
+              title="Cerrar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
           <div className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-3xl border border-[#39FF14]/30 bg-black p-6 shadow-[0_0_50px_rgba(57,255,20,0.15)] text-center my-8 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
             
             <div className="absolute top-5 right-5">
@@ -1223,40 +1250,51 @@ export default function VipTasks({
                   )}
 
                   {/* Amount of coins */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 block font-bold">
-                        Cantidad de Monedas a Retirar
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const maxRounded = Math.floor(userProfile.earnings);
-                          setWithdrawalAmount(String(maxRounded >= 3670 ? maxRounded : 3670));
-                        }}
-                        className="text-[9px] font-mono text-[#39FF14] hover:underline uppercase cursor-pointer"
-                      >
-                        Retirar Todo
-                      </button>
-                    </div>
-                    
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min="3670"
-                        required
-                        value={withdrawalAmount}
-                        onChange={(e) => setWithdrawalAmount(e.target.value)}
-                        className="w-full text-xs font-mono bg-zinc-950 border border-white/10 rounded-xl pl-4 pr-24 py-2.5 text-white placeholder-zinc-805 focus:outline-none focus:border-[#39FF14]"
-                      />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-zinc-900 border border-white/5 text-[9px] text-[#39FF14] px-2 py-1 rounded font-bold font-mono">
-                        ≈ {isNaN(parseFloat(withdrawalAmount)) ? '0.00' : (parseFloat(withdrawalAmount) / 734).toFixed(2)} USDT
-                      </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-bold block">
+                      Selecciona el Monto de Retiro (Monedas / USDT)
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 mt-1.5">
+                      {WITHDRAW_OPTIONS.map((opt) => {
+                        const isSelected = withdrawalAmount === String(opt.coins);
+                        const canAfford = userProfile.earnings >= opt.coins;
+                        return (
+                          <button
+                            key={opt.coins}
+                            type="button"
+                            onClick={() => {
+                              setWithdrawalAmount(String(opt.coins));
+                              setWithdrawalError('');
+                            }}
+                            className={`relative p-3 rounded-2xl border text-left flex flex-col justify-between transition-all duration-300 cursor-pointer ${
+                              isSelected
+                                ? 'bg-[#39FF14]/15 border-[#39FF14] shadow-[0_0_15px_rgba(57,255,20,0.2)] scale-[1.02]'
+                                : canAfford
+                                  ? 'bg-zinc-950 hover:bg-zinc-900/50 hover:border-zinc-700 border-white/10 text-zinc-300'
+                                  : 'bg-zinc-950/40 border-white/5 opacity-40 text-zinc-650'
+                            }`}
+                          >
+                            <div className="flex justify-between items-start w-full">
+                              <span className={`text-[12px] font-black tracking-tight ${isSelected ? 'text-[#39FF14]' : 'text-white'}`}>
+                                ${opt.usdt}.00 USDT
+                              </span>
+                              {isSelected && (
+                                <span className="h-1.5 w-1.5 rounded-full bg-[#39FF14] animate-ping" />
+                              )}
+                            </div>
+                            <div className="mt-1 flex items-baseline justify-between w-full font-mono">
+                              <span className="text-[9px] text-[#39FF14] font-semibold leading-none">
+                                {opt.coins.toLocaleString()} <span className="text-[8px] text-zinc-500 uppercase">Monedas</span>
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
 
                     {/* Breakdown ticket card */}
                     {!isNaN(parseFloat(withdrawalAmount)) && parseFloat(withdrawalAmount) >= 3670 && (
-                      <div className="bg-black/40 border border-white/5 rounded-xl p-3 space-y-1.5 font-mono text-[9px] text-zinc-400">
+                      <div className="bg-black/40 border border-white/5 rounded-xl p-3 space-y-1.5 font-mono text-[9px] text-zinc-400 mt-2">
                         <div className="flex justify-between items-center">
                           <span>Monto de Retiro (Bruto):</span>
                           <span className="text-white">{(parseFloat(withdrawalAmount) / 734).toFixed(2)} USDT</span>
@@ -1304,7 +1342,7 @@ export default function VipTasks({
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2">
                     <button
                       type="submit"
-                      disabled={userProfile.earnings < 3670}
+                      disabled={userProfile.earnings < (parseFloat(withdrawalAmount) || 3670)}
                       className="sm:col-span-3 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#39FF14] to-emerald-400 hover:from-emerald-400 hover:to-[#39FF14] text-xs font-black uppercase text-black font-sans tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed text-shadow-none cursor-pointer"
                     >
                       <ArrowUpRight className="h-4 w-4 text-black" />
