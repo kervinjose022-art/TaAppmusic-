@@ -1317,20 +1317,6 @@ export default function VipTasks({
                     </p>
                   </div>
 
-                  {/* Bypass simulation checkbox */}
-                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-zinc-950/80 border border-white/5">
-                    <input
-                      type="checkbox"
-                      id="bypass10DaysCheckbox"
-                      checked={bypass10Days}
-                      onChange={(e) => setBypass10Days(e.target.checked)}
-                      className="accent-[#39FF14] h-3 w-3 rounded border-zinc-800 bg-zinc-900 cursor-pointer"
-                    />
-                    <label htmlFor="bypass10DaysCheckbox" className="text-[9px] font-mono text-zinc-400 select-none cursor-pointer flex-1">
-                      Ignorar límite de 10 días <span className="text-neon-green font-black">[MODO INVERSIONISTA DE PRUEBA]</span>
-                    </label>
-                  </div>
-
                   {/* Error display */}
                   {withdrawalError && (
                     <div className="p-3 rounded-xl border border-red-500/20 bg-red-950/10 text-red-400 font-mono text-[10px] text-center leading-relaxed antialiased">
