@@ -80,7 +80,8 @@ export default function App() {
     enabled: true,
     allowedDays: [], // empty by default to prevent weekday confusion
     allowedDates: [],
-    allowedMonthDays: [10, 20, 30]
+    allowedMonthDays: [10, 20, 30],
+    apkDownloadUrl: ''
   });
 
   // Persist master users pool & Listen to Firestore in Real-Time
@@ -1817,10 +1818,14 @@ export default function App() {
                     
                     <div className="w-full">
                       <a
-                        href="/assets/tappmusic.apk"
-                        download="tappmusic.apk"
+                        href={withdrawConfig?.apkDownloadUrl || "/assets/tappmusic.apk"}
+                        download={withdrawConfig?.apkDownloadUrl ? undefined : "tappmusic.apk"}
+                        target={withdrawConfig?.apkDownloadUrl ? "_blank" : undefined}
+                        rel={withdrawConfig?.apkDownloadUrl ? "noopener noreferrer" : undefined}
                         onClick={() => {
-                          alert("📲 Iniciando descarga del APK de Tappmusic v1.0 original de forma segura...");
+                          alert(withdrawConfig?.apkDownloadUrl 
+                            ? "📲 Redirigiendo a tu enlace de descarga externa del de Tappmusic v1.0 original de forma segura..." 
+                            : "📲 Iniciando descarga del APK de Tappmusic v1.0 original de forma segura...");
                         }}
                         className="w-full flex h-8 items-center justify-center gap-1.5 rounded-xl bg-[#39FF14] hover:bg-[#39FF14]/85 text-black text-[11px] font-extrabold transition-all cursor-pointer filter saturate-120 hover:scale-[1.02] active:scale-95 shadow-[0_0_10px_rgba(57,255,20,0.2)]"
                       >
@@ -2693,6 +2698,71 @@ export default function App() {
               >
                 ✨ Reestablecer 367 Monedas (Ayer)
               </button>
+            </div>
+
+            {/* ⚙️ CONFIGURACIÓN GLOBAL: ENLACE DE DESCARGA APK */}
+            <div className="bg-gradient-to-r from-purple-950/40 to-black p-4 rounded-2xl border border-purple-500/30 space-y-3 font-sans relative overflow-hidden animate-fade-in">
+              <div className="absolute top-0 right-0 h-16 w-16 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-black text-[#39FF14] uppercase tracking-wider font-mono">
+                  <Smartphone className="h-4 w-4 text-[#39FF14] animate-bounce" />
+                  <span>⚙️ Configurar Enlace de Descarga de la APK</span>
+                </div>
+                {withdrawConfig?.apkDownloadUrl && (
+                  <span className="text-[9px] font-bold text-[#39FF14] bg-[#39FF14]/10 border border-[#39FF14]/20 px-2 py-0.5 rounded-full uppercase animate-pulse">
+                    Enlace Activo ⚡
+                  </span>
+                )}
+              </div>
+              
+              <p className="text-[11px] text-zinc-300 leading-normal">
+                Hermanito, por defecto el botón <strong>"DESCARGAR APK"</strong> intenta descargar un apk local vacío. Si tienes tu propia APK compilada y subida a <strong>Google Drive, Mediafire, Mega, Dropbox o cualquier servidor</strong>, pega ese enlace de descarga abajo. ¡Cualquier cambio se actualiza en tiempo real para todos los usuarios!
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="url"
+                  placeholder="Pega aquí tu enlace (Ej. https://drive.google.com/uc?export=download&id=...)"
+                  value={withdrawConfig?.apkDownloadUrl || ''}
+                  onChange={async (e) => {
+                    const val = e.target.value;
+                    const updated = {
+                      ...withdrawConfig,
+                      apkDownloadUrl: val
+                    };
+                    setWithdrawConfig(updated);
+                    try {
+                      await setDoc(doc(db, 'config', 'withdrawals'), updated);
+                    } catch (err: any) {
+                      console.error("Firestore update error:", err);
+                    }
+                  }}
+                  className="flex-1 bg-black text-xs font-semibold border border-white/10 rounded-xl px-3 py-2 text-white placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
+                />
+                {withdrawConfig?.apkDownloadUrl && (
+                  <button
+                    onClick={async () => {
+                      const updated = {
+                        ...withdrawConfig,
+                        apkDownloadUrl: ''
+                      };
+                      setWithdrawConfig(updated);
+                      try {
+                        await setDoc(doc(db, 'config', 'withdrawals'), updated);
+                        alert("⚠️ Enlace externo removido. Ahora el botón descargará el archivo local predeterminado de la plataforma.");
+                      } catch (err) {}
+                    }}
+                    className="h-8 sm:h-auto px-3 bg-red-950/40 hover:bg-red-900 border border-red-500/20 text-red-400 hover:text-white text-[10px] uppercase font-bold rounded-xl transition-all cursor-pointer"
+                  >
+                    Quitar Enlace
+                  </button>
+                )}
+              </div>
+              <span className="text-[9px] text-zinc-500 font-mono block">
+                {withdrawConfig?.apkDownloadUrl 
+                  ? `👉 El botón ahora descarga desde: ${withdrawConfig.apkDownloadUrl}` 
+                  : 'ℹ️ Estado actual: Descargando archivo local predeterminado de la plataforma.'}
+              </span>
             </div>
 
             {/* Tab switch control */}
@@ -3783,7 +3853,7 @@ export default function App() {
 
             {/* TAB CONTENT: SOPORTE DE RECOVERY REQUESTS */}
             {activeAdminTab === 'recuperaciones' && (
-              <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 text-left">
+              <div className="space-y-4 max-h-[420px] overflow-y-auto pr-1 text-left font-sans">
                 <div className="bg-purple-950/20 rounded-xl p-3 border border-purple-500/15 flex items-center gap-3 text-xs text-purple-300">
                   <div className="h-5 w-5 bg-purple-500/10 rounded-full flex items-center justify-center font-bold shrink-0">i</div>
                   <p className="leading-normal font-sans">
