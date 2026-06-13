@@ -1663,9 +1663,11 @@ export default function App() {
                   <div className="pt-1.5 text-center flex flex-col items-center gap-1.5">
                     <button
                       onClick={() => setShowAdminCodePrompt(true)}
-                      className="text-[10px] text-zinc-650 hover:text-[#39FF14] transition-all uppercase font-mono font-bold tracking-tight bg-transparent border-none pointer-events-auto cursor-pointer"
+                      type="button"
+                      className="text-[9px] text-zinc-900 hover:text-[#39FF14]/40 transition-all bg-transparent border-none pointer-events-auto cursor-pointer p-1 active:scale-90"
+                      title=""
                     >
-                      🛠️ Acceso de Administrador
+                      <ShieldCheck className="h-2.5 w-2.5" />
                     </button>
 
                     <button
