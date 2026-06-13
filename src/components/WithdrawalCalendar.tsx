@@ -5,6 +5,7 @@ interface WithdrawConfig {
   enabled: boolean;
   allowedDays: number[]; // 0 for Sunday, 1 for Monday... 5 for Friday, 6 for Saturday
   allowedDates: string[]; // "YYYY-MM-DD"
+  allowedMonthDays?: number[]; // Days of the month (1-31), e.g. [10, 20, 30]
 }
 
 interface WithdrawalCalendarProps {
@@ -74,10 +75,14 @@ export default function WithdrawalCalendar({
     });
   }
 
+  const allowedMonthDays = config.allowedMonthDays !== undefined ? config.allowedMonthDays : [10, 20, 30];
+
   // Check if a given date is enabled for withdrawal
-  const isDateEnabled = (dateStr: string, dayOfWeek: number) => {
+  const isDateEnabled = (dateStr: string, dayOfWeek: number, dayOfMonth: number) => {
     if (!config.enabled) return true; // if calendar is disabled, all days are open!
-    return config.allowedDays.includes(dayOfWeek) || config.allowedDates.includes(dateStr);
+    return config.allowedDays.includes(dayOfWeek) || 
+           config.allowedDates.includes(dateStr) ||
+           allowedMonthDays.includes(dayOfMonth);
   };
 
   // Toggle specific date allowance (admin ONLY)
@@ -110,7 +115,26 @@ export default function WithdrawalCalendar({
 
     onUpdateConfig({
       ...config,
-      allowedDays: updatedDays
+      allowedDays: updatedDays,
+      allowedMonthDays // preserve standard days of month
+    });
+  };
+
+  // Toggle specific recurring day of month (admin ONLY)
+  const handleToggleRecurringMonthDay = (dayNum: number) => {
+    if (mode !== 'admin' || !onUpdateConfig) return;
+
+    let updatedMonthDays = [...allowedMonthDays];
+    if (updatedMonthDays.includes(dayNum)) {
+      updatedMonthDays = updatedMonthDays.filter(d => d !== dayNum);
+    } else {
+      updatedMonthDays.push(dayNum);
+    }
+    updatedMonthDays.sort((a, b) => a - b);
+
+    onUpdateConfig({
+      ...config,
+      allowedMonthDays: updatedMonthDays
     });
   };
 
@@ -125,7 +149,11 @@ export default function WithdrawalCalendar({
 
   // Verify status of today (whether withdrawals are open right now for today)
   const todayDayOfWeek = today.getDay();
-  const isWithdrawOpenToday = !config.enabled || config.allowedDays.includes(todayDayOfWeek) || config.allowedDates.includes(todayDateStr);
+  const todayDayOfMonth = today.getDate();
+  const isWithdrawOpenToday = !config.enabled || 
+                              config.allowedDays.includes(todayDayOfWeek) || 
+                              config.allowedDates.includes(todayDateStr) ||
+                              allowedMonthDays.includes(todayDayOfMonth);
 
   return (
     <div id="virtual_withdrawal_calendar" className="p-5 rounded-3xl bg-zinc-950/90 border border-white/5 backdrop-blur-xl space-y-5 shadow-2xl relative overflow-hidden">
@@ -230,7 +258,7 @@ export default function WithdrawalCalendar({
             }
 
             const isToday = cell.dateStr === todayDateStr;
-            const isEnabled = isDateEnabled(cell.dateStr, cell.dayOfWeek);
+            const isEnabled = cell.dayNum !== null ? isDateEnabled(cell.dateStr, cell.dayOfWeek, cell.dayNum) : false;
 
             return (
               <button
@@ -284,10 +312,16 @@ export default function WithdrawalCalendar({
         {config.enabled ? (
           <>
             <div>
-              • <strong className="text-zinc-300">Días recurrentes semanales:</strong>{' '}
+              • <strong className="text-zinc-300">Días del mes recurrentes:</strong>{' '}
               <span className="text-[#39FF14] font-bold">
+                {allowedMonthDays.length === 0 ? 'Ninguno' : allowedMonthDays.map(d => `${d} de cada mes`).join(', ')}
+              </span>
+            </div>
+            <div>
+              • <strong className="text-zinc-300">Días de la semana recurrentes:</strong>{' '}
+              <span className="text-emerald-400 font-bold">
                 {config.allowedDays.length === 0
-                  ? 'Ninguno (Modo fecha específica única)'
+                  ? 'Ninguno (Solo por día del mes / fecha)'
                   : config.allowedDays
                       .map(d => RECURRING_DAYS_MAP.find(rm => rm.value === d)?.label || '')
                       .join(', ')}
@@ -363,10 +397,39 @@ export default function WithdrawalCalendar({
                 })}
               </div>
 
-              <div className="p-2 bg-purple-950/10 border border-purple-500/10 rounded-xl flex items-start gap-2 text-[9px] font-mono text-purple-400 mt-2">
+              {/* Monthly Days Toggles */}
+              <div className="space-y-2 mt-3.5 pt-3.5 border-t border-white/5">
+                <span className="text-[9px] font-mono font-extrabold text-purple-400 uppercase tracking-widest block">
+                  Seleccionar Días recurrentes del Mes (Ej: 10, 20, 30):
+                </span>
+                <p className="text-[9px] font-sans text-zinc-500 leading-normal mb-1.5">
+                  Los días seleccionados en verde serán habilitados automáticamente en todos los meses recurrentes del año.
+                </p>
+                <div className="grid grid-cols-6 sm:grid-cols-10 gap-1 bg-black/40 p-2.5 rounded-2xl border border-white/5">
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((dayNum) => {
+                    const isActive = allowedMonthDays.includes(dayNum);
+                    return (
+                      <button
+                        key={dayNum}
+                        type="button"
+                        onClick={() => handleToggleRecurringMonthDay(dayNum)}
+                        className={`h-7 rounded-lg text-[10px] font-mono font-black transition-all border cursor-pointer flex items-center justify-center ${
+                          isActive
+                            ? 'border-[#39FF14] text-[#39FF14] bg-[#39FF14]/10 shadow-[0_0_8px_rgba(57,255,20,0.08)]'
+                            : 'border-white/5 text-zinc-500 hover:text-zinc-300 bg-zinc-950/20'
+                        }`}
+                      >
+                        {dayNum}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-purple-950/10 border border-purple-500/10 rounded-xl flex items-start gap-2 text-[9px] font-mono text-purple-400 mt-3.5">
                 <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
                 <p className="leading-tight">
-                  <span className="font-bold text-white uppercase">Sincronización Interactiva Directa:</span> Puedes hacer click en cualquier día del calendario de arriba para agregar/remover fechas de retiro excepcionales. No requiere presionar Guardar, estos cambios toman efecto instantáneamente para los usuarios.
+                  <span className="font-bold text-white uppercase">Sincronización Interactiva Directa:</span> Puedes hacer click en cualquier día del calendario de arriba para agregar/remover fechas de retiro excepcionales para un mes concreto. No requiere presionar Guardar, estos cambios toman efecto instantáneamente para los inversionistas.
                 </p>
               </div>
             </div>

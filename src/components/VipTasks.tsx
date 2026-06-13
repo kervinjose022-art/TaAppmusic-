@@ -21,6 +21,7 @@ interface VipTasksProps {
     enabled: boolean;
     allowedDays: number[];
     allowedDates: string[];
+    allowedMonthDays?: number[];
   };
 }
 
@@ -31,7 +32,7 @@ export default function VipTasks({
   setWithdrawHistory,
   voiceThemes = [],
   reels = [],
-  withdrawConfig = { enabled: true, allowedDays: [1, 5], allowedDates: [] }
+  withdrawConfig = { enabled: true, allowedDays: [1, 5], allowedDates: [], allowedMonthDays: [10, 20, 30] }
 }: VipTasksProps) {
   const [tasks, setTasks] = useState<UserTask[]>(() => {
     // Check if task IDs already stored in user profile to mark as completed
@@ -184,12 +185,16 @@ export default function VipTasks({
     if (withdrawConfig && withdrawConfig.enabled && !bypass10Days) {
       const today = new Date();
       const todayDayOfWeek = today.getDay(); // 0-6
+      const todayDayOfMonth = today.getDate(); // 1-31
       const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       
+      const allowedMonthDays = withdrawConfig.allowedMonthDays !== undefined ? withdrawConfig.allowedMonthDays : [10, 20, 30];
+
       const isDayAllowed = withdrawConfig.allowedDays.includes(todayDayOfWeek);
       const isDateAllowed = withdrawConfig.allowedDates.includes(todayDateStr);
+      const isMonthDayAllowed = allowedMonthDays.includes(todayDayOfMonth);
       
-      if (!isDayAllowed && !isDateAllowed) {
+      if (!isDayAllowed && !isDateAllowed && !isMonthDayAllowed) {
         setWithdrawalError('La solicitud de retiro ha sido bloqueada porque hoy no es un día de retiro habilitado en el calendario virtual. Revisa las fechas en verde.');
         return;
       }
