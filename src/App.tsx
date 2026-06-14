@@ -1948,6 +1948,39 @@ export default function App() {
                       💡 <strong>¿No inicia?</strong> Si estás usando la app, presiona <strong>"Copiar Enlace Directo"</strong> y pégalo en Google Chrome.
                     </p>
                   </div>
+
+                  {/* VIP Flyer Promotion Widget with Zoom & Download Actions */}
+                  <div className="shrink-0 bg-black border border-purple-500/25 rounded-2xl p-4 flex flex-col items-start gap-3 w-full sm:w-auto">
+                    <div className="text-left">
+                      <p className="text-[9px] font-black text-purple-400 tracking-wider uppercase flex items-center gap-1">
+                        🖼️ TABLA DE RANGOS VIP
+                      </p>
+                      <p className="text-xs font-sans font-bold text-zinc-300">Flyer Oficial Tappmusic</p>
+                    </div>
+
+                    <div className="w-full flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAdminZoomImage("/assets/tappmusic_vip_flyer.jpg")}
+                        className="w-full flex h-8 items-center justify-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-extrabold transition-all cursor-pointer hover:scale-[1.02] active:scale-95 shadow-[0_0_10px_rgba(168,85,247,0.2)]"
+                      >
+                        <span>👁️ VER EN PANTALLA</span>
+                      </button>
+
+                      <a
+                        href="/assets/tappmusic_vip_flyer.jpg"
+                        download="tappmusic_flyer_vip.jpg"
+                        className="w-full h-8 px-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-white/10 hover:border-white/20 text-zinc-300 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 select-none"
+                      >
+                        <span>📥 Descargar Flyer</span>
+                      </a>
+                    </div>
+
+                    <p className="text-[9px] text-zinc-500 font-sans leading-tight mt-0.5 max-w-[180px]">
+                      👑 <strong>¡Promociona!</strong> Descarga la imagen y compártela con tus invitados para que se activen.
+                    </p>
+                  </div>
+
                 </div>
               </div>
             </div>
