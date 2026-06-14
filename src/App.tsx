@@ -4039,13 +4039,77 @@ export default function App() {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-zinc-400 bg-zinc-950/40 p-2.5 rounded-lg border border-white/5">
-                            <div>Email: <strong className="text-zinc-300 select-all">{u.email || 'N/A'}</strong></div>
-                            <div>Contraseña: <strong className="text-yellow-500 select-all">{u.password || 'N/A'}</strong></div>
-                            <div>VIP Actual: <strong className="text-purple-300 uppercase font-bold">{u.vipLevel}</strong></div>
-                            <div>Comisiones: <strong className="text-[#39FF14]">{u.inviteCommissionsEarned || 0} USD</strong></div>
-                            <div className="sm:col-span-2 text-zinc-500 border-t border-white/5 pt-1.5 mt-0.5">📅 Fecha de Ingreso: <strong className="text-zinc-300 font-mono">{u.createdAt || registrations.find(r => r.username && r.username.toLowerCase().trim() === u.username.toLowerCase().trim())?.date || '11/06/2026'}</strong></div>
-                          </div>
+                          {(() => {
+                            const cleanUsrName = u.username ? u.username.toLowerCase().trim() : '';
+                            const actualReferred = allUsers.filter(refUser => {
+                              if (!refUser.invitedBy || refUser.status !== 'active') return false;
+                              return refUser.invitedBy.toLowerCase().trim() === cleanUsrName;
+                            });
+                            const actualCount = actualReferred.length;
+                            const actualCommissions = actualReferred.reduce((total, refUser) => {
+                              const priceUsd = getLevelPriceInUsd(refUser.vipLevel);
+                              return total + (priceUsd * 0.15);
+                            }, 0);
+
+                            return (
+                              <>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-zinc-400 bg-zinc-950/40 p-2.5 rounded-lg border border-white/5">
+                                  <div>Email: <strong className="text-zinc-300 select-all">{u.email || 'N/A'}</strong></div>
+                                  <div>Contraseña: <strong className="text-yellow-500 select-all">{u.password || 'N/A'}</strong></div>
+                                  <div>VIP Actual: <strong className="text-purple-300 uppercase font-bold">{u.vipLevel}</strong></div>
+                                  <div>Comisiones Guardadas: <strong className="text-[#39FF14]">{u.inviteCommissionsEarned || 0} USD</strong></div>
+                                  <div>Invitados Guardados: <strong className="text-zinc-300">{u.inviteCount || 0}</strong></div>
+                                  <div>Comisiones Reales: <strong className="text-emerald-400">{actualCommissions.toFixed(2)} USD</strong></div>
+                                  <div>Invitados Reales: <strong className="text-emerald-400">{actualCount} activos (con depósito)</strong></div>
+                                  <div className="sm:col-span-2 text-zinc-500 border-t border-white/5 pt-1.5 mt-0.5">📅 Fecha de Ingreso: <strong className="text-zinc-300 font-mono">{u.createdAt || registrations.find(r => r.username && r.username.toLowerCase().trim() === u.username.toLowerCase().trim())?.date || '11/06/2026'}</strong></div>
+                                </div>
+
+                                {actualCount > 0 ? (
+                                  <div className="text-[10px] bg-emerald-950/20 border border-emerald-500/10 p-2.5 rounded-xl text-emerald-400 font-sans space-y-1">
+                                    <span className="font-bold flex items-center gap-1 text-[11px]">👥 Invitados Activos ({actualCount}):</span>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {actualReferred.map(refUser => (
+                                        <span key={refUser.username} className="bg-emerald-950/60 border border-emerald-500/25 px-2 py-0.5 rounded font-mono text-[9px] text-emerald-300">
+                                          @{refUser.username} ({refUser.vipLevel})
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="text-[10px] bg-zinc-950/40 border border-white/5 p-2 rounded-xl text-zinc-550 font-sans">
+                                    ℹ️ No tiene invitados activos con depósito aprobados en base de datos.
+                                  </div>
+                                )}
+
+                                <div className="flex justify-start">
+                                  <button
+                                    onClick={async () => {
+                                      if (window.confirm(`🔄 ¿Quieres ajustar las estadísticas guardadas de @${u.username} en la base de datos?\n\nActuales en DB:\n- Invitados: ${u.inviteCount || 0}\n- Comisiones: ${u.inviteCommissionsEarned || 0} USD\n\nNuevos Valores Reales:\n- Invitados: ${actualCount}\n- Comisiones: ${actualCommissions.toFixed(2)} USD`)) {
+                                        try {
+                                          const userRef = doc(db, 'users', cleanUsrName);
+                                          await updateDoc(userRef, {
+                                            inviteCount: actualCount,
+                                            inviteCommissionsEarned: actualCommissions
+                                          });
+                                          setAllUsers(prev => prev.map(usr => usr.username && usr.username.toLowerCase().trim() === cleanUsrName ? {
+                                            ...usr,
+                                            inviteCount: actualCount,
+                                            inviteCommissionsEarned: actualCommissions
+                                          } : usr));
+                                          alert(`✅ ¡Estadísticas de @${u.username} sincronizadas de modo exacto!`);
+                                        } catch (err: any) {
+                                          alert(`Error al sincronizar: ${err.message}`);
+                                        }
+                                      }
+                                    }}
+                                    className="px-2.5 py-1.5 bg-purple-950/80 hover:bg-purple-900 border border-purple-500/30 hover:border-purple-400 text-purple-300 hover:text-white transition-all text-[9.5px] font-black uppercase rounded-lg cursor-pointer flex items-center gap-1 active:scale-95"
+                                  >
+                                    🔄 Corregir/Sincronizar (Real vs Guardado)
+                                  </button>
+                                </div>
+                              </>
+                            );
+                          })()}
 
                           <div className="flex flex-col sm:flex-row gap-3 bg-zinc-950/80 p-3 rounded-xl border border-white/5 sm:items-end">
                             {/* VIP Select */}

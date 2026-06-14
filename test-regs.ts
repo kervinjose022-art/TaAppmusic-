@@ -6,18 +6,11 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 async function run() {
-  const snap = await getDocs(collection(db, 'registrations'));
-  console.log(`TOTAL_REGS:${snap.size}`);
-  snap.forEach(doc => {
-    const d = doc.data();
-    console.log(`REG:${d.username}|VIP:${d.vipLevel}|REF:${d.invitedBy}|STATUS:${d.status}|DATE:${d.date}`);
-  });
-  
   const snapUsers = await getDocs(collection(db, 'users'));
   console.log(`TOTAL_USERS:${snapUsers.size}`);
   snapUsers.forEach(doc => {
     const d = doc.data();
-    console.log(`USER:${d.username}|VIP:${d.vipLevel}|REF:${d.invitedBy}|STATUS:${d.status}`);
+    console.log(`username: ${d.username}, inviteCount: ${d.inviteCount}, commissions: ${d.inviteCommissionsEarned}, status: ${d.status}, invitedBy: ${d.invitedBy}`);
   });
   
   process.exit(0);
