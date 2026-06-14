@@ -89,6 +89,15 @@ export default function App() {
     apkDownloadUrl: 'https://drive.google.com/file/d/1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5/view?usp=drivesdk'
   });
 
+  useEffect(() => {
+    (window as any).showVipFlyer = () => {
+      setAdminZoomImage("/assets/tappmusic_vip_flyer.jpg");
+    };
+    return () => {
+      delete (window as any).showVipFlyer;
+    };
+  }, []);
+
   // Persist master users pool & Listen to Firestore in Real-Time
   useEffect(() => {
     localStorage.setItem('tappmusic_users', JSON.stringify(allUsers));
@@ -1583,16 +1592,45 @@ export default function App() {
     localStorage.removeItem('tappmusic_profile');
   };
 
-  const copyModalLink = async () => {
+  const robustCopyToClipboard = (text: string): boolean => {
     try {
-      const inviteLink = userProfile.isRegistered && userProfile.username !== 'usuario_vip' && userProfile.username !== 'visitante_tapp'
-        ? `${sharedUrl}/?ref=${userProfile.username}`
-        : sharedUrl;
-      await navigator.clipboard.writeText(inviteLink);
+      // Try standards API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (e) {
+      console.warn("navigator.clipboard failed, trying fallback:", e);
+    }
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.top = "0";
+      textArea.style.left = "0";
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return successful;
+    } catch (err) {
+      console.error("Fallback copy failed:", err);
+      return false;
+    }
+  };
+
+  const copyModalLink = () => {
+    const inviteLink = userProfile.isRegistered && userProfile.username !== 'usuario_vip' && userProfile.username !== 'visitante_tapp'
+      ? `${sharedUrl}/?ref=${userProfile.username}`
+      : sharedUrl;
+    const ok = robustCopyToClipboard(inviteLink);
+    if (ok) {
       setCopiedModalLink(true);
       setTimeout(() => setCopiedModalLink(false), 2000);
-    } catch (err) {
-      console.error(err);
+    } else {
+      alert(`Copia manual del enlace: ${inviteLink}`);
     }
   };
 
@@ -1642,6 +1680,7 @@ export default function App() {
         onOpenShareModal={() => setIsShareModalOpen(true)} 
         onOpenVipSelector={() => setIsVipSelectorOpen(true)}
         onLogout={handleLogout}
+        apkDownloadUrl={withdrawConfig?.apkDownloadUrl}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-8 text-center">
@@ -1934,7 +1973,7 @@ export default function App() {
                         type="button"
                         onClick={() => {
                           const url = withdrawConfig?.apkDownloadUrl || "https://drive.google.com/file/d/1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5/view?usp=drivesdk";
-                          navigator.clipboard.writeText(url);
+                          robustCopyToClipboard(url);
                           alert("📋 ¡Enlace de la aplicación copiado! Pégalo en Google Chrome o el navegador de tu celular para descargar.");
                         }}
                         className="w-full h-8 px-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-white/10 hover:border-white/20 text-zinc-300 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 select-none"
@@ -2037,13 +2076,9 @@ export default function App() {
                     {sharedUrl}/?ref={userProfile.username}
                   </span>
                   <button
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(`${sharedUrl}/?ref=${userProfile.username}`);
-                        alert("✅ ¡Enlace de invitación personalizado copiado con éxito! Compártelo para ganar 15% de comisión.");
-                      } catch (err) {
-                        console.error(err);
-                      }
+                    onClick={() => {
+                      robustCopyToClipboard(`${sharedUrl}/?ref=${userProfile.username}`);
+                      alert("✅ ¡Enlace de invitación personalizado copiado con éxito! Compártelo para ganar 15% de comisión.");
                     }}
                     className="h-7 px-2.5 rounded-lg bg-purple-950 text-purple-300 border border-purple-500/30 hover:border-purple-400 hover:text-white transition-all text-[9.5px] uppercase font-black shrink-0 tracking-wide cursor-pointer active:scale-95"
                   >

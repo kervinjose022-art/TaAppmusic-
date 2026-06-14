@@ -6,9 +6,10 @@ interface HeaderProps {
   onOpenShareModal: () => void;
   onOpenVipSelector?: () => void;
   onLogout?: () => void;
+  apkDownloadUrl?: string;
 }
 
-export default function Header({ userProfile, onOpenShareModal, onOpenVipSelector, onLogout }: HeaderProps) {
+export default function Header({ userProfile, onOpenShareModal, onOpenVipSelector, onLogout, apkDownloadUrl }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[#39FF14]/20 bg-black/95 px-6 py-4 backdrop-blur-md">
       {/* Left items - Live status LED indicator and APK Download */}
@@ -22,11 +23,12 @@ export default function Header({ userProfile, onOpenShareModal, onOpenVipSelecto
         </div>
 
         <a
-          href="/assets/tappmusic.apk"
-          download="tappmusic.apk"
+          href={apkDownloadUrl || "https://drive.google.com/file/d/1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5/view?usp=drivesdk"}
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center gap-1.5 rounded-full border border-[#39FF14]/50 bg-gradient-to-r from-emerald-950/50 to-black px-3 py-1.5 text-[9px] font-mono font-black text-[#39FF14] hover:bg-[#39FF14]/15 hover:border-[#39FF14] transition-all shadow-[0_0_8px_rgba(57,255,20,0.1)] active:scale-95"
           onClick={() => {
-            alert("📲 Iniciando descarga de la versión oficial Tappmusic APK para Android. ¡Instálala para disfrutar de la experiencia móvil nativa original!");
+            alert("📲 Redirigiendo de forma segura a la descarga oficial del APK original de Tappmusic v1.0...");
           }}
         >
           <Smartphone className="h-3 w-3 text-neon-green animate-pulse" />

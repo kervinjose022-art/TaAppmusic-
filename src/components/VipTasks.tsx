@@ -1124,6 +1124,27 @@ export default function VipTasks({
                 </div>
               </div>
 
+              {/* Promo VIP Flyer Button for real-time rates check */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/30 to-black border border-purple-500/25 flex items-center justify-between gap-3 text-left">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black text-purple-400 uppercase tracking-wide">¿Cuántas ganancias puedes generar?</p>
+                  <p className="text-[9px] text-zinc-400 font-sans leading-tight">Presiona abajo para ver la tabla oficial de ganancias de cada VIP en alta definición.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if ((window as any).showVipFlyer) {
+                      (window as any).showVipFlyer();
+                    } else {
+                      window.open("/assets/tappmusic_vip_flyer.jpg", "_blank");
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-[10px] font-black uppercase rounded-xl transition-all cursor-pointer shrink-0 active:scale-95 shadow-[0_0_10px_rgba(168,85,247,0.3)] border-none shrink-0"
+                >
+                  👁️ Ver Flyer VIP 👑
+                </button>
+              </div>
+
               {/* Render 4D Interactive Calendar of eligible withdrawal dates */}
               <WithdrawalCalendar mode="user" config={withdrawConfig} />
 
