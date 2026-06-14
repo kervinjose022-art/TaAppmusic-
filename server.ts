@@ -8,7 +8,14 @@ async function startServer() {
   const PORT = 3000;
 
   // Pre-convert JPG logo to a beautiful PNG at startup for WebIntoApp compatibility
-  const Jimp = ((JimpPkg as any).default || (JimpPkg as any).Jimp || JimpPkg) as any;
+  let Jimp: any = (JimpPkg as any).Jimp;
+  if (!Jimp || typeof Jimp.read !== "function") {
+    Jimp = (JimpPkg as any).default?.Jimp || (JimpPkg as any).default || JimpPkg;
+  }
+  if (typeof Jimp.read !== "function" && JimpPkg && typeof (JimpPkg as any).read === "function") {
+    Jimp = JimpPkg;
+  }
+
   try {
     const jpgPath = path.join(process.cwd(), "src", "assets", "images", "logo_tappmusic_1781384373669.jpg");
     const pngDestPath1 = path.join(process.cwd(), "src", "assets", "images", "logo_tappmusic_256.png");
@@ -18,10 +25,11 @@ async function startServer() {
     if (fs.existsSync(jpgPath)) {
       console.log("[Tappmusic Logo Engine] Found source JPG logo. Converting to high-quality PNG...");
       const imageInstance = await Jimp.read(jpgPath);
-      // Resize to 256x256 (which is perfect for Android app icon)
-      imageInstance.resize(256, 256);
+      // Resize to 256x256 using the modern Jimp v1 options object signature
+      imageInstance.resize({ w: 256, h: 256 });
       
-      const pngBuffer = await imageInstance.getBufferAsync("image/png");
+      // Get buffer using the modern async getBuffer method of Jimp v1
+      const pngBuffer = await imageInstance.getBuffer("image/png");
       
       // Save to all locations (create parent directory if not existing)
       const assetsDir = path.join(process.cwd(), "assets");

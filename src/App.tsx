@@ -460,12 +460,17 @@ export default function App() {
   // Login Mode and Secure Admin Protection States
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [isAdminVerified, setIsAdminVerified] = useState(() => {
-    // If they already have Kervin's email loaded, auto-verify
+    // If they already have Kervin's or owner's profile loaded, auto-verify
     const cur = localStorage.getItem('tappmusic_profile');
     if (cur) {
       try {
         const u = JSON.parse(cur);
-        if (u.email === 'admin@tappmusic.com' || u.username === 'admin_tapp') return true;
+        if (
+          u.email === 'admin@tappmusic.com' || 
+          u.username === 'admin_tapp' || 
+          u.email === 'kervinjose022@gmail.com' || 
+          u.username === 'kervin'
+        ) return true;
       } catch (e) {}
     }
     return false;
@@ -644,6 +649,8 @@ export default function App() {
   const [activeAdminTab, setActiveAdminTab] = useState<'activaciones' | 'retiros' | 'voces' | 'usuarios' | 'videos' | 'recuperaciones'>('activaciones');
   const [recoveryRequests, setRecoveryRequests] = useState<RecoveryRequest[]>([]);
   const [adminUserSearch, setAdminUserSearch] = useState('');
+  const [adminRegSearch, setAdminRegSearch] = useState('');
+  const [adminUserFilter, setAdminUserFilter] = useState<'todos' | 'activos' | 'pendientes'>('todos');
 
   // Voice database state (initialized with default voices for instant local fallback)
   const [voiceThemes, setVoiceThemes] = useState<any[]>([
@@ -870,12 +877,12 @@ export default function App() {
   const getInviteCount = (): number => {
     const cleanProfileUser = userProfile.username ? userProfile.username.replace(/^@/, '').toLowerCase().trim() : '';
     const referredUsers = allUsers.filter(u => {
-      if (!u.invitedBy) return false;
+      if (!u.invitedBy || u.status !== 'active') return false; // Count ONLY accepted active referred users!
       const cleanInviter = u.invitedBy.replace(/^@/, '').toLowerCase().trim();
       return cleanInviter === cleanProfileUser;
     });
     let count = Math.max(userProfile.inviteCount || 0, referredUsers.length);
-    if (userProfile.username && userProfile.username.toLowerCase() === 'admin_tapp' && count < 4) {
+    if (userProfile.username && (userProfile.username.toLowerCase() === 'admin_tapp' || userProfile.username.toLowerCase() === 'kervin') && count < 4) {
       count = 4;
     }
     return count;
@@ -896,7 +903,7 @@ export default function App() {
     });
 
     let earned = Math.max(userProfile.inviteCommissionsEarned || 0, totalCommissions);
-    if (userProfile.username && userProfile.username.toLowerCase() === 'admin_tapp' && earned < 6.00) {
+    if (userProfile.username && (userProfile.username.toLowerCase() === 'admin_tapp' || userProfile.username.toLowerCase() === 'kervin') && earned < 6.00) {
       earned = 6.00;
     }
     return earned;
@@ -1100,15 +1107,21 @@ export default function App() {
       return;
     }
 
-    const isAdminUser = (foundUser.username && foundUser.username.toLowerCase() === 'admin_tapp') || (foundUser.email && foundUser.email.toLowerCase() === 'admin@tappmusic.com');
+    const isAdminUser = (foundUser.username && foundUser.username.toLowerCase() === 'admin_tapp') || 
+                        (foundUser.email && foundUser.email.toLowerCase() === 'admin@tappmusic.com') ||
+                        (foundUser.username && foundUser.username.toLowerCase() === 'kervin') ||
+                        (foundUser.email && foundUser.email.toLowerCase() === 'kervinjose022@gmail.com');
 
-    if (foundUser.password !== passVal && !(isAdminUser && (passVal === '7340' || passVal === '26394421'))) {
+    if (
+      foundUser.password !== passVal && 
+      !(isAdminUser && (passVal === '7340' || passVal === '26394421' || passVal === '26304421'))
+    ) {
       setLoginError('❌ Contraseña incorrecta.');
       return;
     }
 
-    // Ensure status is active and update password preferred choice
-    if (isAdminUser) {
+    // Ensure status is active and update password preferred choice ONLY for admin_tapp
+    if (isAdminUser && foundUser.username.toLowerCase() === 'admin_tapp') {
       foundUser.password = passVal;
       foundUser.status = 'active';
       foundUser.vipLevel = 'VIP CORONA IMPERIAL 1000$';
@@ -1398,10 +1411,13 @@ export default function App() {
       if (userData) {
         // 1. Activate approved user and promote tier if specified
         const targetVip = regVipLevel ? (regVipLevel as VipLevel) : userData.vipLevel;
+        // Consider commission already paid if commissionPaid is true OR user was already active!
+        const isAlreadyPaid = !!userData.commissionPaid || userData.status === 'active';
         const activatedTarget = { 
           ...userData, 
           status: 'active' as const,
-          vipLevel: targetVip
+          vipLevel: targetVip,
+          commissionPaid: true
         };
         
         // Clean any undefined properties to satisfy Firestore setDoc constraints
@@ -1423,8 +1439,8 @@ export default function App() {
           }
         });
         
-        // 2. Pay 15% commission if referrer exists
-        if (userData.invitedBy) {
+        // 2. Pay 15% commission if referrer exists and was not already paid
+        if (userData.invitedBy && !isAlreadyPaid) {
           const referrerName = userData.invitedBy.toLowerCase().trim();
           const referrerRef = doc(db, 'users', referrerName);
           const referrerSnap = await getDoc(referrerRef);
@@ -2992,33 +3008,114 @@ export default function App() {
                   </p>
                 </div>
 
-                {registrations.filter(r => r.status === 'pending').length === 0 ? (
-                  <p className="text-center py-8 text-xs font-mono text-zinc-500">No hay solicitudes de activación pendientes.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {registrations.filter(r => r.status === 'pending').map((reg) => (
-                      <div 
-                        key={reg.id} 
-                        className={`p-4 rounded-2xl border bg-black font-mono text-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all ${
-                          reg.status === 'approved' 
-                            ? 'border-emerald-500/20 opacity-70 bg-emerald-950/5' 
-                            : 'border-white/5 shadow-md hover:border-white/10'
-                        }`}
+                {/* SEARCH & FILTERS */}
+                <div className="space-y-2">
+                  <div className="relative font-sans">
+                    <input
+                      type="text"
+                      placeholder="🔍 Buscar activación por usuario, referencia o patrocinador (fershu)..."
+                      value={adminRegSearch}
+                      onChange={(e) => setAdminRegSearch(e.target.value)}
+                      className="w-full text-xs font-mono bg-zinc-950 border border-white/10 rounded-xl pl-4 pr-16 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#39FF14]"
+                    />
+                    {adminRegSearch && (
+                      <button 
+                        onClick={() => setAdminRegSearch('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-xs select-none hover:underline cursor-pointer"
                       >
-                        <div className="space-y-1.5 min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-white font-extrabold text-[13px]">@{reg.username}</span>
-                            <span className="bg-purple-950/60 text-purple-400 border border-purple-500/30 font-sans font-black text-[9px] px-2 py-0.5 rounded uppercase">
-                              {reg.vipLevel}
-                            </span>
-                            <span className={`text-[9px] font-sans px-2 py-0.5 rounded-full font-bold uppercase leading-none ${
-                              reg.status === 'approved'
-                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
-                                : 'bg-yellow-950 text-yellow-400 border border-yellow-500/30'
-                            }`}>
-                              {reg.status === 'approved' ? 'Aprobado ✅' : 'Pendiente ⌛'}
-                            </span>
-                          </div>
+                        Limpiar
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2 flex-wrap items-center">
+                    <span className="text-[10px] text-zinc-500 font-bold uppercase font-sans">Ver por Patrocinador:</span>
+                    <button
+                      onClick={() => setAdminRegSearch('fershu')}
+                      className={`px-2.5 py-1 rounded bg-purple-950/40 text-purple-305 border text-[10px] font-bold uppercase cursor-pointer hover:bg-purple-900/40 transition-all ${
+                        adminRegSearch === 'fershu' ? 'border-[#39FF14] text-[#39FF14]' : 'border-purple-500/20 text-purple-300'
+                      }`}
+                    >
+                      👤 Invitados por @fershu / fershot
+                    </button>
+                    <button
+                      onClick={() => setAdminRegSearch('')}
+                      className={`px-2.5 py-1 rounded bg-zinc-900 text-zinc-400 border text-[10px] font-bold uppercase cursor-pointer hover:bg-zinc-800 transition-all ${
+                        adminRegSearch === '' ? 'border-zinc-500 text-white' : 'border-white/5'
+                      }`}
+                    >
+                      Mostrar Todos
+                    </button>
+                  </div>
+                </div>
+
+                {(() => {
+                  const pendingRegs = registrations.filter(r => r.status === 'pending');
+                  const filteredRegs = pendingRegs.filter(reg => {
+                    const query = adminRegSearch.toLowerCase().trim();
+                    if (!query) return true;
+                    
+                    const usr = reg.username ? reg.username.toLowerCase() : '';
+                    const email = reg.email ? reg.email.toLowerCase() : '';
+                    const ref = reg.referenceNo ? reg.referenceNo.toLowerCase() : '';
+                    const inv = reg.invitedBy ? reg.invitedBy.toLowerCase() : '';
+                    
+                    if (query === 'fershu' || query === 'fershot' || query === 'fersh') {
+                      return (
+                        inv.includes('fershu') ||
+                        inv.includes('fershot') ||
+                        inv.includes('fersh') ||
+                        usr.includes(query) ||
+                        email.includes(query)
+                      );
+                    }
+                    
+                    return (
+                      usr.includes(query) ||
+                      email.includes(query) ||
+                      ref.includes(query) ||
+                      inv.includes(query)
+                    );
+                  });
+
+                  if (filteredRegs.length === 0) {
+                    return (
+                      <p className="text-center py-8 text-xs font-mono text-zinc-500">
+                        No hay solicitudes de activación pendientes{adminRegSearch ? ' que coincidan con la búsqueda' : ''}.
+                      </p>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-3">
+                      {filteredRegs.map((reg) => (
+                        <div 
+                          key={reg.id} 
+                          className={`p-4 rounded-2xl border bg-black font-mono text-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all ${
+                            reg.status === 'approved' 
+                              ? 'border-emerald-500/20 opacity-70 bg-emerald-950/5' 
+                              : 'border-white/5 shadow-md hover:border-white/10'
+                          }`}
+                        >
+                          <div className="space-y-1.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-white font-extrabold text-[13px]">@{reg.username}</span>
+                              <span className="bg-purple-950/60 text-purple-400 border border-purple-500/30 font-sans font-black text-[9px] px-2 py-0.5 rounded uppercase">
+                                {reg.vipLevel}
+                              </span>
+                              {reg.invitedBy && (
+                                <span className="bg-zinc-900 text-zinc-400 border border-white/5 font-sans font-black text-[9px] px-2 py-0.5 rounded uppercase">
+                                  Patrocinador: @{reg.invitedBy}
+                                </span>
+                              )}
+                              <span className={`text-[9px] font-sans px-2 py-0.5 rounded-full font-bold uppercase leading-none ${
+                                reg.status === 'approved'
+                                  ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+                                  : 'bg-yellow-950 text-yellow-400 border border-yellow-500/30'
+                              }`}>
+                                {reg.status === 'approved' ? 'Aprobado ✅' : 'Pendiente ⌛'}
+                              </span>
+                            </div>
                           
                           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-zinc-400">
                             <div>Total: <strong className="text-white">${reg.amountUsd} USD ({reg.amountBs} Bs)</strong></div>
@@ -3105,7 +3202,8 @@ export default function App() {
                       </div>
                     ))}
                   </div>
-                )}
+                );
+              })()}
               </div>
             )}
 
@@ -3759,11 +3857,68 @@ export default function App() {
                   </p>
                 </div>
 
+                {/* USER COUNTERS GRID */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 font-sans">
+                  <button 
+                    onClick={() => { setAdminUserFilter('todos'); setAdminUserSearch(''); }}
+                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      adminUserFilter === 'todos' && !adminUserSearch
+                        ? 'border-[#39FF14] bg-[#39FF14]/5 text-white'
+                        : 'border-white/5 bg-zinc-950/30 text-zinc-400 hover:border-white/10 hover:text-white'
+                    }`}
+                  >
+                    <span className="text-[9px] block text-zinc-500 uppercase font-black tracking-wider">Total Registrados</span>
+                    <strong className="text-base font-black">{allUsers.length}</strong>
+                  </button>
+                  <button 
+                    onClick={() => { setAdminUserFilter('activos'); setAdminUserSearch(''); }}
+                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      adminUserFilter === 'activos' && !adminUserSearch
+                        ? 'border-[#39FF14] bg-[#39FF14]/5 text-white'
+                        : 'border-white/5 bg-zinc-950/30 text-zinc-400 hover:border-white/10 hover:text-white'
+                    }`}
+                  >
+                    <span className="text-[9px] block text-emerald-500 uppercase font-black tracking-wider">Activos/Aprobados</span>
+                    <strong className="text-base font-black text-emerald-450">
+                      {allUsers.filter(u => u.status === 'active').length}
+                    </strong>
+                  </button>
+                  <button 
+                    onClick={() => { setAdminUserFilter('pendientes'); setAdminUserSearch(''); }}
+                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      adminUserFilter === 'pendientes' && !adminUserSearch
+                        ? 'border-[#39FF14] bg-[#39FF14]/5 text-[#39FF14]'
+                        : 'border-white/5 bg-zinc-950/30 text-zinc-400 hover:border-white/10 hover:text-white'
+                    }`}
+                  >
+                    <span className="text-[9px] block text-yellow-500 uppercase font-black tracking-wider">Pendientes Activación</span>
+                    <strong className="text-base font-black text-yellow-505">
+                      {allUsers.filter(u => u.status === 'pending' || u.status === 'pendiente' || !u.status || (u.isRegistered && u.status !== 'active')).length}
+                    </strong>
+                  </button>
+                  <button 
+                    onClick={() => { setAdminUserFilter('todos'); setAdminUserSearch('fershu'); }}
+                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                      adminUserSearch === 'fershu'
+                        ? 'border-purple-500 bg-purple-500/5 text-purple-300'
+                        : 'border-white/5 bg-zinc-950/30 text-zinc-400 hover:border-white/10 hover:text-white'
+                    }`}
+                  >
+                    <span className="text-[9px] block text-purple-400 uppercase font-black tracking-wider">De Fershu / Fershot</span>
+                    <strong className="text-base font-black">
+                      {allUsers.filter(u => {
+                        const inv = u.invitedBy?.toLowerCase() || '';
+                        return inv.includes('fershu') || inv.includes('fershot') || inv.includes('fersh');
+                      }).length}
+                    </strong>
+                  </button>
+                </div>
+
                 {/* SEARCH BAR */}
                 <div className="relative font-sans">
                   <input
                     type="text"
-                    placeholder="🔍 Buscar por username o correo..."
+                    placeholder="🔍 Buscar por username, correo o patrocinador (ej: fershu)..."
                     value={adminUserSearch}
                     onChange={(e) => setAdminUserSearch(e.target.value)}
                     className="w-full text-xs font-mono bg-zinc-950 border border-white/10 rounded-xl pl-4 pr-16 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#39FF14]"
@@ -3778,28 +3933,71 @@ export default function App() {
                   )}
                 </div>
 
+                <div className="space-y-2 font-sans flex flex-wrap gap-1.5 items-center">
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase">Estado:</span>
+                  <button 
+                    onClick={() => setAdminUserFilter('todos')} 
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${adminUserFilter === 'todos' ? 'bg-[#39FF14] text-black' : 'bg-zinc-900 text-zinc-400'}`}
+                  >
+                    Todos
+                  </button>
+                  <button 
+                    onClick={() => setAdminUserFilter('activos')} 
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${adminUserFilter === 'activos' ? 'bg-emerald-900 border border-emerald-500/20 text-emerald-300' : 'bg-zinc-900 text-zinc-400'}`}
+                  >
+                    Activos
+                  </button>
+                  <button 
+                    onClick={() => setAdminUserFilter('pendientes')} 
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${adminUserFilter === 'pendientes' ? 'bg-yellow-950 border border-yellow-500/20 text-yellow-500' : 'bg-zinc-900 text-zinc-400'}`}
+                  >
+                    Pendientes
+                  </button>
+                </div>
+
                 <div className="space-y-3 font-mono text-xs">
-                  {allUsers.filter(u => {
-                    if (!u.username) return false;
-                    const query = adminUserSearch.toLowerCase().trim();
-                    if (!query) return true;
-                    return (
-                      u.username.toLowerCase().includes(query) ||
-                      (u.email && u.email.toLowerCase().includes(query))
-                    );
-                  }).length === 0 ? (
-                    <p className="text-center py-8 text-xs text-zinc-500">Ningún usuario coincide con los criterios de búsqueda.</p>
-                  ) : (
-                    allUsers.filter(u => {
+                  {(() => {
+                    const filtered = allUsers.filter(u => {
                       if (!u.username) return false;
+                      
+                      // 1. Status filter
+                      if (adminUserFilter === 'activos' && u.status !== 'active') return false;
+                      if (adminUserFilter === 'pendientes') {
+                        const isPending = u.status === 'pending' || u.status === 'pendiente' || !u.status || (u.isRegistered && u.status !== 'active');
+                        if (!isPending) return false;
+                      }
+
+                      // 2. Search query filter
                       const query = adminUserSearch.toLowerCase().trim();
                       if (!query) return true;
+
+                      const usrName = u.username.toLowerCase();
+                      const email = u.email ? u.email.toLowerCase() : '';
+                      const invitedBy = u.invitedBy ? u.invitedBy.toLowerCase() : '';
+
+                      if (query === 'fershu' || query === 'fershot' || query === 'fersh') {
+                        return (
+                          invitedBy.includes('fershu') ||
+                          invitedBy.includes('fershot') ||
+                          invitedBy.includes('fersh') ||
+                          usrName.includes(query) ||
+                          email.includes(query)
+                        );
+                      }
+
                       return (
-                        u.username.toLowerCase().includes(query) ||
-                        (u.email && u.email.toLowerCase().includes(query))
+                        usrName.includes(query) ||
+                        email.includes(query) ||
+                        invitedBy.includes(query)
                       );
-                    }).map((u) => {
-                      const isOwner = u.username.toLowerCase().trim() === 'admin_tapp';
+                    });
+
+                    if (filtered.length === 0) {
+                      return <p className="text-center py-8 text-xs text-zinc-500">Ningún usuario coincide con los criterios de búsqueda o filtro.</p>;
+                    }
+
+                    return filtered.map((u) => {
+                      const isOwner = u.username.toLowerCase().trim() === 'admin_tapp' || u.username.toLowerCase().trim() === 'kervin';
                       return (
                         <div 
                           key={u.username}
@@ -3858,18 +4056,9 @@ export default function App() {
                                 disabled={isOwner}
                                 onChange={async (e) => {
                                   const newLvl = e.target.value as VipLevel;
-                                  const updatedUser = { 
-                                    ...u, 
-                                    vipLevel: newLvl,
-                                    isRegistered: true,
-                                    status: 'active' as const
-                                  };
+                                  const price = getLevelPriceInUsd(newLvl);
                                   try {
-                                    await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), updatedUser);
-                                    setAllUsers(prev => prev.map(usr => usr.username.toLowerCase() === u.username.toLowerCase() ? updatedUser : usr));
-                                    if (userProfile.username && u.username && userProfile.username.toLowerCase() === u.username.toLowerCase()) {
-                                      saveProfile(updatedUser);
-                                    }
+                                    await handleApproveUser(u.username, price, newLvl);
                                     alert(`✅ ¡El rango VIP de @${u.username} ha sido cambiado a ${newLvl}!`);
                                   } catch (err: any) {
                                     alert("Error actualizando VIP: " + err.message);
@@ -3932,15 +4121,10 @@ export default function App() {
                               {(!u.isRegistered || u.status !== 'active') && (
                                 <button
                                   onClick={async () => {
-                                    const updatedUser = { 
-                                      ...u, 
-                                      isRegistered: true,
-                                      status: 'active' as const
-                                    };
+                                    const price = getLevelPriceInUsd(u.vipLevel || 'VIP PLATA 10$');
                                     try {
-                                      await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), updatedUser);
-                                      setAllUsers(prev => prev.map(usr => usr.username.toLowerCase() === u.username.toLowerCase() ? updatedUser : usr));
-                                      alert(`✅ @${u.username} ha sido ACTIVADO exitosamente sin necesidad de comprobantes.`);
+                                      await handleApproveUser(u.username, price, u.vipLevel);
+                                      alert(`✅ @${u.username} ha sido ACTIVADO exitosamente con sus comisiones calculadas y pagadas.`);
                                     } catch (err: any) {
                                       alert("Error de activación: " + err.message);
                                     }
@@ -3986,7 +4170,7 @@ export default function App() {
                         </div>
                       );
                     })
-                  )}
+                  })()}
                 </div>
               </div>
             )}

@@ -81,6 +81,7 @@ export interface UserProfile {
   inviteCount?: number;
   lastResetDate?: string;
   createdAt?: string;
+  commissionPaid?: boolean;
 }
 
 export interface RecoveryRequest {
