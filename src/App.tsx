@@ -133,7 +133,7 @@ export default function App() {
               if (savedProfileStr) {
                 try {
                   const savedObj = JSON.parse(savedProfileStr) as UserProfile;
-                  if (savedObj.username && savedObj.username.toLowerCase() === u.username.toLowerCase()) {
+                  if (savedObj.username && savedObj.username.toLowerCase().trim() !== 'usuario_vip' && savedObj.username.toLowerCase() === u.username.toLowerCase()) {
                     setUserProfile(migratedUser);
                     localStorage.setItem('tappmusic_profile', JSON.stringify(migratedUser));
                   }
@@ -310,28 +310,30 @@ export default function App() {
         if (currentLocal) {
           try {
             const parsed = JSON.parse(currentLocal) as UserProfile;
-            const updatedProfile = items.find(u => u.username && parsed.username && u.username.toLowerCase().trim() === parsed.username.toLowerCase().trim());
-            if (updatedProfile) {
-              hasSyncedWithFirestore.current = true;
-              setUserProfile(prevProfile => {
-                const earningsChanged = prevProfile.earnings !== updatedProfile.earnings;
-                const vipLevelChanged = prevProfile.vipLevel !== updatedProfile.vipLevel;
-                const statusChanged = prevProfile.status !== updatedProfile.status;
-                const inviteCountChanged = prevProfile.inviteCount !== updatedProfile.inviteCount;
-                const inviteCommissionsChanged = prevProfile.inviteCommissionsEarned !== updatedProfile.inviteCommissionsEarned;
-                
-                const prevTasksStr = [...(prevProfile.completedTaskIds || [])].sort().join(',');
-                const updatedTasksStr = [...(updatedProfile.completedTaskIds || [])].sort().join(',');
-                const tasksChanged = prevTasksStr !== updatedTasksStr;
+            if (parsed.username && parsed.username.toLowerCase().trim() !== 'usuario_vip') {
+              const updatedProfile = items.find(u => u.username && parsed.username && u.username.toLowerCase().trim() === parsed.username.toLowerCase().trim());
+              if (updatedProfile) {
+                hasSyncedWithFirestore.current = true;
+                setUserProfile(prevProfile => {
+                  const earningsChanged = prevProfile.earnings !== updatedProfile.earnings;
+                  const vipLevelChanged = prevProfile.vipLevel !== updatedProfile.vipLevel;
+                  const statusChanged = prevProfile.status !== updatedProfile.status;
+                  const inviteCountChanged = prevProfile.inviteCount !== updatedProfile.inviteCount;
+                  const inviteCommissionsChanged = prevProfile.inviteCommissionsEarned !== updatedProfile.inviteCommissionsEarned;
+                  
+                  const prevTasksStr = [...(prevProfile.completedTaskIds || [])].sort().join(',');
+                  const updatedTasksStr = [...(updatedProfile.completedTaskIds || [])].sort().join(',');
+                  const tasksChanged = prevTasksStr !== updatedTasksStr;
 
-                if (earningsChanged || vipLevelChanged || statusChanged || inviteCountChanged || inviteCommissionsChanged || tasksChanged) {
-                  return {
-                    ...prevProfile,
-                    ...updatedProfile
-                  };
-                }
-                return prevProfile;
-              });
+                  if (earningsChanged || vipLevelChanged || statusChanged || inviteCountChanged || inviteCommissionsChanged || tasksChanged) {
+                    return {
+                      ...prevProfile,
+                      ...updatedProfile
+                    };
+                  }
+                  return prevProfile;
+                });
+              }
             }
           } catch (e) {}
         }
