@@ -66,6 +66,26 @@ export default function VipTasks({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const synthNodesRef = useRef<any[]>([]);
 
+  // Pre-load and warm up Android TTS / Web Speech API voices at mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try {
+        window.speechSynthesis.getVoices();
+        const handleVoices = () => {
+          window.speechSynthesis.getVoices();
+        };
+        window.speechSynthesis.onvoiceschanged = handleVoices;
+        return () => {
+          if (window.speechSynthesis) {
+            window.speechSynthesis.onvoiceschanged = null;
+          }
+        };
+      } catch (err) {
+        console.warn("TTS initialization warning:", err);
+      }
+    }
+  }, []);
+
   const stopAmbientSynth = () => {
     if (synthNodesRef.current.length > 0) {
       synthNodesRef.current.forEach(node => {
@@ -458,6 +478,10 @@ export default function VipTasks({
       };
 
       speechUtteranceRef.current = utterance;
+      try {
+        // Resume in case speech synthesis is stuck or paused as a chromium webview quirk
+        window.speechSynthesis.resume();
+      } catch (e) {}
       window.speechSynthesis.speak(utterance);
     }
   };
