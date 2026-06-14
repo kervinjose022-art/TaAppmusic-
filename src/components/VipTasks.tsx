@@ -464,12 +464,12 @@ export default function VipTasks({
       let finalRate = typeof voiceTheme.rate === 'number' ? voiceTheme.rate : 0.8;
       let finalPitch = typeof voiceTheme.pitch === 'number' ? voiceTheme.pitch : 1.0;
 
-      // Pitch shifting to solemn preacher tones
+      // Pitch shifting to solemn preacher tones with safe boundaries for mobile devices
       if (voiceTheme.key === 'jesus' || voiceTheme.key === 'dios' || voiceTheme.key === 'mentalidad' || voiceTheme.key === 'espiritu_santo' || voiceTheme.key === 'angel') {
         const isFemale = chosenVoice ? femaleKeywords.some(kw => chosenVoice.name.toLowerCase().includes(kw)) : true;
         if (isFemale) {
-          finalPitch = 0.65; // Warm, heavy sub-bass solemn sermon pitch
-          finalRate = 0.72; // Make it slow and majestic
+          finalPitch = isMobileWebView ? 0.80 : 0.65;
+          finalRate = isMobileWebView ? 0.85 : 0.72;
         }
       }
 
@@ -497,13 +497,18 @@ export default function VipTasks({
       };
 
       speechUtteranceRef.current = utterance;
-      try {
-        // Resume in case speech synthesis is stuck or paused as a chromium webview quirk
-        window.speechSynthesis.resume();
-        window.speechSynthesis.speak(utterance);
-      } catch (e) {
-        console.warn("Speech synthesis trigger failed:", e);
-      }
+      
+      // Delaying the execution slightly prevents race-conditions with the internal SpeechSynthesis system queue on Android Webviews
+      setTimeout(() => {
+        try {
+          if (typeof window !== 'undefined' && window.speechSynthesis) {
+            window.speechSynthesis.resume();
+            window.speechSynthesis.speak(utterance);
+          }
+        } catch (e) {
+          console.warn("Speech synthesis trigger failed:", e);
+        }
+      }, 100);
     }
   };
 
