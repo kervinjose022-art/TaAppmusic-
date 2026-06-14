@@ -389,7 +389,7 @@ export default function App() {
         let needsUpdate = false;
         
         // Auto-initialize the brand new Google Drive APK Link for real-time remote configuration
-        if (!data.apkDownloadUrl || data.apkDownloadUrl.includes('drive.google.com/uc?export=download')) {
+        if (!data.apkDownloadUrl) {
           data.apkDownloadUrl = 'https://drive.google.com/file/d/1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5/view?usp=drivesdk';
           needsUpdate = true;
         }
@@ -651,6 +651,7 @@ export default function App() {
   const [adminUserSearch, setAdminUserSearch] = useState('');
   const [adminRegSearch, setAdminRegSearch] = useState('');
   const [adminUserFilter, setAdminUserFilter] = useState<'todos' | 'activos' | 'pendientes'>('todos');
+  const [adminZoomImage, setAdminZoomImage] = useState<string | null>(null);
 
   // Voice database state (initialized with default voices for instant local fallback)
   const [voiceThemes, setVoiceThemes] = useState<any[]>([
@@ -1906,8 +1907,8 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* APK Download helper widget */}
-                  <div className="shrink-0 bg-black border border-[#39FF14]/25 rounded-2xl p-4 flex flex-col items-start gap-3">
+                  {/* APK Download helper widget with copy link for WebView app wrapper backup */}
+                  <div className="shrink-0 bg-black border border-[#39FF14]/25 rounded-2xl p-4 flex flex-col items-start gap-3 w-full sm:w-auto">
                     <div className="text-left">
                       <p className="text-[9px] font-black text-neon-green tracking-wider uppercase flex items-center gap-1">
                         <Smartphone className="h-2.5 w-2.5 text-[#39FF14]" /> APP OFICIAL ANDROID
@@ -1915,23 +1916,37 @@ export default function App() {
                       <p className="text-xs font-sans font-bold text-zinc-300">Tappmusic v1.0.apk</p>
                     </div>
                     
-                    <div className="w-full">
+                    <div className="w-full flex flex-col gap-2">
                       <a
                         href={withdrawConfig?.apkDownloadUrl || "/assets/tappmusic.apk"}
-                        download={withdrawConfig?.apkDownloadUrl ? undefined : "tappmusic.apk"}
-                        target={withdrawConfig?.apkDownloadUrl ? "_blank" : undefined}
-                        rel={withdrawConfig?.apkDownloadUrl ? "noopener noreferrer" : undefined}
-                        onClick={() => {
-                          alert(withdrawConfig?.apkDownloadUrl 
-                            ? "📲 Redirigiendo a tu enlace de descarga externa del de Tappmusic v1.0 original de forma segura..." 
-                            : "📲 Iniciando descarga del APK de Tappmusic v1.0 original de forma segura...");
+                        // Remove target="_blank" inside webview wraps to allow direct custom protocol download handles
+                        onClick={(e) => {
+                          const url = withdrawConfig?.apkDownloadUrl || "enlace_por_defecto";
+                          console.log("Downloading APK:", url);
                         }}
                         className="w-full flex h-8 items-center justify-center gap-1.5 rounded-xl bg-[#39FF14] hover:bg-[#39FF14]/85 text-black text-[11px] font-extrabold transition-all cursor-pointer filter saturate-120 hover:scale-[1.02] active:scale-95 shadow-[0_0_10px_rgba(57,255,20,0.2)]"
                       >
                         <Download className="h-3.5 w-3.5 text-black" />
                         <span>DESCARGAR APK</span>
                       </a>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = withdrawConfig?.apkDownloadUrl || "https://drive.google.com/file/d/1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5/view?usp=drivesdk";
+                          navigator.clipboard.writeText(url);
+                          alert("📋 ¡Enlace de la aplicación copiado! Pégalo en Google Chrome o el navegador de tu celular para descargar.");
+                        }}
+                        className="w-full h-8 px-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-white/10 hover:border-white/20 text-zinc-300 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 select-none"
+                      >
+                        <Copy className="h-3 w-3 text-zinc-400" />
+                        <span>Copiar Enlace Directo</span>
+                      </button>
                     </div>
+
+                    <p className="text-[9px] text-zinc-500 font-sans leading-tight mt-0.5 max-w-[180px]">
+                      💡 <strong>¿No inicia?</strong> Si estás usando la app, presiona <strong>"Copiar Enlace Directo"</strong> y pégalo en Google Chrome.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -3127,22 +3142,34 @@ export default function App() {
                           {/* Image receipt toggle view if uploaded */}
                           {reg.proofFileBlob ? (
                             <div className="pt-2">
-                              <span className="text-zinc-600 text-[10px] block mb-1">Capture Adjunto:</span>
-                              <div className="rounded-lg overflow-hidden bg-zinc-950 p-1 border border-white/5 w-24">
-                                <a href={reg.proofFileBlob} target="_blank" rel="noopener noreferrer" title="Ampliar Imagen">
+                              <span className="text-zinc-500 font-bold text-[9px] uppercase tracking-wider block mb-1">📸 Capture de Pago Adjunto (clic para ampliar):</span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setAdminZoomImage(reg.proofFileBlob)}
+                                  className="rounded-lg overflow-hidden bg-zinc-950 p-1 border border-white/10 hover:border-[#39FF14] transition-all w-24 h-16 flex items-center justify-center cursor-zoom-in group select-none"
+                                  title="Expandir captura de pago"
+                                >
                                   <img 
                                     src={reg.proofFileBlob} 
                                     alt="Capture depósito" 
-                                    className="h-14 w-auto object-cover rounded hover:scale-105 transition-all"
+                                    className="max-h-full max-w-full object-contain rounded group-hover:scale-110 transition-all duration-305"
                                     referrerPolicy="no-referrer"
                                   />
-                                </a>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setAdminZoomImage(reg.proofFileBlob)}
+                                  className="text-[10px] text-zinc-400 font-sans hover:text-[#39FF14] underline cursor-pointer select-none"
+                                >
+                                  🔍 Ampliar Capture
+                                </button>
                               </div>
                             </div>
                           ) : (
-                            <div className="pt-2 whitespace-nowrap">
-                              <span className="text-zinc-600 text-[10px] block mb-1">Capture Adjunto:</span>
-                              <span className="inline-flex items-center gap-1 bg-zinc-900 border border-white/5 px-2 py-1 rounded text-zinc-500 text-[10px]">
+                            <div className="pt-2">
+                              <span className="text-zinc-600 text-[9px] uppercase tracking-wider block mb-1">Capture Adjunto:</span>
+                              <span className="inline-flex items-center gap-1.5 bg-zinc-950 border border-white/5 px-2.5 py-1 rounded text-zinc-500 text-[10px] font-mono">
                                 📁 {reg.proofFileName || 'comprobante_banco.png'}
                               </span>
                             </div>
@@ -4061,6 +4088,23 @@ export default function App() {
                                   <div>Invitados Guardados: <strong className="text-zinc-300">{u.inviteCount || 0}</strong></div>
                                   <div>Comisiones Reales: <strong className="text-emerald-400">{actualCommissions.toFixed(2)} USD</strong></div>
                                   <div>Invitados Reales: <strong className="text-emerald-400">{actualCount} activos (con depósito)</strong></div>
+                                  {u.proofFileBlob ? (
+                                    <div className="sm:col-span-2 border-t border-white/5 pt-1.5 mt-0.5 flex items-center gap-2 flex-wrap">
+                                      <span className="text-[10px] text-zinc-500 uppercase font-extrabold">Voucher de Pago:</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setAdminZoomImage(u.proofFileBlob!)}
+                                        className="inline-flex items-center gap-1 bg-purple-950/50 border border-purple-500/40 hover:border-[#39FF14] text-[#39FF14] px-2.5 py-0.5 rounded text-[10px] uppercase font-black hover:bg-purple-900/60 cursor-zoom-in transition-all active:scale-95"
+                                      >
+                                        👁️ Ver Capture de Pago 🔍
+                                      </button>
+                                    </div>
+                                  ) : u.proofFileName ? (
+                                    <div className="sm:col-span-2 border-t border-white/5 pt-1.5 mt-0.5 text-zinc-500 flex items-center gap-1 text-[10px]">
+                                      <span>Archivo Capture:</span>
+                                      <span className="font-mono text-zinc-400 bg-zinc-950 px-1.5 py-0.5 rounded border border-white/5">{u.proofFileName}</span>
+                                    </div>
+                                  ) : null}
                                   <div className="sm:col-span-2 text-zinc-500 border-t border-white/5 pt-1.5 mt-0.5">📅 Fecha de Ingreso: <strong className="text-zinc-300 font-mono">{u.createdAt || registrations.find(r => r.username && r.username.toLowerCase().trim() === u.username.toLowerCase().trim())?.date || '11/06/2026'}</strong></div>
                                 </div>
 
@@ -4428,6 +4472,62 @@ export default function App() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal for zooming in on payment captures */}
+      {adminZoomImage && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in font-sans">
+          <div className="absolute top-4 right-4 z-10 flex gap-2">
+            <button
+              onClick={() => {
+                const w = window.open();
+                if (w) {
+                  w.document.write(`<img src="${adminZoomImage}" style="max-width:105%; margin:20px auto; display:block;" />`);
+                  w.document.title = "Comprobante de Pago Tappmusic";
+                } else {
+                  alert("Por favor habilita las ventanas emergentes si deseas imprimir/descargar.");
+                }
+              }}
+              className="px-3 py-1.5 bg-zinc-900 border border-white/10 hover:border-white/30 text-white text-[11px] font-bold rounded-lg cursor-pointer transition-all active:scale-95"
+            >
+              📥 Abrir en Ventana Nueva
+            </button>
+            <button
+              onClick={() => setAdminZoomImage(null)}
+              className="h-8 w-8 flex items-center justify-center rounded-xl bg-[#39FF14] text-black font-black text-sm hover:scale-105 active:scale-95 cursor-pointer transition-all shadow-[0_0_15px_rgba(57,255,20,0.4)]"
+              title="Cerrar Imagen"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="relative w-full max-w-lg lg:max-w-2xl bg-zinc-950 p-2 border border-white/10 rounded-[28px] overflow-hidden flex flex-col items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+            <div className="p-3 w-full text-center border-b border-white/5 text-zinc-400 text-xs font-mono">
+              🔎 COMPROBANTE DE PAGO EN ALTA RESOLUCIÓN (VOUCHER)
+            </div>
+            
+            <div className="p-2 overflow-auto max-h-[70vh] flex items-center justify-center">
+              <img
+                src={adminZoomImage}
+                alt="Capture ampliado"
+                className="max-w-full max-h-[60vh] object-contain rounded-2xl border border-white/5 shadow-2xl"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+
+            <div className="p-3 border-t border-white/5 w-full flex justify-between items-center text-[10px] text-zinc-500 font-mono">
+              <span>Haga clic fuera para cerrar</span>
+              <button
+                onClick={() => setAdminZoomImage(null)}
+                className="text-white hover:text-[#39FF14] transition-all font-sans font-bold"
+              >
+                CERRAR ✕
+              </button>
+            </div>
+          </div>
+          
+          <div className="absolute inset-0 -z-10 cursor-zoom-out" onClick={() => setAdminZoomImage(null)} />
         </div>
       )}
 
