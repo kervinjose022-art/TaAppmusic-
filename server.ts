@@ -1,14 +1,76 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
+import * as JimpPkg from "jimp";
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  // Pre-convert JPG logo to a beautiful PNG at startup for WebIntoApp compatibility
+  const Jimp = ((JimpPkg as any).default || (JimpPkg as any).Jimp || JimpPkg) as any;
+  try {
+    const jpgPath = path.join(process.cwd(), "src", "assets", "images", "logo_tappmusic_1781384373669.jpg");
+    const pngDestPath1 = path.join(process.cwd(), "src", "assets", "images", "logo_tappmusic_256.png");
+    const pngDestPath2 = path.join(process.cwd(), "assets", "logo_tappmusic_256.png");
+    const pngDestPath3 = path.join(process.cwd(), "assets", "logo.png");
+
+    if (fs.existsSync(jpgPath)) {
+      console.log("[Tappmusic Logo Engine] Found source JPG logo. Converting to high-quality PNG...");
+      const imageInstance = await Jimp.read(jpgPath);
+      // Resize to 256x256 (which is perfect for Android app icon)
+      imageInstance.resize(256, 256);
+      
+      const pngBuffer = await imageInstance.getBufferAsync("image/png");
+      
+      // Save to all locations (create parent directory if not existing)
+      const assetsDir = path.join(process.cwd(), "assets");
+      if (!fs.existsSync(assetsDir)) {
+        fs.mkdirSync(assetsDir, { recursive: true });
+      }
+
+      fs.writeFileSync(pngDestPath1, pngBuffer);
+      fs.writeFileSync(pngDestPath2, pngBuffer);
+      fs.writeFileSync(pngDestPath3, pngBuffer);
+      console.log("[Tappmusic Logo Engine] Success! Converted logo and saved to:", {
+        src: pngDestPath1,
+        assets_opt: pngDestPath2,
+        assets: pngDestPath3
+      });
+    } else {
+      console.log("[Tappmusic Logo Engine] Warning: JPG logo file not found at " + jpgPath);
+    }
+  } catch (err) {
+    console.error("[Tappmusic Logo Engine] Conversion failed at startup:", err);
+  }
+
   // Root endpoint for simple checking
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok", service: "Tappmusic" });
+  });
+
+  // Serve static PNG logo explicitly with correct headers
+  app.get("/assets/logo.png", (req, res) => {
+    const p = path.join(process.cwd(), "assets", "logo.png");
+    if (fs.existsSync(p)) {
+      res.setHeader("Content-Type", "image/png");
+      return res.sendFile(p);
+    }
+    const pSrc = path.join(process.cwd(), "src", "assets", "images", "logo_tappmusic_256.png");
+    if (fs.existsSync(pSrc)) {
+      res.setHeader("Content-Type", "image/png");
+      return res.sendFile(pSrc);
+    }
+    res.status(404).send("Logo not found");
+  });
+
+  app.get("/assets/logo_tappmusic_256.png", (req, res) => {
+    const p = path.join(process.cwd(), "assets", "logo_tappmusic_256.png");
+    if (fs.existsSync(p)) {
+      res.setHeader("Content-Type", "image/png");
+      return res.sendFile(p);
+    }
+    res.status(404).send("Logo not found");
   });
 
   // Intercept and serve tappmusic.apk with proper Android headers and fallback
