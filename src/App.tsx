@@ -83,7 +83,7 @@ export default function App() {
     allowedDays: [], // empty by default to prevent weekday confusion
     allowedDates: [],
     allowedMonthDays: [10, 20, 30],
-    apkDownloadUrl: ''
+    apkDownloadUrl: 'https://drive.google.com/uc?export=download&id=1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5'
   });
 
   // Persist master users pool & Listen to Firestore in Real-Time
@@ -381,28 +381,36 @@ export default function App() {
     const unsubWithdrawalConfig = onSnapshot(doc(db, 'config', 'withdrawals'), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        let needsUpdate = false;
+        
+        // Auto-initialize the brand new Google Drive APK Link for real-time remote configuration
+        if (!data.apkDownloadUrl) {
+          data.apkDownloadUrl = 'https://drive.google.com/uc?export=download&id=1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5';
+          needsUpdate = true;
+        }
+
         // Self-healing: If there are leftover weekdays or missing allowedMonthDays, automatically clear them
         // and set the standard 10, 20, and 30 of each month to avoid user confusion.
         if ((data.allowedDays && data.allowedDays.length > 0) || !data.hasOwnProperty('allowedMonthDays')) {
-          const repaired = {
-            ...data,
-            allowedDays: [],
-            allowedDates: data.allowedDates || [],
-            allowedMonthDays: [10, 20, 30]
-          };
-          setDoc(doc(db, 'config', 'withdrawals'), repaired).catch(err => {
-            console.warn("Could not repair config/withdrawals in Firestore:", err);
-          });
-          setWithdrawConfig(repaired);
-        } else {
-          setWithdrawConfig(data);
+          data.allowedDays = [];
+          data.allowedDates = data.allowedDates || [];
+          data.allowedMonthDays = [10, 20, 30];
+          needsUpdate = true;
         }
+
+        if (needsUpdate) {
+          setDoc(doc(db, 'config', 'withdrawals'), data).catch(err => {
+            console.warn("Could not sync/repair withdrawals in Firestore:", err);
+          });
+        }
+        setWithdrawConfig(data);
       } else {
         const defaultVal = {
           enabled: true,
           allowedDays: [], // Only month days 10, 20, 30
           allowedDates: [],
-          allowedMonthDays: [10, 20, 30]
+          allowedMonthDays: [10, 20, 30],
+          apkDownloadUrl: 'https://drive.google.com/uc?export=download&id=1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5'
         };
         setDoc(doc(db, 'config', 'withdrawals'), defaultVal).catch(err => {
           console.warn("Could not seed config/withdrawals in Firestore:", err);
