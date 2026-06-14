@@ -83,7 +83,7 @@ export default function App() {
     allowedDays: [], // empty by default to prevent weekday confusion
     allowedDates: [],
     allowedMonthDays: [10, 20, 30],
-    apkDownloadUrl: 'https://drive.google.com/uc?export=download&id=1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5'
+    apkDownloadUrl: 'https://drive.google.com/file/d/1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5/view?usp=drivesdk'
   });
 
   // Persist master users pool & Listen to Firestore in Real-Time
@@ -384,8 +384,8 @@ export default function App() {
         let needsUpdate = false;
         
         // Auto-initialize the brand new Google Drive APK Link for real-time remote configuration
-        if (!data.apkDownloadUrl) {
-          data.apkDownloadUrl = 'https://drive.google.com/uc?export=download&id=1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5';
+        if (!data.apkDownloadUrl || data.apkDownloadUrl.includes('drive.google.com/uc?export=download')) {
+          data.apkDownloadUrl = 'https://drive.google.com/file/d/1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5/view?usp=drivesdk';
           needsUpdate = true;
         }
 
@@ -410,7 +410,7 @@ export default function App() {
           allowedDays: [], // Only month days 10, 20, 30
           allowedDates: [],
           allowedMonthDays: [10, 20, 30],
-          apkDownloadUrl: 'https://drive.google.com/uc?export=download&id=1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5'
+          apkDownloadUrl: 'https://drive.google.com/file/d/1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5/view?usp=drivesdk'
         };
         setDoc(doc(db, 'config', 'withdrawals'), defaultVal).catch(err => {
           console.warn("Could not seed config/withdrawals in Firestore:", err);

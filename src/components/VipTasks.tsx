@@ -410,6 +410,7 @@ export default function VipTasks({
 
       const utterance = new SpeechSynthesisUtterance(cleaned);
       utterance.lang = 'es-MX';
+      utterance.volume = 1.0;
       
       const voices = window.speechSynthesis.getVoices();
       const spanishVoices = voices.filter(v => v.lang.startsWith('es-MX') || v.lang.startsWith('es-ES') || v.lang.startsWith('es-') || v.lang.startsWith('es'));
@@ -444,8 +445,18 @@ export default function VipTasks({
         });
       }
 
-      let chosenVoice = maleVoice || spanishVoices.find(v => v.name.toLowerCase().includes('google')) || spanishVoices[0] || voices[0];
-      if (chosenVoice) {
+      // Detect if we are inside a mobile webview/packager
+      const isMobileWebView = typeof navigator !== 'undefined' && 
+        (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) &&
+        (!window.chrome || (navigator.userAgent.includes('wv') || navigator.userAgent.includes('WebIntoApp')));
+
+      // Try to find a local / offline service spanish voice to avoid cloud download silences
+      const localSpanishVoice = spanishVoices.find(v => v.localService === true);
+      let chosenVoice = localSpanishVoice || maleVoice || spanishVoices[0] || voices[0];
+
+      // On mobile devices/webviews, forcing a specific remote google/chrome voice can cause silence or get stuck.
+      // Leaving the voice undefined but setting the lang to es-MX allows Android/iOS to instantly use their offline system Spanish voice.
+      if (chosenVoice && !isMobileWebView) {
         utterance.voice = chosenVoice;
       }
 
@@ -453,7 +464,7 @@ export default function VipTasks({
       let finalRate = typeof voiceTheme.rate === 'number' ? voiceTheme.rate : 0.8;
       let finalPitch = typeof voiceTheme.pitch === 'number' ? voiceTheme.pitch : 1.0;
 
-      // Pitch shifting to ultra-deep bass if we fell back to a female voice for solemn masculine categories
+      // Pitch shifting to solemn preacher tones
       if (voiceTheme.key === 'jesus' || voiceTheme.key === 'dios' || voiceTheme.key === 'mentalidad' || voiceTheme.key === 'espiritu_santo' || voiceTheme.key === 'angel') {
         const isFemale = chosenVoice ? femaleKeywords.some(kw => chosenVoice.name.toLowerCase().includes(kw)) : true;
         if (isFemale) {
@@ -477,12 +488,22 @@ export default function VipTasks({
         }
       };
 
+      utterance.onerror = (e) => {
+        console.warn("SpeechSynthesisUtterance error captured gracefully:", e);
+        // Force volume back to normal on error so audio is never stuck low
+        if (audioRef.current && !isAudioMuted) {
+          audioRef.current.volume = 0.50;
+        }
+      };
+
       speechUtteranceRef.current = utterance;
       try {
         // Resume in case speech synthesis is stuck or paused as a chromium webview quirk
         window.speechSynthesis.resume();
-      } catch (e) {}
-      window.speechSynthesis.speak(utterance);
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.warn("Speech synthesis trigger failed:", e);
+      }
     }
   };
 
