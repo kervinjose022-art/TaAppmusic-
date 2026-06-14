@@ -448,7 +448,7 @@ export default function VipTasks({
       // Detect if we are inside a mobile webview/packager
       const isMobileWebView = typeof navigator !== 'undefined' && 
         (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) &&
-        (!window.chrome || (navigator.userAgent.includes('wv') || navigator.userAgent.includes('WebIntoApp')));
+        (!(window as any).chrome || (navigator.userAgent.includes('wv') || navigator.userAgent.includes('WebIntoApp')));
 
       // Try to find a local / offline service spanish voice to avoid cloud download silences
       const localSpanishVoice = spanishVoices.find(v => v.localService === true);

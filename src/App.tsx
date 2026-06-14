@@ -34,13 +34,16 @@ export default function App() {
     const saved = localStorage.getItem('tappmusic_profile');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.username && parsed.username.toLowerCase().trim() !== 'usuario_vip' && parsed.username.toLowerCase().trim() !== 'visitante_tapp') {
+          return parsed;
+        }
       } catch (e) {
         // Fallback
       }
     }
     return {
-      username: 'usuario_vip',
+      username: 'visitante_tapp',
       email: '',
       password: '',
       vipLevel: 'VIP PLATA 10$',
@@ -133,7 +136,7 @@ export default function App() {
               if (savedProfileStr) {
                 try {
                   const savedObj = JSON.parse(savedProfileStr) as UserProfile;
-                  if (savedObj.username && savedObj.username.toLowerCase().trim() !== 'usuario_vip' && savedObj.username.toLowerCase() === u.username.toLowerCase()) {
+                  if (savedObj.username && savedObj.username.toLowerCase().trim() !== 'usuario_vip' && savedObj.username.toLowerCase().trim() !== 'visitante_tapp' && savedObj.username.toLowerCase() === u.username.toLowerCase()) {
                     setUserProfile(migratedUser);
                     localStorage.setItem('tappmusic_profile', JSON.stringify(migratedUser));
                   }
@@ -310,7 +313,7 @@ export default function App() {
         if (currentLocal) {
           try {
             const parsed = JSON.parse(currentLocal) as UserProfile;
-            if (parsed.username && parsed.username.toLowerCase().trim() !== 'usuario_vip') {
+            if (parsed.username && parsed.username.toLowerCase().trim() !== 'usuario_vip' && parsed.username.toLowerCase().trim() !== 'visitante_tapp') {
               const updatedProfile = items.find(u => u.username && parsed.username && u.username.toLowerCase().trim() === parsed.username.toLowerCase().trim());
               if (updatedProfile) {
                 hasSyncedWithFirestore.current = true;
@@ -556,7 +559,7 @@ export default function App() {
       // Synchronize in real-time with Firestore so coins/tasks are never lost on updates or refresh
       // Only write to firestore if we have synced with Firestore at least once in this session.
       // This prevents local stale state on start-up from overwriting updated database values (e.g. status approvals).
-      if (hasSyncedWithFirestore.current && userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip') {
+      if (hasSyncedWithFirestore.current && userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip' && userProfile.username.toLowerCase().trim() !== 'visitante_tapp') {
         const userDocRef = doc(db, 'users', userProfile.username.toLowerCase().trim());
         setDoc(userDocRef, userProfile).catch(err => {
           console.warn("Background setDoc failed for userProfile:", err);
@@ -567,7 +570,7 @@ export default function App() {
 
   // Automatic Daily Task Reset Engine
   useEffect(() => {
-    if (userProfile && userProfile.isRegistered && userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip') {
+    if (userProfile && userProfile.isRegistered && userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip' && userProfile.username.toLowerCase().trim() !== 'visitante_tapp') {
       const todayDateStr = new Date().toLocaleDateString('es-ES');
       if (userProfile.lastResetDate !== todayDateStr) {
         setUserProfile(prev => ({
@@ -584,7 +587,7 @@ export default function App() {
     hasSyncedWithFirestore.current = true;
     setUserProfile(newProfile);
     localStorage.setItem('tappmusic_profile', JSON.stringify(newProfile));
-    if (newProfile && newProfile.username && newProfile.username !== 'usuario_vip') {
+    if (newProfile && newProfile.username && newProfile.username.toLowerCase().trim() !== 'usuario_vip' && newProfile.username.toLowerCase().trim() !== 'visitante_tapp') {
       setDoc(doc(db, 'users', newProfile.username.toLowerCase().trim()), newProfile).catch(err => {
         // Background sync fail silent
       });
@@ -948,6 +951,12 @@ export default function App() {
       const name = inputUsername.trim().toLowerCase() || 'invitado_vip';
       const emailLower = inputEmail.trim().toLowerCase();
 
+      // Block registering under system placeholder or protected accounts
+      if (['usuario_vip', 'visitante_tapp', 'admin_tapp', 'invitado_vip'].includes(name)) {
+        alert("❌ Este nombre de usuario es reservado o protegido. Por favor, elige otro nombre de usuario.");
+        return;
+      }
+
       // Prevent overwriting existing user data by checking duplicate username or email
       const nameExists = allUsers.some(u => u.username && u.username.toLowerCase() === name);
       const emailExists = allUsers.some(u => u.email && u.email.toLowerCase() === emailLower);
@@ -1042,6 +1051,11 @@ export default function App() {
 
     if (!inputVal || !passVal) {
       setLoginError('❌ Por favor, llena todos los campos.');
+      return;
+    }
+
+    if (['usuario_vip', 'visitante_tapp', 'invitado_vip'].includes(inputVal)) {
+      setLoginError('❌ Esta cuenta es reservada/temporal y no se puede usar para iniciar sesión.');
       return;
     }
 
@@ -1540,7 +1554,7 @@ export default function App() {
     setIsLoginMode(false);
     
     const updated: UserProfile = {
-      username: 'usuario_vip',
+      username: 'visitante_tapp',
       email: '',
       password: '',
       vipLevel: 'VIP PLATA 10$',
@@ -1554,7 +1568,7 @@ export default function App() {
 
   const copyModalLink = async () => {
     try {
-      const inviteLink = userProfile.isRegistered && userProfile.username !== 'usuario_vip'
+      const inviteLink = userProfile.isRegistered && userProfile.username !== 'usuario_vip' && userProfile.username !== 'visitante_tapp'
         ? `${sharedUrl}/?ref=${userProfile.username}`
         : sharedUrl;
       await navigator.clipboard.writeText(inviteLink);
