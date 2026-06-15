@@ -2607,6 +2607,25 @@ export default function App() {
                   <p className="text-[11px] text-zinc-400">Prueba los diferentes niveles para ver tareas y Reels asociados.</p>
                 </div>
 
+                <div className="flex flex-col gap-2 p-3 bg-gradient-to-r from-purple-950/20 to-black border border-purple-500/20 rounded-2xl text-left select-none">
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div>
+                      <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest leading-none">🖼️ TABLA DE RANGOS VIP EN HD</p>
+                      <p className="text-[8.5px] text-zinc-500 font-sans leading-tight mt-1">Visualiza el flyer de inversión oficial con todos los rangos y ganancias.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsVipSelectorOpen(false);
+                        setAdminZoomImage("/assets/tappmusic_vip_flyer.jpg");
+                      }}
+                      className="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-[9px] uppercase rounded-xl transition-all active:scale-95 shrink-0 cursor-pointer shadow-[0_0_8px_rgba(168,85,247,0.3)] border-none"
+                    >
+                      Ver Flyer 👑
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-2 pt-2 text-left max-h-[350px] overflow-y-auto pr-1">
                   {[
                     { lvl: 'VIP PLATA 10$', desc: '5 Videos/Día | Recompensa: 367 monedas diarias', bonus: 'Bono x1.0', col: 'text-zinc-400' },

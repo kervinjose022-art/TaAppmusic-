@@ -104,18 +104,16 @@ async function startServer() {
     if (foundPath) {
       const stats = fs.statSync(foundPath);
       // If the file is extremely small, it is our text instructions/placeholder rather than a compiled binary APK
-      if (stats.size > 1000) {
+      if (stats.size > 1000000) {
         console.log(`[Tappmusic] Serving real APK file from: ${foundPath} (${stats.size} bytes)`);
+        res.setHeader("Content-Type", "application/vnd.android.package-archive");
+        res.setHeader("Content-Disposition", 'attachment; filename="tappmusic.apk"');
         return res.sendFile(foundPath);
       }
     }
 
-    console.log("[Tappmusic] APK file not loaded or is a tiny placeholder. Serving valid binary ZIP/APK empty-archive stub on-the-fly.");
-    // A standard 22-byte End of Central Directory record signifying an empty zip archive that downloads cleanly as a binary file:
-    const emptyZipBytes = Buffer.from([
-      0x50, 0x4b, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-    ]);
-    return res.send(emptyZipBytes);
+    console.log("[Tappmusic] APK file not loaded or is a tiny placeholder. Redirecting to Google Drive official APK.");
+    return res.redirect("https://drive.google.com/file/d/1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5/view?usp=drivesdk");
   });
 
   const distPath = path.join(process.cwd(), "dist");
