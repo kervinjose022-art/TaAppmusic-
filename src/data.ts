@@ -4,7 +4,7 @@ export const TRACKS: Track[] = [
   {
     id: '1',
     title: 'Intro: TaAppMusic',
-    artist: 'Kervin x DJ TaApp',
+    artist: 'Tappmusic Colab',
     duration: '6:12',
     genre: 'Urban Latino',
     coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80',
@@ -61,7 +61,7 @@ export const TRACKS: Track[] = [
   {
     id: '4',
     title: 'Trap de las Calles',
-    artist: 'El Kervin Flow',
+    artist: 'Tappmusic Creator',
     duration: '5:02',
     genre: 'Trap',
     coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80',

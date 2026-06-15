@@ -227,6 +227,12 @@ export default function VipTasks({
         setWithdrawalError('La solicitud de retiro ha sido bloqueada porque hoy no es un día de retiro habilitado en el calendario virtual. Revisa las fechas en verde.');
         return;
       }
+
+      // Check "A partir de las 9:00 AM" rule
+      if (today.getHours() < 9) {
+        setWithdrawalError('La solicitud de retiro ha sido bloqueada. Los retiros solo están permitidos en los días correspondientes a partir de las 9:00 AM (Hora del servidor).');
+        return;
+      }
     }
 
     // Validate 10-day constraint unless bypass is checked
@@ -536,7 +542,7 @@ export default function VipTasks({
   const handlePerformTask = (task: UserTask) => {
     // Guard of verification status
     if (userProfile.status === 'pending') {
-      alert(`⚠️ Tu cuenta está en modo gratuito para explorar la plataforma. Podrás realizar y cobrar estas tareas VIP una vez que tu depósito sea verificado y activado por el administrador (Hermanito Kervin).`);
+      alert(`⚠️ Tu cuenta está en modo gratuito para explorar la plataforma. Podrás realizar y cobrar estas tareas VIP una vez que tu depósito sea verificado y activado por el Equipo de Verificación de Tappmusic.`);
       return;
     }
 

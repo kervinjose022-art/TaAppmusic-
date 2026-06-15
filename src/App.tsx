@@ -1240,7 +1240,7 @@ export default function App() {
       };
       
       await setDoc(requestRef, requestData);
-      setRecoverSuccess('⚡ ¡Solicitud enviada con éxito al Panel de Kervin! Tu correo coincide con nuestros registros. Tan pronto como el administrador verifique y apruebe tu solicitud en su panel, tu nueva clave se activará al instante.');
+      setRecoverSuccess('⚡ ¡Solicitud enviada con éxito al Panel de Administración! Tu correo coincide con nuestros registros. Tan pronto como el equipo de soporte verifique y apruebe tu solicitud en su panel, tu nueva clave se activará al instante.');
       setRecoverStep(4);
     } catch (err) {
       console.error("Error creating recovery request:", err);
@@ -1565,7 +1565,7 @@ export default function App() {
     setUpgradeFileBlob('');
     setIsVipSelectorOpen(false);
 
-    alert(`⚡ Solicitud de Cambio VIP a ${upgradeVipLevel} enviada con éxito. El administrador (Hermanito Kervin) validará tu depósito para activar el rango.`);
+    alert(`⚡ Solicitud de Cambio VIP a ${upgradeVipLevel} enviada con éxito. El Equipo de Verificación de Tappmusic validará tu depósito para activar el rango.`);
   };
 
   const handleLogout = () => {
@@ -3758,7 +3758,7 @@ export default function App() {
                         <label className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 font-bold block">Creador / Predicador</label>
                         <input
                           type="text"
-                          placeholder="Ej. Hermano Kervin"
+                          placeholder="Ej. Tappmusic Oficial"
                           value={reelFormArtist}
                           onChange={(e) => setReelFormArtist(e.target.value)}
                           className="w-full text-[11px] bg-black border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#39FF14]"
