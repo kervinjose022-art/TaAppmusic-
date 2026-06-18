@@ -74,36 +74,46 @@ export default function VipReels({ currentVip }: VipReelsProps) {
       const osc1 = ctx.createOscillator();
       const osc2 = ctx.createOscillator();
       const osc3 = ctx.createOscillator();
+      const osc4 = ctx.createOscillator(); // Angelic shimmer of heaven
       const filter = ctx.createBiquadFilter();
       const gainNode = ctx.createGain();
       
-      // Soothing warm triadic Cmajor background pad (C3, E3, G3 base notes)
+      // Majestic, booming cathedral celestial organ/choral pad (C2, C3, G3, E4 choir pad)
       osc1.type = 'triangle';
-      osc1.frequency.setValueAtTime(130.81, ctx.currentTime);
+      osc1.frequency.setValueAtTime(65.41, ctx.currentTime); // C2 (Booming cathedral cosmic sub-bass)
       
-      osc2.type = 'triangle';
-      osc2.frequency.setValueAtTime(164.81, ctx.currentTime);
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(130.81, ctx.currentTime); // C3 (Warm middle voice)
+      osc2.detune.setValueAtTime(-15, ctx.currentTime); // Detune negatively for organic chorus breadth
       
-      osc3.type = 'sine';
-      osc3.frequency.setValueAtTime(196.00, ctx.currentTime);
+      osc3.type = 'triangle';
+      osc3.frequency.setValueAtTime(196.00, ctx.currentTime); // G3 (Deep majestic fifth)
+      osc3.detune.setValueAtTime(15, ctx.currentTime); // Detune positively to enrich the stereo chorus field
+      
+      osc4.type = 'sine';
+      osc4.frequency.setValueAtTime(329.63, ctx.currentTime); // E4 (High angelic shimmer of peace)
+      osc4.detune.setValueAtTime(6, ctx.currentTime);
       
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(290, ctx.currentTime); // filter out buzzing treble
+      filter.frequency.setValueAtTime(250, ctx.currentTime); // Soothing lowpass filter for ultimate warm, sacred feel
       
-      // Extremely soft ambient loop backing pad
-      gainNode.gain.setValueAtTime(isMuted ? 0 : 0.07, ctx.currentTime);
+      // Infinite slow lush volume swell to make it a divine celestial background pad
+      gainNode.gain.setValueAtTime(0, ctx.currentTime);
+      gainNode.gain.linearRampToValueAtTime(isMuted ? 0 : 0.08, ctx.currentTime + 2.5);
       
       osc1.connect(filter);
       osc2.connect(filter);
       osc3.connect(filter);
+      osc4.connect(filter);
       filter.connect(gainNode);
       gainNode.connect(ctx.destination);
       
       osc1.start();
       osc2.start();
       osc3.start();
+      osc4.start();
       
-      synthNodesRef.current = [osc1, osc2, osc3, filter, gainNode];
+      synthNodesRef.current = [osc1, osc2, osc3, osc4, filter, gainNode];
     } catch (e) {
       console.warn("Auto-ambient block avoided:", e);
     }
@@ -207,17 +217,17 @@ export default function VipReels({ currentVip }: VipReelsProps) {
 
       // Customize rates and pitches for specialized preaching / teaching / motivational flows
       if (category === 'Video de Fe' || category === 'Voz de Dios') {
-        utterance.rate = 0.74; // Extremely slow, majestic, and heavy sermon tempo
-        utterance.pitch = 0.82; // Warm, authoritative, divine bass tone
+        utterance.rate = 0.65; // Majestic slow preaching speed for sacred echoic feeling
+        utterance.pitch = 0.50; // Absolute deepest booming gravel tone available in SpeechSynthesis (0.50)
       } else if (category === 'Familia') {
-        utterance.rate = 0.82; // Warm, loving pacing
-        utterance.pitch = 0.95; // Friendly and wise parental tone
+        utterance.rate = 0.80; // Warm, loving pacing
+        utterance.pitch = 0.85; // Wise friendly parental sound
       } else if (category === 'Mentalidad') {
-        utterance.rate = 0.78; // Deep, powerful magnetic tempo
-        utterance.pitch = 0.88; // Deep, rich and confident entrepreneur coach register
+        utterance.rate = 0.72; // Deep motivational speed
+        utterance.pitch = 0.62; // Booming success pitch
       } else {
-        utterance.rate = 0.84;
-        utterance.pitch = 0.95;
+        utterance.rate = 0.80;
+        utterance.pitch = 0.70;
       }
 
       utterance.onstart = () => {
