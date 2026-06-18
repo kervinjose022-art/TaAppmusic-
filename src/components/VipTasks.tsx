@@ -1048,22 +1048,6 @@ export default function VipTasks({
                   ? `Sintoniza tu fe. Por favor espera ${secondsLeft} segundos para validar la recompensa.`
                   : "¡Vídeo contemplado correctamente! Las regalías están listas para cosechar."}
               </p>
-
-              {/* Voice troubleshooting warning for mobile and Webviews */}
-              <div className="rounded-2xl border border-yellow-500/15 bg-yellow-500/5 p-3 text-left text-[10px] space-y-1.5 font-mono text-yellow-500/90 leading-normal">
-                <p className="font-extrabold flex items-center gap-1.5 text-yellow-400 uppercase tracking-widest text-[9px]">
-                  <span>🎙️</span> ¿No escuchas la voz del sermón?
-                </p>
-                <p>
-                  1. <strong className="text-white">Evita WhatsApp:</strong> No uses el navegador de WhatsApp. Copia el link de la plataforma y ábrelo directamente en <strong className="text-white">Google Chrome</strong> en tu celular.
-                </p>
-                <p>
-                  2. <strong className="text-white">Motor de Voz de Android:</strong> Ve a <strong>Ajustes ➡️ Accesibilidad ➡️ Salida de Texto a Voz</strong>. Elige <strong>"Servicios de Voz de Google"</strong> como preferido y baja la voz en <strong>Español</strong>.
-                </p>
-                <p>
-                  3. Presiona el botón <strong className="text-[#39FF14] underline">🔊 Repetir Prédica</strong> de arriba para reactivar el reproductor de voz manualmente en cualquier momento.
-                </p>
-              </div>
             </div>
 
             {/* Claim Reward Buttons row */}
