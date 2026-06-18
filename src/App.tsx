@@ -89,6 +89,22 @@ export default function App() {
     apkDownloadUrl: 'https://drive.google.com/file/d/1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5/view?usp=drivesdk'
   });
 
+  // Zoom level state for responsive scale (acercar y alejar)
+  const [zoomScale, setZoomScale] = useState<number>(() => {
+    const saved = localStorage.getItem('tappmusic_zoom');
+    if (saved) {
+      const val = parseFloat(saved);
+      if (!isNaN(val) && val >= 0.70 && val <= 1.40) {
+        return val;
+      }
+    }
+    return 1.0;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('tappmusic_zoom', zoomScale.toString());
+  }, [zoomScale]);
+
   useEffect(() => {
     (window as any).showVipFlyer = () => {
       setAdminZoomImage("/assets/tappmusic_vip_flyer.jpg");
@@ -1635,7 +1651,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-[#39FF14] pb-16 antialiased selection:bg-[#39FF14] selection:text-black">
+    <div className="min-h-screen bg-black text-[#39FF14] pb-16 antialiased selection:bg-[#39FF14] selection:text-black" style={{ zoom: zoomScale } as React.CSSProperties}>
       {/* Dynamic Administrator floating check bar */}
       {isAdminVerified && (
         <div className="sticky top-0 z-50 bg-[#121214] border-b border-[#39FF14]/30 py-2.5 px-6 flex flex-col sm:flex-row gap-2 justify-between items-center text-xs font-mono animate-fade-in shadow-[0_0_15px_rgba(57,255,20,0.1)]">
@@ -4617,6 +4633,39 @@ export default function App() {
           <div className="absolute inset-0 -z-10 cursor-zoom-out" onClick={() => setAdminZoomImage(null)} />
         </div>
       )}
+
+      {/* Control Ajustable de Zoom / Escala de Pantalla (Adaptable en tiempo real) */}
+      <div className="fixed bottom-4 right-4 z-40 bg-zinc-950/90 border border-[#39FF14]/20 hover:border-[#39FF14]/50 px-3 py-1.5 rounded-2xl shadow-[0_0_20px_rgba(57,255,20,0.1)] transition-all font-mono flex items-center gap-2 select-none">
+        <span className="text-[10px] uppercase font-black text-zinc-400 select-none tracking-wider flex items-center gap-1">
+          <span>🔍</span> <span className="hidden sm:inline">Pantalla:</span>
+        </span>
+        <span className="text-[11px] font-bold text-[#39FF14] bg-black px-2 py-0.5 rounded-lg border border-[#39FF14]/15 min-w-[42px] text-center">
+          {Math.round(zoomScale * 100)}%
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setZoomScale(m => Math.max(0.70, m - 0.05))}
+            className="text-xs bg-zinc-900 border border-white/5 hover:bg-[#39FF14] hover:text-black hover:scale-105 active:scale-95 text-zinc-300 font-bold w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer"
+            title="Alejar pantalla (Zoom Out)"
+          >
+            -
+          </button>
+          <button
+            onClick={() => setZoomScale(1.0)}
+            className="text-[9px] bg-zinc-900 border border-white/5 hover:bg-[#39FF14] hover:text-black hover:scale-105 active:scale-95 text-zinc-300 px-2 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer font-black"
+            title="Restaurar escala original (100%) font-black"
+          >
+            100%
+          </button>
+          <button
+            onClick={() => setZoomScale(m => Math.min(1.40, m + 0.05))}
+            className="text-xs bg-zinc-900 border border-white/5 hover:bg-[#39FF14] hover:text-black hover:scale-105 active:scale-95 text-zinc-300 font-bold w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer"
+            title="Acercar pantalla (Zoom In)"
+          >
+            +
+          </button>
+        </div>
+      </div>
 
     </div>
   );
