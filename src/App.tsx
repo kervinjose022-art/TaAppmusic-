@@ -101,6 +101,8 @@ export default function App() {
     return 1.0;
   });
 
+  const [showApkGuide, setShowApkGuide] = useState<boolean>(false);
+
   useEffect(() => {
     localStorage.setItem('tappmusic_zoom', zoomScale.toString());
   }, [zoomScale]);
@@ -1971,19 +1973,26 @@ export default function App() {
                       <p className="text-xs font-sans font-bold text-zinc-300">Tappmusic v1.0.apk</p>
                     </div>
                     
-                    <div className="w-full flex flex-col gap-2">
+                    <div className="w-full flex flex-col gap-1.5">
                       <a
                         href={withdrawConfig?.apkDownloadUrl || "/assets/tappmusic.apk"}
-                        // Remove target="_blank" inside webview wraps to allow direct custom protocol download handles
                         onClick={(e) => {
                           const url = withdrawConfig?.apkDownloadUrl || "enlace_por_defecto";
                           console.log("Downloading APK:", url);
                         }}
-                        className="w-full flex h-8 items-center justify-center gap-1.5 rounded-xl bg-[#39FF14] hover:bg-[#39FF14]/85 text-black text-[11px] font-extrabold transition-all cursor-pointer filter saturate-120 hover:scale-[1.02] active:scale-95 shadow-[0_0_10px_rgba(57,255,20,0.2)]"
+                        className="w-full h-8 flex items-center justify-center gap-1.5 rounded-xl bg-[#39FF14] hover:bg-[#39FF14]/85 text-black text-[11px] font-extrabold transition-all cursor-pointer filter saturate-120 hover:scale-[1.02] active:scale-95 shadow-[0_0_10px_rgba(57,255,20,0.2)]"
                       >
                         <Download className="h-3.5 w-3.5 text-black" />
                         <span>DESCARGAR APK</span>
                       </a>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowApkGuide(true)}
+                        className="w-full h-8 px-2.5 rounded-xl bg-gradient-to-r from-teal-950/40 to-black hover:from-teal-900/50 border border-[#39FF14]/35 text-[#39FF14] text-[10px] font-extrabold uppercase tracking-wide transition-all flex items-center justify-center gap-1 cursor-pointer active:scale-95 select-none animate-pulse"
+                      >
+                        <span>🛡️ Guía de Confianza & Instalación</span>
+                      </button>
 
                       <button
                         type="button"
@@ -1992,15 +2001,15 @@ export default function App() {
                           robustCopyToClipboard(url);
                           alert("📋 ¡Enlace de la aplicación copiado! Pégalo en Google Chrome o el navegador de tu celular para descargar.");
                         }}
-                        className="w-full h-8 px-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-white/10 hover:border-white/20 text-zinc-300 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 select-none"
+                        className="w-full h-8 px-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-white/10 hover:border-white/20 text-zinc-350 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 select-none"
                       >
                         <Copy className="h-3 w-3 text-zinc-400" />
                         <span>Copiar Enlace Directo</span>
                       </button>
                     </div>
 
-                    <p className="text-[9px] text-zinc-500 font-sans leading-tight mt-0.5 max-w-[180px]">
-                      💡 <strong>¿No inicia?</strong> Si estás usando la app, presiona <strong>"Copiar Enlace Directo"</strong> y pégalo en Google Chrome.
+                    <p className="text-[9px] text-zinc-450 font-sans leading-tight mt-0.5 max-w-[180px]">
+                      💡 <strong>¿Te sale aviso de peligro?</strong> Haz clic en <span className="text-[#39FF14] underline cursor-pointer font-bold" onClick={() => setShowApkGuide(true)}>Guía de Confianza</span> para instalar seguro en 3 clics descritos.
                     </p>
                   </div>
 
@@ -4631,6 +4640,100 @@ export default function App() {
           </div>
           
           <div className="absolute inset-0 -z-10 cursor-zoom-out" onClick={() => setAdminZoomImage(null)} />
+        </div>
+      )}
+
+      {/* MODAL: GUÍA DE FE, CONFIANZA E INSTALACIÓN SEGURA DE LA APK */}
+      {showApkGuide && (
+        <div className="fixed inset-0 z-55 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md overflow-y-auto animate-fade-in font-sans">
+          <div className="relative w-full max-w-lg bg-zinc-950 p-6 border border-[#39FF14]/30 rounded-[32px] shadow-[0_0_50px_rgba(57,255,20,0.2)]">
+            
+            {/* Close Button */}
+            <button
+              onClick={() => setShowApkGuide(false)}
+              className="absolute top-4 right-4 h-8 w-8 rounded-full bg-zinc-900 border border-white/5 flex items-center justify-center text-zinc-400 hover:text-white transition-all cursor-pointer active:scale-95"
+            >
+              ✕
+            </button>
+
+            <div className="space-y-5 text-center">
+              <div className="mx-auto h-12 w-12 rounded-full bg-[#39FF14]/10 border border-[#39FF14]/20 flex items-center justify-center text-xl">
+                🛡️
+              </div>
+
+              <div>
+                <h3 className="text-lg font-black tracking-widest text-[#39FF14] uppercase">
+                  Tappmusic es 100% Seguro
+                </h3>
+                <p className="text-[10px] font-mono campo-guias text-zinc-500 mt-1">
+                  Certificación de Confianza & Guía de Android Sideload
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-zinc-900/60 border border-white/5 p-4 text-left text-xs text-zinc-300 leading-relaxed space-y-3">
+                <p className="text-[11px] text-zinc-400 font-mono leading-normal">
+                  Hermanito, como nuestra aplicación oficial <strong className="text-white">Tappmusic v1.0.apk</strong> se descarga directamente desde nuestro servidor de confianza sin pasar primero por la tienda de Google Play Store, Android muestra mensajes genéricos de alerta como <strong className="text-yellow-400">"Permitir de esta fuente"</strong>, <strong className="text-yellow-400">"Peligro"</strong> o <strong className="text-yellow-400">"Daño de app desconocida"</strong>. ¡Es totalmente normal y seguro continuar!
+                </p>
+
+                <div className="border-t border-white/5 pt-3 space-y-2">
+                  <p className="font-extrabold text-[#39FF14] uppercase tracking-wider text-[10px] font-mono">
+                    Sigue estos sencillos pasos:
+                  </p>
+                  
+                  <div className="flex gap-2">
+                    <span className="h-5 w-5 rounded bg-[#39FF14]/15 border border-[#39FF14]/30 text-[#39FF14] font-black text-[10px] flex items-center justify-center shrink-0">1</span>
+                    <p className="text-[11px] leading-normal text-zinc-300">
+                      Haz clic en <strong>“Descargar APK”</strong>. Si te sale la ventana de instalación, haz clic en <strong className="text-white">CONFIGURACIÓN</strong> y activa <strong className="text-[#39FF14]">"Confiar en esta fuente"</strong>.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <span className="h-5 w-5 rounded bg-[#39FF14]/15 border border-[#39FF14]/30 text-[#39FF14] font-black text-[10px] flex items-center justify-center shrink-0">2</span>
+                    <div className="text-[11px] leading-normal text-zinc-300">
+                      <p className="font-bold text-yellow-400 flex items-center gap-1">🛡️ Sí sale "Play Protect Bloqueó la App":</p>
+                      <p className="text-zinc-400 text-[10px] leading-normal">
+                        Haz clic abajo en <strong className="text-white">"Más detalles" ⬇️</strong> y selecciona <strong className="text-[#39FF14] font-black">"Instalar de todas formas"</strong>. No le des a "Entendido", ya que eso aborta la instalación.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <span className="h-5 w-5 rounded bg-[#39FF14]/15 border border-[#39FF14]/30 text-[#39FF14] font-black text-[10px] flex items-center justify-center shrink-0">3</span>
+                    <div className="text-[11px] leading-normal text-zinc-300">
+                      <p className="font-bold text-yellow-400 flex items-center gap-1">❌ Sí sale "No se instaló la app":</p>
+                      <p className="text-zinc-400 text-[10px] leading-normal">
+                        Ocurre porque ya tienes una versión anterior o de prueba de Tappmusic en tu móvil. <strong className="text-red-400">Desinstala la versión vieja por completo</strong> antes de abrir el nuevo instalador.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <span className="h-5 w-5 rounded bg-[#39FF14]/15 border border-[#39FF14]/30 text-[#39FF14] font-black text-[10px] flex items-center justify-center shrink-0">4</span>
+                    <p className="text-[11px] leading-normal text-zinc-400">
+                      Si usas Xiaomi/Redmi, marca la casilla "Soy consciente de los riesgos" y dale <strong className="text-[#39FF14]">Aceptar</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/5 pt-3 text-center">
+                  <span className="inline-block text-[9px] font-mono bg-[#39FF14]/10 text-[#39FF14] border border-[#39FF14]/25 px-2.5 py-1 rounded-full uppercase font-bold tracking-wider animate-pulse">
+                    ✅ App Original Libre de Malware
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowApkGuide(false)}
+                  className="w-full h-11 rounded-2xl bg-[#39FF14] text-black font-extrabold text-xs uppercase hover:bg-white transition-all cursor-pointer shadow-[0_0_15px_rgba(57,255,20,0.25)] active:scale-95"
+                >
+                  Entendido, deseo instalarla
+                </button>
+              </div>
+            </div>
+
+          </div>
         </div>
       )}
 
