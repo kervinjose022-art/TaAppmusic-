@@ -174,7 +174,6 @@ export default function VipReels({ currentVip }: VipReelsProps) {
         .trim();
 
       const utterance = new SpeechSynthesisUtterance(cleaned);
-      utterance.lang = 'es-MX'; // Deep Latin American accent
       
       const voices = window.speechSynthesis.getVoices();
       // Look for beautiful Spanish/Latin voices
@@ -213,6 +212,9 @@ export default function VipReels({ currentVip }: VipReelsProps) {
       const finalVoice = chosenVoice || spanishVoices[0] || voices[0];
       if (finalVoice) {
         utterance.voice = finalVoice;
+        utterance.lang = finalVoice.lang; // Use precise voice locale string
+      } else {
+        utterance.lang = 'es-ES'; // Default fallback
       }
 
       // Customize rates and pitches for specialized preaching / teaching / motivational flows
@@ -243,8 +245,30 @@ export default function VipReels({ currentVip }: VipReelsProps) {
         }
       };
 
+      utterance.onerror = (e) => {
+        console.warn("Reels SpeechSynthesisUtterance error captured gracefully:", e);
+        if (audioRef.current && !isMuted) {
+          audioRef.current.volume = 0.50;
+        }
+      };
+
       speechUtteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
+      // CRITICAL: Bind the utterance to a global property (window wrapper) to protect from garbage collection sweep on Android WebView wrappers
+      if (typeof window !== 'undefined') {
+        (window as any)._activeUtterance = utterance;
+      }
+
+      // Delaying the execution slightly prevents race-conditions with the internal SpeechSynthesis system queue on Android Webviews
+      setTimeout(() => {
+        try {
+          if (typeof window !== 'undefined' && window.speechSynthesis) {
+            window.speechSynthesis.resume();
+            window.speechSynthesis.speak(utterance);
+          }
+        } catch (e) {
+          console.warn("Reels speech synthesis trigger failed:", e);
+        }
+      }, 100);
     }
   };
 
