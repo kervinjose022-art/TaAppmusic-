@@ -39,7 +39,7 @@ interface P2PTransaction {
 
 export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: () => void; isStandalone?: boolean }) {
   // Master P2P Rates (simulation)
-  const [usdtPriceInBs, setUsdtPriceInBs] = useState<number>(780.00);
+  const [usdtPriceInBs, setUsdtPriceInBs] = useState<number>(801.99);
   const [isUpdatingRate, setIsUpdatingRate] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'buy' | 'sell' | 'orders' | 'deposit' | 'advisor' | 'withdraw'>('buy');
   
@@ -123,7 +123,7 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
         id: 'off_1',
         type: 'Vender', // Trader sells USDT -> You buy USDT
         traderName: 'Inversiones Oro Express',
-        rate: 780.85,
+        rate: 802.85,
         amountUsdt: 450,
         minLimitUsdt: 20,
         maxLimitUsdt: 450,
@@ -135,7 +135,7 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
         id: 'off_2',
         type: 'Vender',
         traderName: 'Orinoco Cambios',
-        rate: 780.00,
+        rate: 801.99,
         amountUsdt: 1250,
         minLimitUsdt: 40,
         maxLimitUsdt: 1200,
@@ -193,9 +193,9 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
         id: 'tr_1092',
         type: 'Comprar',
         offerId: 'off_2',
-        rate: 780.00,
+        rate: 801.99,
         amountUsdt: 50.00,
-        amountBs: 39000.00,
+        amountBs: 40099.50,
         status: 'pending_payment',
         paymentInfo: {
           bank: 'Banco Mercantil (0105)',
@@ -211,7 +211,7 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
   // State for posting custom P2P offers
   const [showCreateOfferModal, setShowCreateOfferModal] = useState<boolean>(false);
   const [newOfferType, setNewOfferType] = useState<'Comprar' | 'Vender'>('Comprar');
-  const [newOfferRate, setNewOfferRate] = useState<string>("780.00");
+  const [newOfferRate, setNewOfferRate] = useState<string>("801.99");
   const [newOfferAmount, setNewOfferAmount] = useState<string>("100");
   const [newOfferMinLimit, setNewOfferMinLimit] = useState<string>("10");
   const [newOfferMaxLimit, setNewOfferMaxLimit] = useState<string>("100");
@@ -220,7 +220,7 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
   // State for buying/selling trade modal trigger
   const [selectedOfferToTrade, setSelectedOfferToTrade] = useState<P2POffer | null>(null);
   const [tradeAmountUsdt, setTradeAmountUsdt] = useState<string>("50");
-  const [tradeAmountBs, setTradeAmountBs] = useState<string>("39000.00");
+  const [tradeAmountBs, setTradeAmountBs] = useState<string>("40099.50");
 
   // USDT Withdraw requests and form state
   const [withdrawRequests, setWithdrawRequests] = useState<any[]>(() => {
@@ -1912,9 +1912,9 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
                   Fija un "margen de diferencial cambial" (spread). Por ejemplo:
                 </p>
                 <ul className="list-disc list-inside space-y-1 text-zinc-300 pl-1 font-sans">
-                  <li>Tasa de Compra de USDT (cuando tú pagas Bolívares): <span className="text-emerald-400 font-mono">775.00 Bs/USDT</span></li>
-                  <li>Tasa de Venta de USDT (cuando ellos te pagan Bolívares): <span className="text-emerald-400 font-mono">780.00 Bs/USDT</span></li>
-                  <li>Ganancia neta del Operador: <strong className="text-white">5.00 Bs por cada USDT</strong> transado.</li>
+                  <li>Tasa de Compra de USDT (cuando tú pagas Bolívares): <span className="text-emerald-400 font-mono">797.00 Bs/USDT</span></li>
+                  <li>Tasa de Venta de USDT (cuando ellos te pagan Bolívares): <span className="text-emerald-400 font-mono">801.99 Bs/USDT</span></li>
+                  <li>Ganancia neta del Operador: <strong className="text-white">4.99 Bs por cada USDT</strong> transado.</li>
                   <li>¡Con un volumen promedio diario de $1,000 USDT generas un ingreso sólido y recurrente de 5,000 Bs libres de cargos!</li>
                 </ul>
               </div>
