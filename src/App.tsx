@@ -490,7 +490,7 @@ export default function App() {
   // Login Mode and Secure Admin Protection States
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [isAdminVerified, setIsAdminVerified] = useState(() => {
-    // If they already have Kervin's or owner's profile loaded, auto-verify
+    // If they already have administrator profile loaded, auto-verify
     const cur = localStorage.getItem('tappmusic_profile');
     if (cur) {
       try {
@@ -498,8 +498,8 @@ export default function App() {
         if (
           u.email === 'admin@tappmusic.com' || 
           u.username === 'admin_tapp' || 
-          u.email === 'kervinjose022@gmail.com' || 
-          u.username === 'kervin'
+          u.email === 'socios@orinocop2p.com' || 
+          u.username === 'orinoco_admin'
         ) return true;
       } catch (e) {}
     }
@@ -913,7 +913,7 @@ export default function App() {
       return cleanInviter === cleanProfileUser;
     });
     let count = Math.max(userProfile.inviteCount || 0, referredUsers.length);
-    if (userProfile.username && (userProfile.username.toLowerCase() === 'admin_tapp' || userProfile.username.toLowerCase() === 'kervin') && count < 4) {
+    if (userProfile.username && (userProfile.username.toLowerCase() === 'admin_tapp' || userProfile.username.toLowerCase() === 'orinoco_admin') && count < 4) {
       count = 4;
     }
     return count;
@@ -934,7 +934,7 @@ export default function App() {
     });
 
     let earned = Math.max(userProfile.inviteCommissionsEarned || 0, totalCommissions);
-    if (userProfile.username && (userProfile.username.toLowerCase() === 'admin_tapp' || userProfile.username.toLowerCase() === 'kervin') && earned < 6.00) {
+    if (userProfile.username && (userProfile.username.toLowerCase() === 'admin_tapp' || userProfile.username.toLowerCase() === 'orinoco_admin') && earned < 6.00) {
       earned = 6.00;
     }
     return earned;
@@ -1140,8 +1140,8 @@ export default function App() {
 
     const isAdminUser = (foundUser.username && foundUser.username.toLowerCase() === 'admin_tapp') || 
                         (foundUser.email && foundUser.email.toLowerCase() === 'admin@tappmusic.com') ||
-                        (foundUser.username && foundUser.username.toLowerCase() === 'kervin') ||
-                        (foundUser.email && foundUser.email.toLowerCase() === 'kervinjose022@gmail.com');
+                        (foundUser.username && foundUser.username.toLowerCase() === 'orinoco_admin') ||
+                        (foundUser.email && foundUser.email.toLowerCase() === 'socios@orinocop2p.com');
 
     if (
       foundUser.password !== passVal && 
@@ -1661,6 +1661,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-venezuela-sky text-[#39FF14] pb-16 antialiased selection:bg-[#39FF14] selection:text-black" style={{ zoom: zoomScale } as React.CSSProperties}>
+      {/* Tricolor Cielo Banner - Venezuela Flag Glow */}
+      <div className="w-full h-1 flex select-none sticky top-0 z-50">
+        <div className="h-full bg-[#f8d117] shadow-[0_0_8px_#f8d117]" style={{ width: '33.33%' }} />
+        <div className="h-full bg-[#0039a6] shadow-[0_0_8px_#0039a6]" style={{ width: '33.33%' }} />
+        <div className="h-full bg-[#ce1126] shadow-[0_0_8px_#ce1126]" style={{ width: '33.34%' }} />
+      </div>
+
       {/* Dynamic Administrator floating check bar */}
       {isAdminVerified && (
         <div className="sticky top-0 z-50 bg-[#121214] border-b border-[#39FF14]/30 py-2.5 px-6 flex flex-col sm:flex-row gap-2 justify-between items-center text-xs font-mono animate-fade-in shadow-[0_0_15px_rgba(57,255,20,0.1)]">
@@ -4319,7 +4326,7 @@ export default function App() {
                     }
 
                     return filtered.map((u) => {
-                      const isOwner = u.username.toLowerCase().trim() === 'admin_tapp' || u.username.toLowerCase().trim() === 'kervin';
+                      const isOwner = u.username.toLowerCase().trim() === 'admin_tapp' || u.username.toLowerCase().trim() === 'orinoco_admin';
                       return (
                         <div 
                           key={u.username}

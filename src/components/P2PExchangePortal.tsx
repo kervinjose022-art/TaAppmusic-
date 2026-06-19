@@ -39,7 +39,7 @@ interface P2PTransaction {
 
 export default function P2PExchangePortal({ onClose }: { onClose: () => void }) {
   // Master P2P Rates (simulation)
-  const [usdtPriceInBs, setUsdtPriceInBs] = useState<number>(45.80);
+  const [usdtPriceInBs, setUsdtPriceInBs] = useState<number>(780.00);
   const [isUpdatingRate, setIsUpdatingRate] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'buy' | 'sell' | 'orders' | 'deposit' | 'advisor' | 'withdraw'>('buy');
   
@@ -123,7 +123,7 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
         id: 'off_1',
         type: 'Vender', // Trader sells USDT -> You buy USDT
         traderName: 'Inversiones Oro Express',
-        rate: 45.85,
+        rate: 780.85,
         amountUsdt: 450,
         minLimitUsdt: 20,
         maxLimitUsdt: 450,
@@ -134,8 +134,8 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
       {
         id: 'off_2',
         type: 'Vender',
-        traderName: 'Kervin Cambios P2P',
-        rate: 45.80,
+        traderName: 'Orinoco Cambios',
+        rate: 780.00,
         amountUsdt: 1250,
         minLimitUsdt: 40,
         maxLimitUsdt: 1200,
@@ -147,7 +147,7 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
         id: 'off_3',
         type: 'Vender',
         traderName: 'Sofia Medina C.A.',
-        rate: 45.75,
+        rate: 779.75,
         amountUsdt: 180,
         minLimitUsdt: 10,
         maxLimitUsdt: 180,
@@ -159,7 +159,7 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
         id: 'off_4',
         type: 'Comprar', // Trader buys USDT -> You sell USDT
         traderName: 'Abundancia P2P Express',
-        rate: 45.68,
+        rate: 778.68,
         amountUsdt: 800,
         minLimitUsdt: 50,
         maxLimitUsdt: 800,
@@ -171,7 +171,7 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
         id: 'off_5',
         type: 'Comprar',
         traderName: 'Manuel Cambios Rápidos',
-        rate: 45.62,
+        rate: 778.62,
         amountUsdt: 350,
         minLimitUsdt: 15,
         maxLimitUsdt: 350,
@@ -193,15 +193,15 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
         id: 'tr_1092',
         type: 'Comprar',
         offerId: 'off_2',
-        rate: 45.80,
+        rate: 780.00,
         amountUsdt: 50.00,
-        amountBs: 2290.00,
+        amountBs: 39000.00,
         status: 'pending_payment',
         paymentInfo: {
           bank: 'Banco Mercantil (0105)',
           phone: '0412-5551234',
           idCard: 'V-19.852.147',
-          holder: 'Kervin José Mercado'
+          holder: 'Inversiones OrinocoP2P'
         },
         createdAt: new Date(Date.now() - 360000).toISOString()
       }
@@ -211,7 +211,7 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
   // State for posting custom P2P offers
   const [showCreateOfferModal, setShowCreateOfferModal] = useState<boolean>(false);
   const [newOfferType, setNewOfferType] = useState<'Comprar' | 'Vender'>('Comprar');
-  const [newOfferRate, setNewOfferRate] = useState<string>("45.80");
+  const [newOfferRate, setNewOfferRate] = useState<string>("780.00");
   const [newOfferAmount, setNewOfferAmount] = useState<string>("100");
   const [newOfferMinLimit, setNewOfferMinLimit] = useState<string>("10");
   const [newOfferMaxLimit, setNewOfferMaxLimit] = useState<string>("100");
@@ -220,7 +220,7 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
   // State for buying/selling trade modal trigger
   const [selectedOfferToTrade, setSelectedOfferToTrade] = useState<P2POffer | null>(null);
   const [tradeAmountUsdt, setTradeAmountUsdt] = useState<string>("50");
-  const [tradeAmountBs, setTradeAmountBs] = useState<string>("2290.00");
+  const [tradeAmountBs, setTradeAmountBs] = useState<string>("39000.00");
 
   // USDT Withdraw requests and form state
   const [withdrawRequests, setWithdrawRequests] = useState<any[]>(() => {
@@ -231,7 +231,7 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
     return [
       {
         id: 'wreq_1082',
-        username: 'kervin_bpay',
+        username: 'usuario_bpay',
         walletAddress: 'TYr5bA2vDkWqXpR3Y9B9S7sTtrc2sXp44',
         network: 'USDT TRC20',
         amountUsdt: 45.00,
@@ -476,6 +476,13 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
 
   return (
     <div className="min-h-screen bg-venezuela-sky font-sans text-neutral-200 select-none pb-12">
+      {/* Tricolor Cielo Banner - Venezuela Flag Glow */}
+      <div className="w-full h-1 flex select-none sticky top-0 z-50">
+        <div className="h-full bg-[#f8d117] shadow-[0_0_8px_#f8d117]" style={{ width: '33.33%' }} />
+        <div className="h-full bg-[#0039a6] shadow-[0_0_8px_#0039a6]" style={{ width: '33.33%' }} />
+        <div className="h-full bg-[#ce1126] shadow-[0_0_8px_#ce1126]" style={{ width: '33.34%' }} />
+      </div>
+
       {/* Upper Status / Header bar */}
       <div className="border-b border-emerald-500/10 bg-zinc-900/60 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -485,12 +492,12 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
             </div>
             <div>
               <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
-                Tapp <span className="text-emerald-400">P2P Exchange</span>
+                Orinoco <span className="text-emerald-400">P2P Exchange</span>
                 <span className="bg-emerald-500/20 text-emerald-300 text-[9px] uppercase px-1.5 py-0.5 rounded font-mono font-bold tracking-wider border border-emerald-500/30">
                   MÓDULO DEMO
                 </span>
               </h1>
-              <p className="text-[10px] text-zinc-400 font-medium">Mercado Cambiario de USDT a Bolívares (BsS) para Venezuela</p>
+              <p className="text-[10px] text-zinc-400 font-medium">Casa de Cambio Oficial - Mercado Cambiario de USDT a Bolívares (BsS)</p>
             </div>
           </div>
 
@@ -525,7 +532,7 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
             <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-sans text-[10px] font-bold border border-emerald-500/25">
               🚀 GESTIÓN DE LIQUIDEZ Y TRANSFERENCIAS
             </span>
-            <h2 className="text-xl font-extrabold text-white tracking-tight">Crea tu propio banco P2P seguro</h2>
+            <h2 className="text-xl font-extrabold text-white tracking-tight">Crea tu propia casa de cambio P2P segura</h2>
             <p className="text-xs text-zinc-300 leading-relaxed max-w-xl">
               Diseña la pasarela donde tus usuarios compren y vendan USDT por Bolívares de forma transparente. Aquí puedes ver y simular toda la experiencia de usuario y el flujo de mediación del administrador.
             </p>
@@ -845,7 +852,7 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
             className={`flex-grow py-2 rounded-lg text-xs font-black transition ${activeTab === 'advisor' ? 'bg-gradient-to-r from-amber-500/10 to-amber-500/5 text-amber-400 shadow-[inset_0_1px_2px_rgba(245,158,11,0.15)] border-b-2 border-amber-500 text-amber-300' : 'text-zinc-400 hover:text-white'}`}
           >
             📚 Consejos del Experto
-            <span className="text-[10px] text-zinc-400 block font-normal">(De Riesgo)</span>
+            <span className="text-[10px] text-zinc-400 block font-normal">(Estrategias)</span>
           </button>
         </div>
 
@@ -1265,7 +1272,7 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
                             <span className="text-white font-mono">${amt.toFixed(2)} USD</span>
                           </div>
                           <div className="flex justify-between text-[9px] text-amber-500 font-bold">
-                            <span>- Comisión Admin Tapp (2.5%):</span>
+                            <span>- Comisión Admin OrinocoP2P (2.5%):</span>
                             <span className="font-mono">-${adminCommission.toFixed(2)} USD</span>
                           </div>
                           <div className="flex justify-between text-[9px] text-zinc-400">
@@ -1399,7 +1406,7 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
                     <input 
                       type="text"
                       className="w-full bg-zinc-950 border border-zinc-800 focus:border-amber-500 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none text-white placeholder-zinc-600"
-                      placeholder="Kervin José Torres"
+                      placeholder="Juan José Torres"
                       value={cardHolder}
                       onChange={(e) => setCardHolder(e.target.value)}
                       required
@@ -1815,7 +1822,7 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-black text-white uppercase tracking-wide">P2P Abierto (Como Binance)</span>
-                    <span className="bg-red-500/10 text-red-400 font-mono text-[9px] px-1.5 py-0.5 rounded font-bold">RIESGO MODERADO</span>
+                    <span className="bg-amber-500/10 text-amber-400 font-mono text-[9px] px-1.5 py-0.5 rounded font-bold">ATENCIÓN MODERADA</span>
                   </div>
                   <p className="text-xs text-zinc-300 leading-normal">
                     Los usuarios comercian libremente entre ellos. Tu plataforma actúa únicamente como garante en custodia (fideicomiso). En caso de desacuerdo, abren una disputa de arbitraje y tú decides quién tiene razón.
@@ -1859,13 +1866,13 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
               </h4>
               <p className="text-xs text-zinc-300 leading-relaxed">
                 {selectedAdviceType === 'otc' && (
-                  <strong>Es la mejor idea absoluta para arrancar.</strong> + " Al vender tú mismo los USDT usando tu dirección de billetera, eliminas el riesgo de fraude interno entre usuarios. El cliente te pide comprar $100 USDT, te transfiere Bolívares por Pago Móvil, tú validas la transacción desde la aplicación de tu banco nacional con total seguridad, y le transfieres los USDT desde tu billetera (Binance Pay, MetaMask, CoinBase). La aplicación es limpia, libre de reclamos complejos, garantizando una excelente experiencia de usuario."
+                  <strong>Es la mejor idea absoluta para arrancar.</strong> + " Al vender tú mismo los USDT usando tu dirección de billetera, eliminas la posibilidad de fraude interno entre usuarios. El cliente te pide comprar $100 USDT, te transfiere Bolívares por Pago Móvil, tú validas la transacción desde la aplicación de tu banco nacional con total seguridad, y le transfieres los USDT desde tu billetera (Binance Pay, MetaMask, CoinBase). La aplicación es limpia, libre de reclamos complejos, garantizando una excelente experiencia de usuario."
                 )}
                 {selectedAdviceType === 'free_p2p' && (
-                  <strong>Este modelo requiere atención legal y mediadores 24/7.</strong> + " Al dejar que los usuarios transen directamente entre ellos, aumentas enormemente la escalabilidad (no necesitas capital para cambiar tú mismo), pero introduces riesgos de estafas (captures de Pago Móvil falsos modificados con Photoshop, triangulación bancaria, etc.). Requieres validación de identidad robusta (KYC) y un equipo de soporte técnico encargado de resolver disputas basándose en estados de cuenta bancarios en formato PDF."
+                  <strong>Este modelo requiere atención legal y mediadores 24/7.</strong> + " Al dejar que los usuarios transen directamente entre ellos, aumentas enormemente la escalabilidad (no necesitas capital para cambiar tú mismo), pero introduces situaciones de soporte adicionales (captures de Pago Móvil modificados con Photoshop, triangulación bancaria, etc.). Requieres validación de identidad robusta (KYC) y un equipo de soporte técnico encargado de resolver disputas basándose en estados de cuenta bancarios en formato PDF."
                 )}
                 {selectedAdviceType === 'hybrid' && (
-                  <strong>Estructura Ganadora e Innovadora.</strong> + " Puedes arrancar actuando tú mismo (Kervin) como el Cajero / Liquidador principal de las solicitudes. De esta forma, construyes reputación. Una vez que la plataforma crezca y se gane la confianza absoluta de la comunidad, puedes habilitar cajeros asociados verificados bajo fianza, quienes depositan un fondo en colateral en tu poder de garantía para poder procesar órdenes a otros usuarios de forma automatizada y sin riesgo."
+                  <strong>Estructura Ganadora e Innovadora.</strong> + " Puedes arrancar actuando tú mismo como el Cajero / Liquidador principal de las solicitudes. De esta forma, construyes reputación. Una vez que la plataforma crezca y se gane la confianza absoluta de la comunidad, puedes habilitar cajeros asociados verificados bajo fianza, quienes depositan un fondo en colateral en tu poder de garantía para poder procesar órdenes a otros usuarios de forma automatizada y segura."
                 )}
               </p>
             </div>
@@ -1890,10 +1897,10 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
                   Fija un "margen de diferencial cambial" (spread). Por ejemplo:
                 </p>
                 <ul className="list-disc list-inside space-y-1 text-zinc-300 pl-1 font-sans">
-                  <li>Tasa de Compra de USDT (cuando tú pagas Bolívares): <span className="text-emerald-400 font-mono">45.20 Bs/USDT</span></li>
-                  <li>Tasa de Venta de USDT (cuando ellos te pagan Bolívares): <span className="text-emerald-400 font-mono">45.80 Bs/USDT</span></li>
-                  <li>Ganancia neta del Operador: <strong className="text-white">0.60 Bs por cada USDT</strong> transado.</li>
-                  <li>¡Con un volumen promedio diario de $1,000 USDT generas un ingreso sólido y recurrente de 600 Bs libres de riesgo!</li>
+                  <li>Tasa de Compra de USDT (cuando tú pagas Bolívares): <span className="text-emerald-400 font-mono">775.00 Bs/USDT</span></li>
+                  <li>Tasa de Venta de USDT (cuando ellos te pagan Bolívares): <span className="text-emerald-400 font-mono">780.00 Bs/USDT</span></li>
+                  <li>Ganancia neta del Operador: <strong className="text-white">5.00 Bs por cada USDT</strong> transado.</li>
+                  <li>¡Con un volumen promedio diario de $1,000 USDT generas un ingreso sólido y recurrente de 5,000 Bs libres de cargos!</li>
                 </ul>
               </div>
             </div>
