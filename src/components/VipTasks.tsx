@@ -63,6 +63,7 @@ export default function VipTasks({
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const currentTtsAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const synthNodesRef = useRef<any[]>([]);
 
@@ -410,137 +411,155 @@ export default function VipTasks({
 
   const stopVoiceover = () => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+    if (currentTtsAudioRef.current) {
+      try {
+        currentTtsAudioRef.current.pause();
+        currentTtsAudioRef.current.src = "";
+      } catch (e) {}
+      currentTtsAudioRef.current = null;
     }
   };
 
   const startVoiceover = (text: string, voiceTheme: typeof VOICE_THEMES[0]) => {
     stopVoiceover();
-    if (typeof window !== 'undefined' && window.speechSynthesis && !isAudioMuted) {
-      // Robust filtering of emojis, hashes, and non-alphanumeric text so TTS never says 'hashtag' or stutter-names emojis
-      const cleaned = text
-        .replace(/#/g, '')
-        .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26EF]|\uD83E[\uDD10-\uDFFF]/g, '')
-        .replace(/[^\x00-\x7F\u00C0-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF.,;:!¿?¡\s]/g, '')
-        .trim();
+    if (isAudioMuted) return;
 
-      const utterance = new SpeechSynthesisUtterance(cleaned);
-      
-      const voices = window.speechSynthesis.getVoices();
-      const spanishVoices = voices.filter(v => v.lang.startsWith('es-MX') || v.lang.startsWith('es-ES') || v.lang.startsWith('es-') || v.lang.startsWith('es'));
-      
-      const maleKeywords = [
-        'eed', 'dfz', 'esf', 'ycg', 'prd', 'isa', 'male', 'hombre', 'boy', 'jorge', 'david',
-        'juan', 'diego', 'raul', 'raúl', 'carlos', 'santiago', 'mateo', 'julio', 'antonio',
-        'alonso', 'enrique', 'miguel', 'pablo', 'pedro', 'tomas', 'tomás', 'francisco', 'guy'
-      ];
-      const femaleKeywords = [
-        'female', 'mujer', 'girl', 'ana', 'sabina', 'helena', 'zira', 'pilar', 'lucia', 'lucía',
-        'marisol', 'monica', 'mónica', 'paulina', 'soledad', 'carmit', 'bna', 'mma', 'lisa',
-        'lorena', 'conchita'
-      ];
+    // Robust filtering of emojis, hashes, and non-alphanumeric text so TTS never says 'hashtag' or stutter-names emojis
+    const cleaned = text
+      .replace(/#/g, '')
+      .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26EF]|\uD83E[\uDD10-\uDFFF]/g, '')
+      .replace(/[^\x00-\x7F\u00C0-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF.,;:!¿?¡\s]/g, '')
+      .trim();
 
-      const isProbablyMale = (v: SpeechSynthesisVoice) => {
-        const name = v.name.toLowerCase();
-        const matchesMale = maleKeywords.some(kw => name.includes(kw));
-        const matchesFemale = femaleKeywords.some(kw => name.includes(kw));
-        if (matchesMale && !matchesFemale) return true;
-        if (matchesFemale) return false;
-        return false;
-      };
+    // Split text into chunks of maximum 165 characters to support Google Translate TTS length constraints
+    const splitTextIntoChunks = (str: string, maxLength: number = 165): string[] => {
+      const sentences = str.match(/[^.!?]+[.!?]*|.+/g) || [str];
+      const chunks: string[] = [];
+      let currentChunk = "";
 
-      // Try male voice first if the theme asks for it
-      let maleVoice = spanishVoices.find(isProbablyMale);
-      if (!maleVoice && (voiceTheme.key === 'jesus' || voiceTheme.key === 'dios' || voiceTheme.key === 'mentalidad' || voiceTheme.key === 'espiritu_santo' || voiceTheme.key === 'angel')) {
-        // Fallback: any voice that is not explicitly female
-        maleVoice = spanishVoices.find(v => {
-          const name = v.name.toLowerCase();
-          return !femaleKeywords.some(kw => name.includes(kw));
-        });
-      }
-
-      // Detect if we are inside a mobile webview/packager
-      const isMobileWebView = typeof navigator !== 'undefined' && 
-        (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) &&
-        (!(window as any).chrome || (navigator.userAgent.includes('wv') || navigator.userAgent.includes('WebIntoApp')));
-
-      // Try to find a local / offline service spanish voice to avoid cloud download silences
-      const localSpanishVoice = spanishVoices.find(v => v.localService === true);
-      let chosenVoice = localSpanishVoice || maleVoice || spanishVoices[0] || voices[0];
-
-      // Set the dynamic voice if found
-      if (chosenVoice) {
-        utterance.voice = chosenVoice;
-        utterance.lang = chosenVoice.lang; // Match voice's precise native register
-      } else {
-        utterance.lang = 'es-ES'; // Default fallback
-      }
-      
-      utterance.volume = 1.0;
-
-      // Dynamic custom rate & pitch override from voiceTheme configuration
-      let finalRate = typeof voiceTheme.rate === 'number' ? voiceTheme.rate : 0.68;
-      let finalPitch = typeof voiceTheme.pitch === 'number' ? voiceTheme.pitch : 0.5;
-
-      // Pitch shifting to solemn preacher tones with safe boundaries for mobile devices
-      // Force an extremely deep, slow, omnipotent celestial voice from heaven!
-      if (voiceTheme.key === 'jesus' || voiceTheme.key === 'dios' || voiceTheme.key === 'espiritu_santo' || voiceTheme.key === 'angel') {
-        finalPitch = 0.5; // Absolute deepest booming gravel tone available in SpeechSynthesis (0.5)
-        finalRate = 0.65; // Majestic slow preaching speed for sacred echoic feeling
-      } else if (voiceTheme.key === 'mentalidad') {
-        finalPitch = 0.62;
-        finalRate = 0.72;
-      } else {
-        const isFemale = chosenVoice ? femaleKeywords.some(kw => chosenVoice.name.toLowerCase().includes(kw)) : true;
-        if (isFemale) {
-          finalPitch = isMobileWebView ? 0.80 : 0.65;
-          finalRate = isMobileWebView ? 0.85 : 0.72;
+      for (const sentence of sentences) {
+        if ((currentChunk + sentence).length > maxLength) {
+          if (currentChunk.trim()) {
+            chunks.push(currentChunk.trim());
+          }
+          if (sentence.length > maxLength) {
+            // Split long sentence by spaces
+            const words = sentence.split(/\s+/);
+            let wordChunk = "";
+            for (const word of words) {
+              if ((wordChunk + " " + word).length > maxLength) {
+                if (wordChunk.trim()) chunks.push(wordChunk.trim());
+                wordChunk = word;
+              } else {
+                wordChunk = wordChunk ? wordChunk + " " + word : word;
+              }
+            }
+            currentChunk = wordChunk;
+          } else {
+            currentChunk = sentence;
+          }
+        } else {
+          currentChunk = currentChunk ? currentChunk + " " + sentence : sentence;
         }
       }
-
-      utterance.rate = finalRate;
-      utterance.pitch = finalPitch;
-
-      utterance.onstart = () => {
-        if (audioRef.current && !isAudioMuted) {
-          audioRef.current.volume = 0.12; // Lower overlay level so background beat plays beautifully behind the words
-        }
-      };
-
-      utterance.onend = () => {
-        if (audioRef.current && !isAudioMuted) {
-          audioRef.current.volume = 0.50; // Majestic full music on narration end
-        }
-      };
-
-      utterance.onerror = (e) => {
-        console.warn("SpeechSynthesisUtterance error captured gracefully:", e);
-        // Force volume back to normal on error so audio is never stuck low
-        if (audioRef.current && !isAudioMuted) {
-          audioRef.current.volume = 0.50;
-        }
-      };
-
-      speechUtteranceRef.current = utterance;
-      // CRITICAL: Bind the utterance to a global property (window wrapper) to protect from garbage collection sweep on Android WebView wrappers
-      if (typeof window !== 'undefined') {
-        (window as any)._activeUtterance = utterance;
+      if (currentChunk.trim()) {
+        chunks.push(currentChunk.trim());
       }
-      
-      // Direct synchronous execution satisfies browser security sandboxes (Safari, Android WebView, Chrome) 
-      try {
-        if (typeof window !== 'undefined' && window.speechSynthesis) {
-          window.speechSynthesis.cancel();
-          window.speechSynthesis.resume();
-          window.speechSynthesis.speak(utterance);
-        }
-      } catch (e) {
-        console.warn("Immediate speech synthesis trigger failed:", e);
-      }
+      return chunks;
+    };
+
+    const chunks = splitTextIntoChunks(cleaned);
+    if (chunks.length === 0) return;
+
+    // Pick translation code mapping
+    let lang = 'es-US';
+    if (voiceTheme.key === 'jesus' || voiceTheme.key === 'dios' || voiceTheme.key === 'jesucristo') {
+      lang = 'es-ES'; // Solid, majestic, authoritative European/neutral tone
+    } else if (voiceTheme.key === 'mentalidad') {
+      lang = 'es-US'; // Dynamic neutral Latin / commercial success vibe
+    } else if (voiceTheme.key === 'familia') {
+      lang = 'es-MX'; // Soft, warm, nurturing maternal Latin tone
     }
+
+    // Playback rate adjustments
+    let finalRate = 0.88; // Majestic slightly slower tempo for premium solemnity
+    if (voiceTheme.key === 'jesus' || voiceTheme.key === 'dios' || voiceTheme.key === 'jesucristo') {
+      finalRate = 0.82; // Deep pacing
+    } else if (voiceTheme.key === 'mentalidad') {
+      finalRate = 0.94; // Vibrant fast pace
+    }
+
+    let currentChunkIndex = 0;
+
+    const playChunk = () => {
+      if (currentChunkIndex >= chunks.length) {
+        if (audioRef.current && !isAudioMuted) {
+          audioRef.current.volume = 0.22; // Restore background beat
+        }
+        return;
+      }
+
+      const chunkText = chunks[currentChunkIndex];
+      const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunkText)}&tl=${lang}&client=tw-ob`;
+
+      const ttsAudio = new Audio(googleTtsUrl);
+      currentTtsAudioRef.current = ttsAudio;
+      (window as any)._activeTtsAudio = ttsAudio; // Protect from GC sweep
+
+      ttsAudio.playbackRate = finalRate;
+
+      ttsAudio.onplay = () => {
+        if (audioRef.current && !isAudioMuted) {
+          audioRef.current.volume = 0.05; // Drop background music level so TTS narration takes master focus
+        }
+      };
+
+      ttsAudio.onended = () => {
+        currentChunkIndex++;
+        playChunk();
+      };
+
+      ttsAudio.onerror = (err) => {
+        console.warn("Google TTS streaming failed, trying Web Speech as secondary fallback...", err);
+        try {
+          const utterance = new SpeechSynthesisUtterance(chunkText);
+          utterance.lang = lang;
+          utterance.rate = finalRate;
+          utterance.onend = () => {
+            currentChunkIndex++;
+            playChunk();
+          };
+          window.speechSynthesis.speak(utterance);
+        } catch (fallbackErr) {
+          console.error("Web Speech synthesis fallback failed:", fallbackErr);
+          currentChunkIndex++;
+          playChunk();
+        }
+      };
+
+      ttsAudio.play().catch(playErr => {
+        console.warn("Autoplay block detected on streaming, falling back to instant browser SpeechSynthesis...", playErr);
+        try {
+          const utterance = new SpeechSynthesisUtterance(chunkText);
+          utterance.lang = lang;
+          utterance.rate = finalRate;
+          utterance.onend = () => {
+            currentChunkIndex++;
+            playChunk();
+          };
+          window.speechSynthesis.speak(utterance);
+        } catch (e) {
+          currentChunkIndex++;
+          playChunk();
+        }
+      });
+    };
+
+    playChunk();
   };
 
-  // Filter tasks based on selected tab & matching user's exact VIP requirement
   const currentFilteredTasks = tasks.filter(task => {
     const isCompleted = userProfile.completedTaskIds.includes(task.id);
     const matchesTab = activeTab === 'completadas' ? isCompleted : !isCompleted;

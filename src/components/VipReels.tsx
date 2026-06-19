@@ -43,6 +43,7 @@ export default function VipReels({ currentVip }: VipReelsProps) {
   
   // Ref to hold the active speech utterance
   const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const currentTtsAudioRef = useRef<HTMLAudioElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const synthNodesRef = useRef<any[]>([]);
 
@@ -121,154 +122,188 @@ export default function VipReels({ currentVip }: VipReelsProps) {
 
   const stopVoiceover = () => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
+      try { window.speechSynthesis.cancel(); } catch (e) {}
+    }
+    if (currentTtsAudioRef.current) {
+      try {
+        currentTtsAudioRef.current.pause();
+        currentTtsAudioRef.current.src = "";
+      } catch (e) {}
+      currentTtsAudioRef.current = null;
     }
   };
 
   const startVoiceover = (title: string, caption: string, artist: string, category?: string) => {
     stopVoiceover();
-    if (typeof window !== 'undefined' && window.speechSynthesis && !isMuted) {
-      // If it's a music video, let the real audio play unmodified without speaking over it!
-      if (category === 'Video Musical') {
+    if (isMuted) return;
+
+    // If it's a music video, let the real audio play unmodified without speaking over it!
+    if (category === 'Video Musical') {
+      if (audioRef.current && !isMuted) {
+        audioRef.current.volume = 0.95; // Let the full song play nicely
+      }
+      return;
+    }
+
+    // 1. Build a highly spiritual, majestic or motivating narration text
+    let finalSpeechText = "";
+    const cleanArtist = artist.replace(/^@/, ''); // Natural name reading instead of "@" technical symbol
+
+    if (category === 'Video de Fe' || category === 'Voz de Dios') {
+      let verse = "";
+      const lowerTitle = title.toLowerCase();
+      if (lowerTitle.includes('caminando') || lowerTitle.includes('jesús') || lowerTitle.includes('jesus')) {
+        verse = "La Palabra del Señor nos dice en Josué 1:9 - Mira que te mando que te esfuerces y seas valiente; no temas ni desmayes, porque Jehová tu Dios estará contigo en dondequiera que vayas.";
+      } else if (lowerTitle.includes('control') || lowerTitle.includes('absoluto') || lowerTitle.includes('padre')) {
+        verse = "La Sagrada Escritura nos enseña en Filipenses 4:13 - Todo lo puedo en Cristo que me fortalece.";
+      } else if (lowerTitle.includes('maestro') || lowerTitle.includes('venció') || lowerTitle.includes('corazón')) {
+        verse = "La Palabra de Dios nos recuerda en Mateo 17:20 - Si tuvierais fe como un grano de mostaza, nada os será imposible.";
+      } else if (lowerTitle.includes('gloria') || lowerTitle.includes('lluvia') || lowerTitle.includes('postrera')) {
+        verse = "El Espíritu Santo nos revela en Jeremías 29:11 - Porque yo sé los pensamientos que tengo acerca de vosotros, dice el Señor, pensamientos de paz, y no de mal.";
+      } else if (lowerTitle.includes('cima') || lowerTitle.includes('bendición') || lowerTitle.includes('corona')) {
+        verse = "El Señor Altísimo nos proclama en el Salmo 23:1 - Jehová es mi pastor, nada me faltará.";
+      } else {
+        verse = "Como está escrito en Hebreos 11:1 - Es pues, la fe, la certeza de lo que se espera, la convicción de lo que no se ve.";
+      }
+
+      finalSpeechText = `Predicación celestial de fe y palabra de vida eterna. ${verse} Ahora escucha esta revelación para tu vida hoy: "${caption}". Amén.`;
+    } else if (category === 'Familia') {
+      finalSpeechText = `Mensaje de edificación para el hogar y la familia de parte del hermano ${cleanArtist}: "${caption}".`;
+    } else if (category === 'Mentalidad') {
+      finalSpeechText = `Instrucción de Mentalidad Millonaria y provisión divina: "${title}". Guarda esta regla de oro: "${caption}". Éxito con la bendición de Dios.`;
+    } else {
+      finalSpeechText = `Mensaje de ${title}. Presentado por ${cleanArtist}: "${caption}".`;
+    }
+
+    // Clean emojis and symbols for elegant text narration
+    const cleaned = finalSpeechText
+      .replace(/#/g, '')
+      .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26EF]|\uD83E[\uDD10-\uDFFF]/g, '')
+      .replace(/[^\x00-\x7F\u00C0-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF.,;:!¿?¡\s]/g, '')
+      .trim();
+
+    // Split text into chunks of maximum 165 characters to support Google Translate TTS length constraints
+    const splitTextIntoChunks = (str: string, maxLength: number = 165): string[] => {
+      const sentences = str.match(/[^.!?]+[.!?]*|.+/g) || [str];
+      const chunks: string[] = [];
+      let currentChunk = "";
+
+      for (const sentence of sentences) {
+        if ((currentChunk + sentence).length > maxLength) {
+          if (currentChunk.trim()) {
+            chunks.push(currentChunk.trim());
+          }
+          if (sentence.length > maxLength) {
+            // Split long sentence by spaces
+            const words = sentence.split(/\s+/);
+            let wordChunk = "";
+            for (const word of words) {
+              if ((wordChunk + " " + word).length > maxLength) {
+                if (wordChunk.trim()) chunks.push(wordChunk.trim());
+                wordChunk = word;
+              } else {
+                wordChunk = wordChunk ? wordChunk + " " + word : word;
+              }
+            }
+            currentChunk = wordChunk;
+          } else {
+            currentChunk = sentence;
+          }
+        } else {
+          currentChunk = currentChunk ? currentChunk + " " + sentence : sentence;
+        }
+      }
+      if (currentChunk.trim()) {
+        chunks.push(currentChunk.trim());
+      }
+      return chunks;
+    };
+
+    const chunks = splitTextIntoChunks(cleaned);
+    if (chunks.length === 0) return;
+
+    // Pick translation code mapping
+    let lang = 'es-US';
+    if (category === 'Video de Fe' || category === 'Voz de Dios') {
+      lang = 'es-ES'; // Deep, solemn, majestic Spanish
+    } else if (category === 'Familia') {
+      lang = 'es-MX'; // Warm Mexican maternal Spanish register
+    }
+
+    let finalRate = 0.86;
+    if (category === 'Video de Fe' || category === 'Voz de Dios') {
+      finalRate = 0.80; // Celestial preaching pacing
+    } else if (category === 'Mentalidad') {
+      finalRate = 0.92;
+    }
+
+    let currentChunkIndex = 0;
+
+    const playChunk = () => {
+      if (currentChunkIndex >= chunks.length) {
         if (audioRef.current && !isMuted) {
-          audioRef.current.volume = 0.95; // Let the full song play nicely
+          audioRef.current.volume = 0.50; // Restore background beat
         }
         return;
       }
 
-      // 1. Build a highly spiritual, majestic or motivating narration text
-      let finalSpeechText = "";
-      const cleanArtist = artist.replace(/^@/, ''); // Natural name reading instead of "@" technical symbol
+      const chunkText = chunks[currentChunkIndex];
+      const googleTtsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(chunkText)}&tl=${lang}&client=tw-ob`;
 
-      if (category === 'Video de Fe' || category === 'Voz de Dios') {
-        let verse = "";
-        const lowerTitle = title.toLowerCase();
-        if (lowerTitle.includes('caminando') || lowerTitle.includes('jesús') || lowerTitle.includes('jesus')) {
-          verse = "La Palabra del Señor nos dice en Josué 1:9 - Mira que te mando que te esfuerces y seas valiente; no temas ni desmayes, porque Jehová tu Dios estará contigo en dondequiera que vayas.";
-        } else if (lowerTitle.includes('control') || lowerTitle.includes('absoluto') || lowerTitle.includes('padre')) {
-          verse = "La Sagrada Escritura nos enseña en Filipenses 4:13 - Todo lo puedo en Cristo que me fortalece.";
-        } else if (lowerTitle.includes('maestro') || lowerTitle.includes('venció') || lowerTitle.includes('corazón')) {
-          verse = "La Palabra de Dios nos recuerda en Mateo 17:20 - Si tuvierais fe como un grano de mostaza, nada os será imposible.";
-        } else if (lowerTitle.includes('gloria') || lowerTitle.includes('lluvia') || lowerTitle.includes('postrera')) {
-          verse = "El Espíritu Santo nos revela en Jeremías 29:11 - Porque yo sé los pensamientos que tengo acerca de vosotros, dice el Señor, pensamientos de paz, y no de mal.";
-        } else if (lowerTitle.includes('cima') || lowerTitle.includes('bendición') || lowerTitle.includes('corona')) {
-          verse = "El Señor Altísimo nos proclama en el Salmo 23:1 - Jehová es mi pastor, nada me faltará.";
-        } else {
-          verse = "Como está escrito en Hebreos 11:1 - Es pues, la fe, la certeza de lo que se espera, la convicción de lo que no se ve.";
-        }
+      const ttsAudio = new Audio(googleTtsUrl);
+      currentTtsAudioRef.current = ttsAudio;
+      (window as any)._activeTtsAudio = ttsAudio; // Protect from GC sweep
 
-        finalSpeechText = `Predicación celestial de fe y palabra de vida eterna. ${verse} Ahora escucha esta revelación para tu vida hoy: "${caption}". Amén.`;
-      } else if (category === 'Familia') {
-        finalSpeechText = `Mensaje de edificación para el hogar y la familia de parte del hermano ${cleanArtist}: "${caption}".`;
-      } else if (category === 'Mentalidad') {
-        finalSpeechText = `Instrucción de Mentalidad Millonaria y provisión divina: "${title}". Guarda esta regla de oro: "${caption}". Éxito con la bendición de Dios.`;
-      } else {
-        finalSpeechText = `Mensaje de ${title}. Presentado por ${cleanArtist}: "${caption}".`;
-      }
+      ttsAudio.playbackRate = finalRate;
 
-      // Clean emojis and symbols for elegant text narration
-      const cleaned = finalSpeechText
-        .replace(/#/g, '')
-        .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26EF]|\uD83E[\uDD10-\uDFFF]/g, '')
-        .replace(/[^\x00-\x7F\u00C0-\u00FF\u0100-\u017F\u0180-\u024F\u1E00-\u1EFF.,;:!¿?¡\s]/g, '')
-        .trim();
-
-      const utterance = new SpeechSynthesisUtterance(cleaned);
-      
-      const voices = window.speechSynthesis.getVoices();
-      // Look for beautiful Spanish/Latin voices
-      const spanishVoices = voices.filter(v => v.lang.startsWith('es-MX') || v.lang.startsWith('es-ES') || v.lang.startsWith('es-') || v.lang.startsWith('es'));
-      
-      // Look for neural or high-quality google ones
-      let chosenVoice = spanishVoices.find(v => 
-        v.name.toLowerCase().includes('google') || 
-        v.name.toLowerCase().includes('natural') || 
-        v.name.toLowerCase().includes('neural')
-      );
-
-      // Preferred deep registers for divine/authority preaching
-      if (category === 'Video de Fe' || category === 'Voz de Dios' || category === 'Mentalidad') {
-        const maleVoice = spanishVoices.find(v => 
-          v.name.toLowerCase().includes('male') || 
-          v.name.toLowerCase().includes('hombre') || 
-          v.name.toLowerCase().includes('jorge') || 
-          v.name.toLowerCase().includes('david') || 
-          v.name.toLowerCase().includes('juan') ||
-          v.name.toLowerCase().includes('carlos') ||
-          v.name.toLowerCase().includes('santiago') ||
-          v.name.toLowerCase().includes('mateo') ||
-          v.name.toLowerCase().includes('julio') ||
-          v.name.toLowerCase().includes('júlio') ||
-          v.name.toLowerCase().includes('antonio') ||
-          v.name.toLowerCase().includes('alonso') ||
-          v.name.toLowerCase().includes('enrique') ||
-          v.name.toLowerCase().includes('miguel')
-        );
-        if (maleVoice) {
-          chosenVoice = maleVoice;
-        }
-      }
-
-      const finalVoice = chosenVoice || spanishVoices[0] || voices[0];
-      if (finalVoice) {
-        utterance.voice = finalVoice;
-        utterance.lang = finalVoice.lang; // Use precise voice locale string
-      } else {
-        utterance.lang = 'es-ES'; // Default fallback
-      }
-
-      // Customize rates and pitches for specialized preaching / teaching / motivational flows
-      if (category === 'Video de Fe' || category === 'Voz de Dios') {
-        utterance.rate = 0.65; // Majestic slow preaching speed for sacred echoic feeling
-        utterance.pitch = 0.50; // Absolute deepest booming gravel tone available in SpeechSynthesis (0.50)
-      } else if (category === 'Familia') {
-        utterance.rate = 0.80; // Warm, loving pacing
-        utterance.pitch = 0.85; // Wise friendly parental sound
-      } else if (category === 'Mentalidad') {
-        utterance.rate = 0.72; // Deep motivational speed
-        utterance.pitch = 0.62; // Booming success pitch
-      } else {
-        utterance.rate = 0.80;
-        utterance.pitch = 0.70;
-      }
-
-      utterance.onstart = () => {
+      ttsAudio.onplay = () => {
         if (audioRef.current && !isMuted) {
-          audioRef.current.volume = 0.12; // Lower overlay level so background beat plays beautifully behind the words
+          audioRef.current.volume = 0.05; // Drop background track so narrative stands out cleanly
         }
       };
 
-      utterance.onend = () => {
-        // Boost music volume nicely once the narration is complete
-        if (audioRef.current && !isMuted) {
-          audioRef.current.volume = 0.50;
-        }
+      ttsAudio.onended = () => {
+        currentChunkIndex++;
+        playChunk();
       };
 
-      utterance.onerror = (e) => {
-        console.warn("Reels SpeechSynthesisUtterance error captured gracefully:", e);
-        if (audioRef.current && !isMuted) {
-          audioRef.current.volume = 0.50;
-        }
-      };
-
-      speechUtteranceRef.current = utterance;
-      // CRITICAL: Bind the utterance to a global property (window wrapper) to protect from garbage collection sweep on Android WebView wrappers
-      if (typeof window !== 'undefined') {
-        (window as any)._activeUtterance = utterance;
-      }
-
-      // Direct synchronous execution satisfies browser security sandboxes (Safari, Android WebView, Chrome) 
-      try {
-        if (typeof window !== 'undefined' && window.speechSynthesis) {
-          window.speechSynthesis.cancel();
-          window.speechSynthesis.resume();
+      ttsAudio.onerror = (err) => {
+        console.warn("Reels Google TTS streaming failing. Retrying with browser SpeechSynthesis...", err);
+        try {
+          const utterance = new SpeechSynthesisUtterance(chunkText);
+          utterance.lang = lang;
+          utterance.rate = finalRate;
+          utterance.onend = () => {
+            currentChunkIndex++;
+            playChunk();
+          };
           window.speechSynthesis.speak(utterance);
+        } catch (fallbackErr) {
+          console.error("Reels Web Speech synthesis fallback failed:", fallbackErr);
+          currentChunkIndex++;
+          playChunk();
         }
-      } catch (e) {
-        console.warn("Reels direct speech synthesis trigger failed:", e);
-      }
-    }
+      };
+
+      ttsAudio.play().catch(playErr => {
+        console.warn("Reels streaming autoplay blocked. Trying instant SpeechSynthesis fallback...", playErr);
+        try {
+          const utterance = new SpeechSynthesisUtterance(chunkText);
+          utterance.lang = lang;
+          utterance.rate = finalRate;
+          utterance.onend = () => {
+            currentChunkIndex++;
+            playChunk();
+          };
+          window.speechSynthesis.speak(utterance);
+        } catch (e) {
+          currentChunkIndex++;
+          playChunk();
+        }
+      });
+    };
+
+    playChunk();
   };
 
   // Play audio snippet when reel gets active and clicked
