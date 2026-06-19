@@ -23,7 +23,12 @@ export default function App() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [copiedModalLink, setCopiedModalLink] = useState(false);
   const [isVipSelectorOpen, setIsVipSelectorOpen] = useState(false);
-  const [isP2PExchangeOpen, setIsP2PExchangeOpen] = useState(false);
+  const [isP2PExchangeOpen, setIsP2PExchangeOpen] = useState(() => {
+    return window.location.search.includes('p2p=true') || 
+           window.location.hash === '#p2p' || 
+           window.location.pathname === '/p2p' ||
+           window.location.pathname.startsWith('/p2p');
+  });
   const [guestTab, setGuestTab] = useState<'login' | 'register'>('login');
   
   // Track if we have synced the active user profile with Firestore in this page session
@@ -1655,8 +1660,27 @@ export default function App() {
     }
   };
 
-  if (isP2PExchangeOpen) {
-    return <P2PExchangePortal onClose={() => setIsP2PExchangeOpen(false)} />;
+  const isCurrentlyStandalone = window.location.search.includes('p2p=true') || 
+                                window.location.hash === '#p2p' || 
+                                window.location.pathname === '/p2p' ||
+                                window.location.pathname.startsWith('/p2p');
+
+  if (isP2PExchangeOpen || isCurrentlyStandalone) {
+    return (
+      <P2PExchangePortal 
+        onClose={() => {
+          setIsP2PExchangeOpen(false);
+          try {
+            if (isCurrentlyStandalone) {
+              window.history.pushState({}, '', window.location.origin);
+            }
+          } catch (e) {
+            console.warn("Could not clean URL:", e);
+          }
+        }} 
+        isStandalone={isCurrentlyStandalone}
+      />
+    );
   }
 
   return (

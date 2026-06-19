@@ -37,7 +37,7 @@ interface P2PTransaction {
   createdAt: string;
 }
 
-export default function P2PExchangePortal({ onClose }: { onClose: () => void }) {
+export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: () => void; isStandalone?: boolean }) {
   // Master P2P Rates (simulation)
   const [usdtPriceInBs, setUsdtPriceInBs] = useState<number>(780.00);
   const [isUpdatingRate, setIsUpdatingRate] = useState<boolean>(false);
@@ -515,12 +515,27 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
               </button>
             </div>
 
-            <button 
-              onClick={onClose}
-              className="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 text-xs font-semibold flex items-center gap-1 border border-zinc-700/60 transition active:scale-95"
-            >
-              <X className="h-3.5 w-3.5" /> Volver a Tappmusic
-            </button>
+            {!isStandalone ? (
+              <button 
+                onClick={onClose}
+                className="px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 text-xs font-semibold flex items-center gap-1 border border-zinc-700/60 transition active:scale-95"
+              >
+                <X className="h-3.5 w-3.5" /> Volver a Tappmusic
+              </button>
+            ) : (
+              <button 
+                onClick={() => {
+                  try {
+                    window.location.href = window.location.origin;
+                  } catch (e) {
+                    onClose();
+                  }
+                }}
+                className="px-3 py-1.5 rounded-lg bg-zinc-900 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 text-xs font-semibold flex items-center gap-1 border border-zinc-800 transition active:scale-95"
+              >
+                🌐 Ir a Tappmusic.com
+              </button>
+            )}
           </div>
         </div>
       </div>
