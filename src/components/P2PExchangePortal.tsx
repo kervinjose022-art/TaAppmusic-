@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeftRight, ShieldCheck, Wallet, DollarSign, ArrowUpRight, ArrowDownRight,
   PlusCircle, RefreshCw, Send, AlertCircle, CheckCircle2, Copy, FileText, Upload,
-  Users, Key, HelpCircle, Landmark, Sparkles, MessageSquare, AlertTriangle, UserCheck, X
+  Users, Key, HelpCircle, Landmark, Sparkles, MessageSquare, AlertTriangle, UserCheck, X,
+  CreditCard
 } from 'lucide-react';
 
 interface P2POffer {
@@ -40,8 +41,31 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
   // Master P2P Rates (simulation)
   const [usdtPriceInBs, setUsdtPriceInBs] = useState<number>(45.80);
   const [isUpdatingRate, setIsUpdatingRate] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'buy' | 'sell' | 'orders' | 'advisor'>('buy');
+  const [activeTab, setActiveTab] = useState<'buy' | 'sell' | 'orders' | 'deposit' | 'advisor'>('buy');
   
+  // Custom states for active liquid balances
+  const [bovedaUsdt, setBovedaUsdt] = useState<number>(12450.00);
+  const [fondoBs, setFondoBs] = useState<number>(480520.00);
+
+  // Card Deposit / BPay simulation states
+  const [depositType, setDepositType] = useState<'deposit' | 'withdraw'>('deposit');
+  const [depositMethod, setDepositMethod] = useState<'card' | 'gpay'>('card');
+  const [depositAmount, setDepositAmount] = useState<string>("100");
+  const [depositStep, setDepositStep] = useState<number>(1); // 1: Select method & amount, 2: Insert card details & Pay, 3: Completed!
+  const [cardNumber, setCardNumber] = useState<string>("");
+  const [cardHolder, setCardHolder] = useState<string>("");
+  const [cardExpiry, setCardExpiry] = useState<string>("");
+  const [cardCvv, setCardCvv] = useState<string>("");
+  const [isProcessingDeposit, setIsProcessingDeposit] = useState<boolean>(false);
+  const [adminCommissionTotal, setAdminCommissionTotal] = useState<number>(() => {
+    const saved = localStorage.getItem('tapp_p2p_commissions');
+    return saved ? parseFloat(saved) : 0;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('tapp_p2p_commissions', adminCommissionTotal.toString());
+  }, [adminCommissionTotal]);
+
   // Custom interactive state for calculator
   const [calcType, setCalcType] = useState<'usdt_to_bs' | 'bs_to_usdt'>('usdt_to_bs');
   const [calcInput, setCalcInput] = useState<string>("100");
@@ -468,15 +492,21 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
               <div className="grid grid-cols-2 gap-2 my-2">
                 <div className="bg-zinc-950/80 p-2.5 rounded-lg border border-zinc-800/80 text-left">
                   <span className="text-[9px] text-zinc-400 font-bold block mb-0.5 uppercase">Bóveda USDT</span>
-                  <div className="text-sm font-black text-white">$12,450.00</div>
+                  <div className="text-sm font-black text-white">${bovedaUsdt.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
                   <span className="text-[8.5px] text-emerald-400 font-mono">Disponibles en Escrow</span>
                 </div>
                 <div className="bg-zinc-950/80 p-2.5 rounded-lg border border-zinc-800/80 text-left">
                   <span className="text-[9px] text-zinc-400 font-bold block mb-0.5 uppercase">Fondo Bolívares</span>
-                  <div className="text-sm font-black text-white">480,520 Bs</div>
+                  <div className="text-sm font-black text-white">{fondoBs.toLocaleString('es-VE', { minimumFractionDigits: 0 })} Bs</div>
                   <span className="text-[8.5px] text-zinc-400 font-mono">Pago Móvil Banesco</span>
                 </div>
               </div>
+              {adminCommissionTotal > 0 && (
+                <div className="text-[9px] bg-zinc-950 px-2 py-1.5 rounded border border-amber-500/10 text-amber-450 font-bold mt-1.5 flex justify-between items-center">
+                  <span>💼 GANANCIA ADMIN BPAY (2.5%):</span>
+                  <span className="font-mono text-[9.5px] text-[#39FF14]">${adminCommissionTotal.toFixed(2)} USD</span>
+                </div>
+              )}
             </div>
 
             <button 
@@ -517,19 +547,19 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
         {/* Tab Selection Switchers */}
         <div className="flex border-b border-zinc-800 mb-6 bg-zinc-900/45 p-1 rounded-xl">
           <button 
-            onClick={() => setActiveTab('buy')}
+            onClick={() => { setActiveTab('buy'); setDepositStep(1); }}
             className={`flex-1 py-2 rounded-lg text-xs font-black transition ${activeTab === 'buy' ? 'bg-gradient-to-r from-emerald-500/10 to-emerald-500/5 text-emerald-400 shadow-[inset_0_1px_2px_rgba(16,185,129,0.15)] border-b-2 border-emerald-500' : 'text-zinc-400 hover:text-white'}`}
           >
             Quiero Comprar USDT <span className="text-[10px] text-zinc-400 block font-normal">(Traders Venden)</span>
           </button>
           <button 
-            onClick={() => setActiveTab('sell')}
+            onClick={() => { setActiveTab('sell'); setDepositStep(1); }}
             className={`flex-1 py-2 rounded-lg text-xs font-black transition ${activeTab === 'sell' ? 'bg-gradient-to-r from-emerald-500/10 to-emerald-500/5 text-emerald-400 shadow-[inset_0_1px_2px_rgba(16,185,129,0.15)] border-b-2 border-emerald-500' : 'text-zinc-400 hover:text-white'}`}
           >
             Quiero Vender USDT <span className="text-[10px] text-zinc-400 block font-normal">(Traders Compran)</span>
           </button>
           <button 
-            onClick={() => setActiveTab('orders')}
+            onClick={() => { setActiveTab('orders'); setDepositStep(1); }}
             className={`flex-1 py-2 rounded-lg text-xs font-black transition relative ${activeTab === 'orders' ? 'bg-gradient-to-r from-emerald-500/10 to-emerald-500/5 text-emerald-400 shadow-[inset_0_1px_2px_rgba(16,185,129,0.15)] border-b-2 border-emerald-500' : 'text-zinc-400 hover:text-white'}`}
           >
             Mis Órdenes Activas
@@ -541,8 +571,18 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
             )}
             <span className="text-[10px] text-zinc-400 block font-normal">(Escrow/{transactions.length} activas)</span>
           </button>
+
+          {/* New BPay/Mastercard/VISA Deposit Tab */}
           <button 
-            onClick={() => setActiveTab('advisor')}
+            onClick={() => { setActiveTab('deposit'); setDepositStep(1); }}
+            className={`flex-1 py-2 rounded-lg text-xs font-black transition relative ${activeTab === 'deposit' ? 'bg-gradient-to-r from-amber-500/10 to-amber-500/5 text-amber-400 shadow-[inset_0_1px_2px_rgba(245,158,11,0.15)] border-b-2 border-amber-500' : 'text-zinc-400 hover:text-white'}`}
+          >
+            💳 Depósito USD (BPay)
+            <span className="text-[10px] text-zinc-400 block font-normal">(Visa/Mastercard 2.5%)</span>
+          </button>
+
+          <button 
+            onClick={() => { setActiveTab('advisor'); setDepositStep(1); }}
             className={`flex-grow py-2 rounded-lg text-xs font-black transition ${activeTab === 'advisor' ? 'bg-gradient-to-r from-amber-500/10 to-amber-500/5 text-amber-400 shadow-[inset_0_1px_2px_rgba(245,158,11,0.15)] border-b-2 border-amber-500 text-amber-300' : 'text-zinc-400 hover:text-white'}`}
           >
             📚 Consejos del Experto
@@ -832,6 +872,368 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB: BPay Visa/Mastercard Deposit & Withdraw */}
+        {activeTab === 'deposit' && (
+          <div className="max-w-md mx-auto bg-[#181a20] border border-zinc-800/80 rounded-3xl p-6 shadow-2xl text-left my-4 relative overflow-hidden">
+            {/* Ambient background glow inside the card */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+            
+            {/* Header with selector for Deposit / Withdraw */}
+            <div className="flex items-center space-x-1.5 p-1 bg-zinc-900/80 rounded-2xl border border-zinc-800/60 mb-6 relative z-10">
+              <button
+                onClick={() => { setDepositType('deposit'); setDepositStep(1); }}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-black tracking-tight transition duration-150 ${depositType === 'deposit' ? 'bg-[#f0b90b] text-neutral-950 shadow-md shadow-amber-500/15' : 'text-zinc-400 hover:text-white'}`}
+              >
+                Depósito
+              </button>
+              <button
+                onClick={() => { setDepositType('withdraw'); setDepositStep(1); }}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-black tracking-tight transition duration-150 ${depositType === 'withdraw' ? 'bg-[#f0b90b] text-neutral-950 shadow-md shadow-amber-500/15' : 'text-zinc-400 hover:text-white'}`}
+              >
+                Retirar
+              </button>
+            </div>
+
+            {depositStep === 1 && (
+              <div className="space-y-5 animate-fadeIn relative z-10">
+                <h3 className="text-[14px] font-black text-zinc-100 tracking-tight">
+                  {depositType === 'deposit' ? 'Selecciona un método de depósito' : 'Selecciona un método de retiro'}
+                </h3>
+
+                {/* Currency selector component */}
+                <div className="flex items-center justify-between bg-zinc-950/70 border border-zinc-800/60 rounded-2xl px-4 py-3">
+                  <div className="flex items-center space-x-2.5">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-[#f0b90b] font-black font-mono text-xs border border-amber-500/40">
+                      $
+                    </span>
+                    <span className="text-xs font-extrabold text-white">USD (Dólar Fiat / Tarjeta Internacional)</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-400 font-bold hover:text-white transition cursor-pointer flex items-center gap-1 bg-zinc-900 border border-zinc-850 px-2 py-1 rounded-lg">
+                    Más <span className="text-[8px] text-[#f0b90b]">▼</span>
+                  </span>
+                </div>
+
+                {/* Amount input box */}
+                <div>
+                  <label className="text-[10px] text-zinc-400 font-bold block mb-1.5 uppercase tracking-wider">
+                    {depositType === 'deposit' ? 'Monto a Depositar (USD)' : 'Monto a Retirar (USD)'}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={depositAmount}
+                      onChange={(e) => setDepositAmount(e.target.value)}
+                      min="10"
+                      max="10000"
+                      className="w-full bg-zinc-950 border border-zinc-800 focus:border-amber-500/80 rounded-2xl px-4 py-3.5 text-sm font-black font-mono text-white focus:outline-none transition-all"
+                      placeholder="100.00"
+                    />
+                    <span className="absolute right-4 top-4.5 text-xs text-zinc-400 font-extrabold font-mono">USD</span>
+                  </div>
+                  <p className="text-[9.5px] text-zinc-500 mt-1 italic">
+                    *Mínimo de operación: $10 USD. Límites automáticos con BPay.
+                  </p>
+                </div>
+
+                {/* Recommended (VISA / Mastercard) Card block */}
+                <div>
+                  <h4 className="text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-wider">Recomendado</h4>
+                  
+                  <div 
+                    onClick={() => setDepositMethod('card')}
+                    className={`p-4 rounded-2.5xl border cursor-pointer transition duration-150 flex items-start space-x-3.5 relative ${depositMethod === 'card' ? 'bg-amber-500/5 border-amber-500 shadow-[0_0_15px_rgba(240,185,11,0.08)]' : 'bg-transparent border-zinc-800/80 hover:border-zinc-700'}`}
+                  >
+                    <div className="p-2.5 bg-zinc-900/90 rounded-xl border border-zinc-800 text-[#f0b90b] shrink-0">
+                      <CreditCard className="h-6 w-6" />
+                    </div>
+                    <div className="text-left space-y-0.5">
+                      <h5 className="text-xs font-black text-white">Tarjeta (VISA/Mastercard)</h5>
+                      <p className="text-[9.5px] text-zinc-400 font-medium">Impulsado por BPay para Banco de Venezuela y otros</p>
+                      
+                      {/* Badges */}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2 pt-1">
+                        <span className="bg-amber-500/10 text-amber-400 font-black text-[9px] px-2 py-0.5 rounded font-mono border border-amber-500/20">
+                          Comisión del 2.5%
+                        </span>
+                        <span className="bg-emerald-500/10 text-[#39FF14] font-black text-[9px] px-2 py-0.5 rounded font-mono border border-emerald-500/20 animate-pulse">
+                          En tiempo real
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Others row (Google Pay) */}
+                <div>
+                  <h4 className="text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-wider">Otros</h4>
+                  
+                  <div 
+                    onClick={() => setDepositMethod('gpay')}
+                    className={`p-4 rounded-2.5xl border cursor-pointer transition duration-150 flex items-start space-x-3.5 relative ${depositMethod === 'gpay' ? 'bg-amber-500/5 border-amber-500 shadow-[0_0_15px_rgba(240,185,11,0.08)]' : 'bg-transparent border-zinc-800/80 hover:border-zinc-700'}`}
+                  >
+                    <div className="absolute top-3.5 right-4 bg-amber-500/10 text-[#f0b90b] text-[8px] font-black px-1.5 py-0.5 rounded border border-amber-500/20 select-none">
+                      Usado por última vez
+                    </div>
+                    
+                    <div className="p-2.5 bg-zinc-900/90 rounded-xl border border-zinc-800 text-[#39FF14] shrink-0">
+                      <Sparkles className="h-6 w-6" />
+                    </div>
+                    <div className="text-left space-y-0.5">
+                      <h5 className="text-xs font-black text-white flex items-center gap-1.5">
+                        Google Pay
+                      </h5>
+                      <p className="text-[9.5px] text-zinc-400 font-medium">Impulsado por BPay con tarjeta internacional</p>
+                      
+                      {/* Badges */}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2 pt-1">
+                        <span className="bg-amber-500/10 text-amber-400 font-black text-[9px] px-2 py-0.5 rounded font-mono border border-amber-500/20">
+                          Comisión del 2.5%
+                        </span>
+                        <span className="bg-emerald-500/10 text-[#39FF14] font-black text-[9px] px-2 py-0.5 rounded font-mono border border-emerald-500/20">
+                          En tiempo real
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Golden Continue button */}
+                <button
+                  onClick={() => {
+                    const val = parseFloat(depositAmount);
+                    if (isNaN(val) || val < 10) {
+                      alert("Por favor introduce un monto mínimo de $10 USD.");
+                      return;
+                    }
+                    if (depositMethod === 'gpay') {
+                      setIsProcessingDeposit(true);
+                      setTimeout(() => {
+                        setIsProcessingDeposit(false);
+                        const comision = val * 0.025;
+                        const finalAmount = val - comision;
+                        if (depositType === 'deposit') {
+                          setBovedaUsdt(prev => prev + finalAmount);
+                          setAdminCommissionTotal(prev => prev + comision);
+                        } else {
+                          setBovedaUsdt(prev => Math.max(0, prev - val));
+                        }
+                        setDepositStep(3);
+                      }, 2000);
+                    } else {
+                      setDepositStep(2);
+                    }
+                  }}
+                  disabled={isProcessingDeposit}
+                  className="w-full mt-4 bg-[#f0b90b] text-neutral-950 border border-yellow-500/30 hover:bg-[#dfaa0a] hover:shadow-[0_0_15px_rgba(240,185,11,0.25)] font-black uppercase text-xs rounded-2xl py-4 px-6 transition duration-150 active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isProcessingDeposit ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" /> Procesando pago bpay...
+                    </>
+                  ) : (
+                    'Continuar'
+                  )}
+                </button>
+              </div>
+            )}
+
+            {depositStep === 2 && (
+              <div className="space-y-4 animate-fadeIn relative z-10">
+                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5 mb-2">
+                  <h4 className="text-[11px] font-black text-white uppercase tracking-wider flex items-center gap-1">
+                    <CreditCard className="h-4 w-4 text-amber-500" /> Detalles de Tarjeta BPay
+                  </h4>
+                  <button 
+                    onClick={() => setDepositStep(1)}
+                    className="text-xs text-amber-400 hover:text-amber-300 font-bold transition flex items-center gap-0.5"
+                  >
+                    ◀ Volver
+                  </button>
+                </div>
+
+                {/* Calculations showing fee & net crediting */}
+                <div className="bg-zinc-950 p-4 rounded-2xl border border-zinc-850 space-y-2 text-xs">
+                  <div className="flex justify-between text-zinc-400 font-medium">
+                    <span>Monto de la Operación:</span>
+                    <strong className="text-white font-mono">${parseFloat(depositAmount).toFixed(2)} USD</strong>
+                  </div>
+                  <div className="flex justify-between text-amber-400 font-bold">
+                    <span>Comisión Administrador (2.5%):</span>
+                    <strong className="font-mono">-${(parseFloat(depositAmount) * 0.025).toFixed(2)} USD</strong>
+                  </div>
+                  <div className="border-t border-zinc-850 my-2 pt-2.5 flex justify-between text-white font-black text-sm">
+                    <span>Monto Neto acreditado:</span>
+                    <span className="text-[#39FF14] font-mono">${(parseFloat(depositAmount) * 0.975).toFixed(2)} USDT</span>
+                  </div>
+                </div>
+
+                {/* Card input simulated forms */}
+                <div className="space-y-3.5 pt-1">
+                  <div>
+                    <label className="text-[10px] text-zinc-400 font-bold block mb-1 uppercase tracking-wider">
+                      Titular de la Tarjeta (Mastercard/Visa)
+                    </label>
+                    <input 
+                      type="text"
+                      className="w-full bg-zinc-950 border border-zinc-800 focus:border-amber-500 rounded-xl px-3 py-2.5 text-xs font-mono focus:outline-none text-white placeholder-zinc-650"
+                      placeholder="Kervin José Torres"
+                      value={cardHolder}
+                      onChange={(e) => setCardHolder(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-zinc-400 font-bold block mb-1 uppercase tracking-wider">
+                      Número de Tarjeta (BPay o Internacional)
+                    </label>
+                    <input 
+                      type="text"
+                      className="w-full bg-zinc-950 border border-zinc-800 focus:border-amber-500 rounded-xl px-3 py-2.5 text-xs font-mono tracking-widest focus:outline-none text-white placeholder-zinc-650"
+                      placeholder="5412 7500 1234 5678"
+                      value={cardNumber}
+                      maxLength={19}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\D/g, '').substring(0, 16);
+                        const parts = raw.match(/.{1,4}/g) || [];
+                        setCardNumber(parts.join(' '));
+                      }}
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="text-[10px] text-zinc-400 font-bold block mb-1 uppercase tracking-wider">
+                        Vencimiento
+                      </label>
+                      <input 
+                        type="text"
+                        className="w-full bg-zinc-950 border border-zinc-800 focus:border-amber-500 rounded-xl px-3 py-2.5 text-xs font-mono focus:outline-none text-white text-center placeholder-zinc-650"
+                        placeholder="MM/YY"
+                        maxLength={5}
+                        value={cardExpiry}
+                        onChange={(e) => {
+                          let raw = e.target.value.replace(/\D/g, '').substring(0, 4);
+                          if (raw.length > 2) {
+                            raw = raw.substring(0, 2) + '/' + raw.substring(2);
+                          }
+                          setCardExpiry(raw);
+                        }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-zinc-400 font-bold block mb-1 uppercase tracking-wider">
+                        CVV / CVI
+                      </label>
+                      <input 
+                        type="password"
+                        className="w-full bg-zinc-950 border border-zinc-800 focus:border-amber-500 rounded-xl px-3 py-2.5 text-xs font-mono focus:outline-none text-white text-center placeholder-zinc-650 tracking-widest"
+                        placeholder="***"
+                        maxLength={3}
+                        value={cardCvv}
+                        onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, '').substring(0, 3))}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      if (!cardHolder || cardNumber.length < 15 || cardExpiry.length < 5 || cardCvv.length < 3) {
+                        alert("Por favor rellene los datos de tarjeta.");
+                        return;
+                      }
+                      setIsProcessingDeposit(true);
+                      setTimeout(() => {
+                        setIsProcessingDeposit(false);
+                        const val = parseFloat(depositAmount);
+                        const comision = val * 0.025;
+                        const finalAmount = val - comision;
+                        if (depositType === 'deposit') {
+                          setBovedaUsdt(prev => prev + finalAmount);
+                          setAdminCommissionTotal(prev => prev + comision);
+                        } else {
+                          setBovedaUsdt(prev => Math.max(0, prev - val));
+                        }
+                        setDepositStep(3);
+                      }, 2500);
+                    }}
+                    disabled={isProcessingDeposit}
+                    className="w-full mt-4 bg-emerald-500 hover:bg-emerald-400 text-neutral-900 border border-emerald-450/40 hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] font-black uppercase text-xs rounded-2xl py-4 px-6 transition duration-150 active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {isProcessingDeposit ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin animate-reverse" /> Autorizando Pasarela BPay...
+                      </>
+                    ) : (
+                      `Pagar $${parseFloat(depositAmount).toFixed(2)} USD`
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {depositStep === 3 && (
+              <div className="text-center space-y-4 py-8 animate-fadeIn relative z-10">
+                <div className="w-16 h-16 bg-[#39FF14]/10 border border-[#39FF14]/40 text-[#39FF14] rounded-full flex items-center justify-center mx-auto mb-2 shadow-[0_0_20px_rgba(57,255,20,0.18)]">
+                  <CheckCircle2 className="h-9 w-9" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-lg font-black text-white">¡Operación BPay Completada!</h4>
+                  <p className="text-xs text-zinc-350">
+                    Tu pase de fondos internacional mediante <strong className="text-[#39FF14]">BPay / VISA / Mastercard</strong> se ha liquidado de forma impecable.
+                  </p>
+                </div>
+
+                <div className="bg-zinc-950 p-4 rounded-2xl border border-zinc-850 space-y-2 text-xs text-left">
+                  <div className="flex justify-between text-zinc-400">
+                    <span>Monto de la Operación:</span>
+                    <strong className="text-white font-mono">${parseFloat(depositAmount).toFixed(2)} USD</strong>
+                  </div>
+                  {depositType === 'deposit' ? (
+                    <>
+                      <div className="flex justify-between text-amber-400 font-semibold">
+                        <span>Comisión del Administrador (2.5%):</span>
+                        <strong className="font-mono">-${(parseFloat(depositAmount) * 0.025).toFixed(2)} USD</strong>
+                      </div>
+                      <div className="border-t border-zinc-850 pt-2 flex justify-between text-white font-black">
+                        <span>Bóveda USDT Acreditada:</span>
+                        <span className="text-emerald-400 font-mono">+${(parseFloat(depositAmount) * 0.975).toFixed(2)} USDT</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-red-400 font-semibold">
+                        <span>Monto Retirado:</span>
+                        <strong className="font-mono font-black">-${parseFloat(depositAmount).toFixed(2)} USD</strong>
+                      </div>
+                      <div className="border-t border-zinc-850 pt-2 text-zinc-400 text-[10px] leading-tight text-center">
+                        Los fondos han sido debitados de tu balance exitosamente.
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setDepositStep(1);
+                    setCardNumber("");
+                    setCardHolder("");
+                    setCardExpiry("");
+                    setCardCvv("");
+                    setActiveTab('buy'); // redirect user to P2P market
+                  }}
+                  className="w-full bg-zinc-800 hover:bg-zinc-700 hover:text-white text-zinc-300 font-black py-3 rounded-2xl text-xs transition active:scale-95 border border-zinc-750/70"
+                >
+                  Regresar al Mercado P2P
+                </button>
               </div>
             )}
           </div>

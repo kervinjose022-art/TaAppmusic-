@@ -1,6 +1,6 @@
 {
   "name": "Tappmusic.com",
-  "description": "La plataforma definitiva para escuchar, disfrutar y compartir la mejor música sin límites.",
+  "description": "Plataforma de música con portal y pasarela de intercambio de divisas P2P de USDT a Bolívares con depósitos Visa/Mastercard impulsados por BPay.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
