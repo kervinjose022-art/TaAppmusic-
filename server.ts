@@ -81,6 +81,30 @@ async function startServer() {
     res.status(404).send("Logo not found");
   });
 
+  // Serve the VIP Flyer image with direct and download triggers support
+  app.get("/assets/tappmusic_vip_flyer.jpg", (req, res) => {
+    const possiblePaths = [
+      path.join(process.cwd(), "assets", "tappmusic_vip_flyer.jpg"),
+      path.join(process.cwd(), "src", "assets", "images", "tappmusic_vip_flyer.jpg"),
+      path.join(process.cwd(), "public", "assets", "tappmusic_vip_flyer.jpg")
+    ];
+    let foundPath = "";
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        foundPath = p;
+        break;
+      }
+    }
+    if (foundPath) {
+      if (req.query.download === "true") {
+        res.setHeader("Content-Disposition", 'attachment; filename="tappmusic_flyer_vip.jpg"');
+      }
+      res.setHeader("Content-Type", "image/jpeg");
+      return res.sendFile(foundPath);
+    }
+    res.status(404).send("Flyer not found");
+  });
+
   // Intercept and serve tappmusic.apk with proper Android headers and fallback
   app.get("/assets/tappmusic.apk", (req, res) => {
     const possiblePaths = [

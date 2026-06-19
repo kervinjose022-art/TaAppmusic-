@@ -1722,16 +1722,18 @@ export default function App() {
           <BrainLogo size="md" />
 
           {/* Glowing New Project P2P Announcement Badge */}
-          <button 
-            onClick={() => setIsP2PExchangeOpen(true)}
-            className="inline-flex items-center gap-2 bg-[#39FF14]/10 hover:bg-[#39FF14]/25 border border-[#39FF14]/30 text-[#39FF14] text-[11px] font-black tracking-tight px-3.5 py-1.5 rounded-full transition-all duration-150 active:scale-95 shadow-[0_0_15px_rgba(57,255,20,0.15)] cursor-pointer"
-          >
-            <span className="flex h-1.5 w-1.5 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#39FF14] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#39FF14]"></span>
-            </span>
-            🤝 PROYECTO NUEVO EN DESARROLLO: MERCADO CAMBIARIO P2P ➔
-          </button>
+          {isAdminVerified && (
+            <button 
+              onClick={() => setIsP2PExchangeOpen(true)}
+              className="inline-flex items-center gap-2 bg-[#39FF14]/10 hover:bg-[#39FF14]/25 border border-[#39FF14]/30 text-[#39FF14] text-[11px] font-black tracking-tight px-3.5 py-1.5 rounded-full transition-all duration-150 active:scale-95 shadow-[0_0_15px_rgba(57,255,20,0.15)] cursor-pointer"
+            >
+              <span className="flex h-1.5 w-1.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#39FF14] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#39FF14]"></span>
+              </span>
+              🤝 PROYECTO NUEVO EN DESARROLLO: MERCADO CAMBIARIO P2P ➔
+            </button>
+          )}
 
           <div className="space-y-1.5">
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-widest text-white uppercase select-all">
@@ -2057,17 +2059,13 @@ export default function App() {
                       </button>
 
                       <a
-                        href="/assets/tappmusic_vip_flyer.jpg"
+                        href="/assets/tappmusic_vip_flyer.jpg?download=true"
                         download="tappmusic_flyer_vip.jpg"
                         className="w-full h-8 px-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-900 border border-white/10 hover:border-white/20 text-zinc-300 text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 select-none"
                       >
                         <span>📥 Descargar Flyer</span>
                       </a>
                     </div>
-
-                    <p className="text-[9px] text-zinc-500 font-sans leading-tight mt-0.5 max-w-[180px]">
-                      👑 <strong>¡Promociona!</strong> Descarga la imagen y compártela con tus invitados para que se activen.
-                    </p>
                   </div>
 
                 </div>
