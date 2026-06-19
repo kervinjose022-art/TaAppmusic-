@@ -146,8 +146,42 @@ async function startServer() {
   if (process.env.NODE_ENV === "production" || fs.existsSync(path.join(distPath, "index.html"))) {
     console.log(`[Tappmusic] Booting in PRODUCTION mode. Serving static files from: ${distPath}`);
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+    app.get("*", (req, res, next) => {
+      const indexPath = path.join(distPath, "index.html");
+      if (!fs.existsSync(indexPath)) {
+        console.warn(`[Tappmusic] Warning: dist/index.html does not exist. Serving standby html...`);
+        res.status(503).send(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Tappmusic Cargo...</title>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <style>
+                body { background: #09090b; color: #f4f4f5; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+                .card { border: 1px solid #27272a; padding: 2rem; border-radius: 1rem; max-width: 440px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); background: #121214; }
+                h1 { color: #f0b90b; font-size: 1.25rem; margin-top: 0; margin-bottom: 0.5rem; font-weight: 800; text-transform: uppercase; }
+                p { color: #a1a1aa; font-size: 0.875rem; line-height: 1.5; margin: 0; }
+              </style>
+            </head>
+            <body>
+              <div class="card">
+                <h1>Sincronizando Sistema</h1>
+                <p>El portal se está terminando de compilar e iniciando servicios. Por favor recarga la página en unos segundos.</p>
+              </div>
+            </body>
+          </html>
+        `);
+        return;
+      }
+      res.sendFile(indexPath, (err) => {
+        if (err) {
+          console.error("[Tappmusic] Error sending index.html:", err);
+          if (!res.headersSent) {
+            res.status(500).send("Error serving client application.");
+          }
+        }
+      });
     });
   } else {
     console.log("[Tappmusic] Booting in DEVELOPMENT mode with Vite middleware.");

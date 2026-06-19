@@ -101,3 +101,8 @@
 .animate-slide-up {
   animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Venezuelan Flag Sunset Sky Background Gradient - Elegant & High Contrast */
+.bg-venezuela-sky {
+  background: radial-gradient(circle at 50% -20%, rgba(240, 185, 11, 0.18) 0%, rgba(0, 47, 108, 0.28) 46%, rgba(207, 20, 43, 0.14) 100%), #040406 !important;
+}

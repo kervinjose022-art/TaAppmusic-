@@ -41,11 +41,25 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
   // Master P2P Rates (simulation)
   const [usdtPriceInBs, setUsdtPriceInBs] = useState<number>(45.80);
   const [isUpdatingRate, setIsUpdatingRate] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'buy' | 'sell' | 'orders' | 'deposit' | 'advisor'>('buy');
+  const [activeTab, setActiveTab] = useState<'buy' | 'sell' | 'orders' | 'deposit' | 'advisor' | 'withdraw'>('buy');
   
-  // Custom states for active liquid balances
-  const [bovedaUsdt, setBovedaUsdt] = useState<number>(12450.00);
-  const [fondoBs, setFondoBs] = useState<number>(480520.00);
+  // Custom states for active liquid balances - persistent
+  const [bovedaUsdt, setBovedaUsdt] = useState<number>(() => {
+    const saved = localStorage.getItem('tapp_p2p_boveda_usdt');
+    return saved ? parseFloat(saved) : 12450.00;
+  });
+  const [fondoBs, setFondoBs] = useState<number>(() => {
+    const saved = localStorage.getItem('tapp_p2p_fondo_bs');
+    return saved ? parseFloat(saved) : 480520.00;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('tapp_p2p_boveda_usdt', bovedaUsdt.toString());
+  }, [bovedaUsdt]);
+
+  useEffect(() => {
+    localStorage.setItem('tapp_p2p_fondo_bs', fondoBs.toString());
+  }, [fondoBs]);
 
   // Card Deposit / BPay simulation states
   const [depositType, setDepositType] = useState<'deposit' | 'withdraw'>('deposit');
@@ -208,6 +222,44 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
   const [tradeAmountUsdt, setTradeAmountUsdt] = useState<string>("50");
   const [tradeAmountBs, setTradeAmountBs] = useState<string>("2290.00");
 
+  // USDT Withdraw requests and form state
+  const [withdrawRequests, setWithdrawRequests] = useState<any[]>(() => {
+    const saved = localStorage.getItem('tapp_p2p_withdraw_requests');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [
+      {
+        id: 'wreq_1082',
+        username: 'kervin_bpay',
+        walletAddress: 'TYr5bA2vDkWqXpR3Y9B9S7sTtrc2sXp44',
+        network: 'USDT TRC20',
+        amountUsdt: 45.00,
+        status: 'pending',
+        createdAt: new Date(Date.now() - 4 * 3600000).toISOString()
+      },
+      {
+        id: 'wreq_1054',
+        username: 'manuel_p2p',
+        walletAddress: '0x32168df9f201e74de055fef72365a123e449a8fe',
+        network: 'USDT BEP20',
+        amountUsdt: 125.00,
+        status: 'dispatched',
+        createdAt: new Date(Date.now() - 24 * 3600000).toISOString()
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('tapp_p2p_withdraw_requests', JSON.stringify(withdrawRequests));
+  }, [withdrawRequests]);
+
+  const [withdrawAddress, setWithdrawAddress] = useState<string>('');
+  const [withdrawNetwork, setWithdrawNetwork] = useState<string>('USDT TRC20');
+  const [withdrawAmount, setWithdrawAmount] = useState<string>('50');
+  const [withdrawSuccessMsg, setWithdrawSuccessMsg] = useState<string>('');
+  const [withdrawErrorMsg, setWithdrawErrorMsg] = useState<string>('');
+
   // Simulated image upload for Bank Receipt
   const [isUploadingReceipt, setIsUploadingReceipt] = useState<string | null>(null);
   const [copiedTextId, setCopiedTextId] = useState<string | null>(null);
@@ -363,6 +415,55 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
     }));
   };
 
+  // Submit manual withdrawal request to administrator
+  const handleWithdrawSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setWithdrawSuccessMsg('');
+    setWithdrawErrorMsg('');
+    
+    const amt = parseFloat(withdrawAmount);
+    if (isNaN(amt) || amt <= 0) {
+      setWithdrawErrorMsg('❌ Por favor introduce un monto válido.');
+      return;
+    }
+    if (amt > bovedaUsdt) {
+      setWithdrawErrorMsg(`❌ Saldo insuficiente en tu Bóveda. Tu saldo actual: $${bovedaUsdt.toFixed(2)} USDT.`);
+      return;
+    }
+    if (!withdrawAddress.trim()) {
+      setWithdrawErrorMsg('❌ Por favor introduce tu billetera o ID de Binance Pay.');
+      return;
+    }
+
+    // Deduct from local user Boveda balance
+    setBovedaUsdt(prev => prev - amt);
+
+    // Get current registered username or fallback
+    let currentUsername = 'usuario_invitado';
+    try {
+      const savedProf = localStorage.getItem('tappmusic_profile');
+      if (savedProf) {
+        const parsed = JSON.parse(savedProf);
+        if (parsed && parsed.username) currentUsername = parsed.username;
+      }
+    } catch(e) {}
+
+    // Create a new request entry
+    const newReq = {
+      id: `wreq_${Math.floor(1000 + Math.random() * 9000)}`,
+      username: currentUsername,
+      walletAddress: withdrawAddress.trim(),
+      network: withdrawNetwork,
+      amountUsdt: amt,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+
+    setWithdrawRequests(prev => [newReq, ...prev]);
+    setWithdrawSuccessMsg(`⚡ ¡Solicitud enviada con éxito! El Administrador la revisará en el Panel de Administrador de la Casa de Cambio para despacharte los $${amt.toFixed(2)} USDT.`);
+    setWithdrawAddress('');
+  };
+
   const filteredOffers = offers.filter(o => {
     const isTargetType = activeTab === 'buy' ? o.type === 'Vender' : o.type === 'Comprar';
     if (!isTargetType) return false;
@@ -374,7 +475,7 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
   });
 
   return (
-    <div className="min-h-screen bg-neutral-950 font-sans text-neutral-200 select-none pb-12">
+    <div className="min-h-screen bg-venezuela-sky font-sans text-neutral-200 select-none pb-12">
       {/* Upper Status / Header bar */}
       <div className="border-b border-emerald-500/10 bg-zinc-900/60 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -596,6 +697,66 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
                   </div>
                 )}
               </div>
+
+              {/* DESPACHO MANUAL DE RETIROS BINANCE - ADMIN ACTION */}
+              <div className="mt-3 bg-[#0a0f1d] border border-yellow-500/20 rounded-xl p-3 space-y-2 text-left animate-fadeIn">
+                <div className="border-b border-zinc-800 pb-1.5 flex justify-between items-center">
+                  <span className="text-[9.5px] font-black text-yellow-400 uppercase tracking-wider flex items-center gap-1">
+                    👑 Despacho manual (Admin)
+                  </span>
+                  <span className="bg-yellow-500/10 text-yellow-400 font-mono text-[8px] px-1.5 py-0.2 rounded font-bold">
+                    {withdrawRequests.filter(r => r.status === 'pending').length} Pendientes
+                  </span>
+                </div>
+                
+                <p className="text-[8.5px] text-zinc-400 leading-tight leading-relaxed">
+                  Como Administrador de la Casa de Cambio, procesa las solicitudes de retiro de los usuarios desde sus cuentas en la plataforma hacia sus billeteras Binance:
+                </p>
+
+                <div className="space-y-2 max-h-[220px] overflow-y-auto pt-1">
+                  {withdrawRequests.filter(r => r.status === 'pending').length === 0 ? (
+                    <p className="text-[8.5px] text-zinc-500 text-center py-2.5">
+                      No hay solicitudes de retiro pendientes de despacho. 👍
+                    </p>
+                  ) : (
+                    withdrawRequests.filter(r => r.status === 'pending').map((req) => (
+                      <div key={req.id} className="bg-black/50 p-2 rounded-lg border border-zinc-800 text-[8.5px] space-y-1.5 animate-fadeIn">
+                        <div className="flex justify-between items-center text-[8px]">
+                          <span className="font-mono text-zinc-500 font-bold">{req.id}</span>
+                          <strong className="text-zinc-300 font-semibold uppercase">{req.username}</strong>
+                        </div>
+                        
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-zinc-500">Monto:</span>
+                          <strong className="text-xs text-[#39FF14] font-mono font-black">${req.amountUsdt.toFixed(2)} USDT</strong>
+                        </div>
+
+                        <div className="text-[8px] text-zinc-400 truncate space-y-0.5">
+                          <div className="flex justify-between">
+                            <span>Red:</span>
+                            <span className="text-white font-mono">{req.network}</span>
+                          </div>
+                          <div className="truncate selection:bg-amber-500/40">
+                            Destino: <span className="text-yellow-400 font-mono select-all font-bold">{req.walletAddress}</span>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`¿Confirmas que has enviado de forma real $${req.amountUsdt} USDT a la wallet ${req.walletAddress}?`)) {
+                              setWithdrawRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'dispatched' } : r));
+                              alert(`✅ Retiro ${req.id} marcado como "Despachado" con éxito en la plataforma.`);
+                            }
+                          }}
+                          className="w-full bg-[#39FF14]/10 border border-[#39FF14]/30 hover:bg-[#39FF14]/20 text-[#39FF14] hover:text-[#39FF14] font-black uppercase text-[8px] py-1 rounded transition cursor-pointer"
+                        >
+                          Confirmar Depósito (Despachar)
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
 
             <button 
@@ -670,12 +831,21 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
             <span className="text-[10px] text-zinc-400 block font-normal">(Visa/Mastercard 2.5%)</span>
           </button>
 
+          {/* New Binance USDT Withdrawal Tab */}
+          <button 
+            onClick={() => { setActiveTab('withdraw'); }}
+            className={`flex-grow py-2 rounded-lg text-xs font-black transition relative ${activeTab === 'withdraw' ? 'bg-gradient-to-r from-yellow-500/10 to-yellow-500/5 text-yellow-400 shadow-[inset_0_1px_2px_rgba(245,158,11,0.15)] border-b-2 border-yellow-500' : 'text-zinc-400 hover:text-white'}`}
+          >
+            🪙 Retirar Binance
+            <span className="text-[10px] text-zinc-400 block font-normal">(Manual USDT)</span>
+          </button>
+
           <button 
             onClick={() => { setActiveTab('advisor'); setDepositStep(1); }}
             className={`flex-grow py-2 rounded-lg text-xs font-black transition ${activeTab === 'advisor' ? 'bg-gradient-to-r from-amber-500/10 to-amber-500/5 text-amber-400 shadow-[inset_0_1px_2px_rgba(245,158,11,0.15)] border-b-2 border-amber-500 text-amber-300' : 'text-zinc-400 hover:text-white'}`}
           >
             📚 Consejos del Experto
-            <span className="text-[10px] text-zinc-400 block font-normal">(Análisis de Riesgo)</span>
+            <span className="text-[10px] text-zinc-400 block font-normal">(De Riesgo)</span>
           </button>
         </div>
 
@@ -1437,6 +1607,166 @@ export default function P2PExchangePortal({ onClose }: { onClose: () => void }) 
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* TAB 3.5: USDT Withdrawal Form */}
+        {activeTab === 'withdraw' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-left animate-fadeIn">
+            {/* Form Column */}
+            <div className="lg:col-span-2 bg-zinc-900/90 rounded-2xl border border-zinc-800 p-6 space-y-6 shadow-xl">
+              <div className="flex items-center space-x-3 border-b border-zinc-800 pb-4">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-yellow-500/20 to-amber-500/20 border border-yellow-500/30">
+                  <ArrowUpRight className="h-6 w-6 text-yellow-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white uppercase tracking-wider">Retirar Fondos a Binance</h3>
+                  <p className="text-xs text-zinc-400">Solicita cambiar tus USDT acumulados hacia tu billetera personal en Binance.</p>
+                </div>
+              </div>
+
+              {withdrawSuccessMsg && (
+                <div className="bg-emerald-950/40 border border-emerald-500/30 text-[#39FF14] text-xs font-semibold p-4 rounded-xl flex items-start gap-3 animate-fadeIn">
+                  <span className="text-base">💎</span>
+                  <div className="leading-relaxed">
+                    {withdrawSuccessMsg}
+                  </div>
+                </div>
+              )}
+
+              {withdrawErrorMsg && (
+                <div className="bg-red-950/40 border border-red-500/30 text-red-400 text-xs font-semibold p-4 rounded-xl flex items-start gap-3 animate-fadeIn">
+                  <span className="text-base">⚠️</span>
+                  <div>
+                    {withdrawErrorMsg}
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleWithdrawSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-black/40 p-4 rounded-2xl border border-zinc-800/65">
+                  <div className="text-left">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block">Mi Saldo Disponible</span>
+                    <strong className="text-xl sm:text-2xl font-mono font-black text-[#39FF14] tracking-normal inline-block mt-0.5">${bovedaUsdt.toFixed(2)} USDT</strong>
+                  </div>
+                  <div className="text-left border-t sm:border-t-0 sm:border-l border-zinc-800/80 pt-2.5 sm:pt-0 sm:pl-4">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block">Comisión de Salida</span>
+                    <strong className="text-md font-mono font-black text-amber-400 tracking-normal inline-block mt-1">0.00% (¡Sin recargos de envío!)</strong>
+                    <span className="text-[9px] text-zinc-500 block leading-tight">El costo de la red es absorbido por el administrador</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] block font-black">
+                    Dirección de Retiro o ID de Pago (Billetera Binance) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej. TUh7b8P2vDkWqXp3Y9B9S7sTtrc20eXp20 o tu ID de Pay"
+                    value={withdrawAddress}
+                    onChange={(e) => setWithdrawAddress(e.target.value)}
+                    className="w-full text-xs font-mono bg-black border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500"
+                  />
+                  <span className="text-[9px] text-zinc-500 block">Indica tu dirección USDT de Coinbase, Binance, TrustWallet o tu Binance Pay UID.</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 block font-bold">
+                      Red Seleccionada (Network) *
+                    </label>
+                    <select
+                      value={withdrawNetwork}
+                      onChange={(e) => setWithdrawNetwork(e.target.value)}
+                      className="w-full text-xs font-semibold bg-black border border-zinc-800 rounded-xl px-3 py-3 text-white focus:outline-none focus:border-yellow-300 cursor-pointer"
+                    >
+                      <option value="USDT TRC20">USDT (TRC20 - Red TRON)</option>
+                      <option value="USDT BEP20">USDT (BEP20 - BNB Smart Chain)</option>
+                      <option value="Binance Pay ID">ID de Binance Pay (UID)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 block font-bold">
+                      Monto a Retirar (USDT) *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="0.01"
+                        required
+                        value={withdrawAmount}
+                        onChange={(e) => setWithdrawAmount(e.target.value)}
+                        className="w-full text-xs font-mono font-black bg-black border border-zinc-800 rounded-xl pl-4 pr-16 py-3 text-[#39FF14] focus:outline-none focus:border-yellow-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setWithdrawAmount(bovedaUsdt.toString())}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase text-amber-400 hover:text-[#f0b90b] transition cursor-pointer bg-zinc-800 px-2 py-1 rounded"
+                      >
+                        MAX
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full flex h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-neutral-950 text-xs font-black uppercase tracking-wider transition-all cursor-pointer active:scale-95 shadow-[0_4px_15px_rgba(240,185,11,0.2)] border-none font-sans"
+                >
+                  <Send className="h-4 w-4" />
+                  <span>Enviar Solicitud de Retiro</span>
+                </button>
+              </form>
+            </div>
+
+            {/* Sidebar Column: Requests history */}
+            <div className="bg-zinc-900/90 rounded-2xl border border-zinc-800 p-5 space-y-4 shadow-xl">
+              <div className="border-b border-zinc-800 pb-2">
+                <h3 className="text-xs font-black text-white uppercase tracking-wider">Historial de Solicitudes</h3>
+                <p className="text-[10px] text-zinc-500">Consulta el estado de despacho manual.</p>
+              </div>
+
+              <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                {withdrawRequests.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-500 text-xs">
+                    No tienes solicitudes de retiro activas.
+                  </div>
+                ) : (
+                  withdrawRequests.map((req) => (
+                    <div key={req.id} className="p-3 bg-black/40 border border-zinc-800/80 rounded-xl space-y-2 text-left">
+                      <div className="flex justify-between items-center text-[10px]">
+                        <span className="font-mono text-zinc-500 font-bold">{req.id}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[8.5px] uppercase font-black ${
+                          req.status === 'dispatched' 
+                            ? 'bg-emerald-500/10 text-[#39FF14] border border-emerald-500/20' 
+                            : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 animate-pulse'
+                        }`}>
+                          {req.status === 'dispatched' ? 'Despachado' : 'Pendiente'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-[10px] text-zinc-400 font-bold">Importe:</span>
+                        <strong className="text-sm font-mono text-[#39FF14] font-black">${req.amountUsdt.toFixed(2)} USDT</strong>
+                      </div>
+
+                      <div className="space-y-0.5 pt-1 border-t border-zinc-800/40 text-[9px]">
+                        <div className="flex justify-between text-zinc-500">
+                          <span>Red:</span>
+                          <span className="text-zinc-300 font-semibold">{req.network}</span>
+                        </div>
+                        <div className="text-zinc-500 flex flex-col pt-0.5">
+                          <span className="text-[8px] uppercase">Billetera de Salida:</span>
+                          <span className="font-mono text-zinc-300 truncate text-[9px] block" title={req.walletAddress}>{req.walletAddress}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
 
