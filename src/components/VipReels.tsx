@@ -258,17 +258,16 @@ export default function VipReels({ currentVip }: VipReelsProps) {
         (window as any)._activeUtterance = utterance;
       }
 
-      // Delaying the execution slightly prevents race-conditions with the internal SpeechSynthesis system queue on Android Webviews
-      setTimeout(() => {
-        try {
-          if (typeof window !== 'undefined' && window.speechSynthesis) {
-            window.speechSynthesis.resume();
-            window.speechSynthesis.speak(utterance);
-          }
-        } catch (e) {
-          console.warn("Reels speech synthesis trigger failed:", e);
+      // Direct synchronous execution satisfies browser security sandboxes (Safari, Android WebView, Chrome) 
+      try {
+        if (typeof window !== 'undefined' && window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.resume();
+          window.speechSynthesis.speak(utterance);
         }
-      }, 100);
+      } catch (e) {
+        console.warn("Reels direct speech synthesis trigger failed:", e);
+      }
     }
   };
 

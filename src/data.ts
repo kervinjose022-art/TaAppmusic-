@@ -164,8 +164,8 @@ export const TASKS_DATABASE: UserTask[] = [
   // === VIP PLATA 10$ (5 Tareas de $2.45 USD c/u - Total: $12.25 USD Diario / $367.00 USD Mensual) ===
   {
     id: 'task_p1',
-    title: 'Visualizar: Refugio de Fe en Tiempos Difíciles',
-    description: 'Mira el testimonio animado "Dios es mi Refugio" para fortalecer tu espíritu de fe.',
+    title: 'Visualizar: Salmo 91 - Amparo y Protección',
+    description: 'Escucha la oración de protección más poderosa de la Biblia: El que habita al abrigo del Altísimo morará bajo la sombra del Omnipotente.',
     rewardValue: 73.40,
     isCompleted: false,
     vipRequired: 'VIP PLATA 10$',
@@ -173,8 +173,8 @@ export const TASKS_DATABASE: UserTask[] = [
   },
   {
     id: 'task_p2',
-    title: 'Compartir: Versículo Matutino de Provisión',
-    description: 'Copia nuestro pasaje bíblico y compártelo con 3 familiares para sembrar bendición hoy.',
+    title: 'Compartir: Salmo 23 - El Señor es mi Pastor',
+    description: 'Sintoniza y comparte la declaración de abundancia eterna: Jehová es mi pastor, nada me faltará. Sembrando paz hoy.',
     rewardValue: 73.40,
     isCompleted: false,
     vipRequired: 'VIP PLATA 10$',
@@ -211,8 +211,8 @@ export const TASKS_DATABASE: UserTask[] = [
   // === VIP ORO 20$ (7 Tareas de $3.50 USD c/u - Total: $24.50 USD Diario / $735.00 USD Mensual) ===
   {
     id: 'task_o1',
-    title: 'Visualizar: Mentalidad Millonaria de Reino',
-    description: 'Mira la mentoría bíblica sobre el enfoque de abundancia y mayordomía de recursos.',
+    title: 'Visualizar: Filipenses 4:13 - Fortaleza Celestial',
+    description: 'Declara con fe inquebrantable: Todo lo puedo en Cristo que me fortalece. Tu fuerza proviene de Dios Padre.',
     rewardValue: 104.85,
     isCompleted: false,
     vipRequired: 'VIP ORO 20$',
@@ -256,8 +256,8 @@ export const TASKS_DATABASE: UserTask[] = [
   },
   {
     id: 'task_o6',
-    title: 'Visualizar: Romanos 8:28 Promesa Absoluta',
-    description: 'Mira la explicación inspiradora de que todas las cosas ayudan a bien a los que aman a Dios.',
+    title: 'Visualizar: Romanos 8:28 - Victoria con Dios',
+    description: 'Escucha el versículo del propósito divino: Y sabemos que a los que aman a Dios, todas las cosas les ayudan a bien.',
     rewardValue: 104.85,
     isCompleted: false,
     vipRequired: 'VIP ORO 20$',
@@ -276,8 +276,8 @@ export const TASKS_DATABASE: UserTask[] = [
   // === VIP RUBÍ 40$ (10 Tareas de $4.90 USD c/u - Total: $49.00 USD Diario / $1,470.00 USD Mensual) ===
   {
     id: 'task_r1',
-    title: 'Visualizar: El Poder de la Oración de Fe',
-    description: 'Estudia el versículo interactivo acerca de la certeza de lo que se espera.',
+    title: 'Visualizar: El Poder del Salmo 121 - Tu Socorro Divino',
+    description: 'Medita en la promesa protectora más hermosa: Alzaré mis ojos a los montes; ¿de dónde vendrá mi socorro? Mi socorro viene del Señor.',
     rewardValue: 146.80,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
@@ -357,8 +357,8 @@ export const TASKS_DATABASE: UserTask[] = [
   },
   {
     id: 'task_r10',
-    title: 'Comentario: No Faltará Nada en Mi Mesa',
-    description: 'Decreta prosperidad comentando sobre el Salmo 23 con fe inquebrantable.',
+    title: 'Comentario: Salmo de Confianza Completa - Salmo 37',
+    description: 'Proclama tu bendición y prosperidad comentando sobre el Salmo 37: Encomienda al Señor tu camino, confía en Él, y Él hará.',
     rewardValue: 146.80,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
