@@ -678,6 +678,8 @@ export default function App() {
   const [attachedFileName, setAttachedFileName] = useState('');
   const [previewBlob, setPreviewBlob] = useState('');
   const [copiedAddressFeedback, setCopiedAddressFeedback] = useState(false);
+  const [copiedPhoneFeedback, setCopiedPhoneFeedback] = useState(false);
+  const [copiedIdFeedback, setCopiedIdFeedback] = useState(false);
 
   // Admin section states
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -1981,20 +1983,37 @@ export default function App() {
                       </select>
                     </div>
 
-                    {/* Registration Payment Method */}
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase font-mono tracking-widest text-zinc-400 font-extrabold block">
-                        Método de Recepción de Depósito *
-                      </label>
-                      <select
-                        value={registrationPayMethod}
-                        onChange={(e) => setRegistrationPayMethod(e.target.value as any)}
-                        className="w-full text-xs font-semibold bg-black border border-white/10 rounded-xl px-3 py-2 text-[#39FF14] focus:outline-none focus:border-[#39FF14] cursor-pointer"
-                      >
-                        <option value="Pago Móvil">Pago Móvil (Bolívares)</option>
-                        <option value="USDT BEP-20">USDT BEP-20 (Cripto)</option>
-                      </select>
-                    </div>
+                     {/* DYNAMIC REGISTRATION COORDINATES VIEW */}
+                     <div className="p-3 bg-zinc-950 rounded-xl border border-purple-500/20 space-y-2 text-[11.5px] font-mono leading-relaxed animate-fade-in text-left">
+                       <span className="text-[9.5px] uppercase font-mono tracking-wider font-extrabold text-purple-400 block border-b border-white/5 pb-1">
+                         💳 DIRECCIÓN DE DEPÓSITO USDT BEP-20
+                       </span>
+                       <div className="flex justify-between items-center bg-black/40 p-2 rounded-lg border border-white/5">
+                         <span className="text-zinc-500 text-[10px]">Monto exacto:</span>
+                         <strong className="text-white font-mono font-bold">${getLevelPriceInUsd(selectedInitialVip)} USDT</strong>
+                       </div>
+                       <div className="space-y-1">
+                         <span className="text-[9px] text-zinc-500 block leading-tight">Dirección USDT BEP-20 (BNB Smart Chain):</span>
+                         <div className="flex items-center gap-1.5 bg-black p-2 rounded-lg border border-white/5">
+                           <code className="text-[9.5px] text-purple-300 break-all select-all flex-1 font-mono">0x29f0f1edd5258ee3b7553bff665df4d1dd811af0</code>
+                           <button
+                             type="button"
+                             onClick={() => {
+                               navigator.clipboard.writeText('0x29f0f1edd5258ee3b7553bff65df4d1dd811af0');
+                               setCopiedAddressFeedback(true);
+                               setTimeout(() => setCopiedAddressFeedback(false), 2000);
+                             }}
+                             className="p-1 rounded bg-zinc-900 border border-white/5 text-purple-450 hover:text-white transition-all cursor-pointer select-none active:scale-90"
+                             title="Copiar billetera"
+                           >
+                             {copiedAddressFeedback ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                           </button>
+                         </div>
+                       </div>
+                       <span className="text-[8px] text-zinc-550 block leading-tight">
+                         * Envía únicamente USDT a través de la red BNB Smart Chain (BEP20).
+                       </span>
+                     </div>
 
                     {/* Reference No / ID */}
                     <div className="space-y-1">
@@ -2004,7 +2023,7 @@ export default function App() {
                       <input
                         type="text"
                         required
-                        placeholder="Ej. Nro de referencia de tu Pago Móvil o Hash"
+                        placeholder="Ej. Hash de Tx o ID de Pago Binance / Wallet"
                         value={inputReferenceNo}
                         onChange={(e) => setInputReferenceNo(e.target.value)}
                         className="w-full text-xs font-mono bg-black border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-zinc-805 focus:outline-none focus:border-[#39FF14]"
@@ -2737,43 +2756,49 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Paso 3: Pago USDT BEP-20 */}
-                <div className="p-4 rounded-2xl bg-black border border-white/5 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-2.5 gap-2">
-                    <h4 className="text-[10px] uppercase font-mono tracking-wider font-extrabold text-white">
-                      💳 Paso 3: Realizar el Depósito Asociado
-                    </h4>
-                    <div className="text-[10px] font-mono text-left sm:text-right">
-                      <strong className="text-purple-400 font-extrabold">${getLevelPriceInUsd(selectedInitialVip)} USD</strong>
-                      <span className="text-zinc-600"> (USDT BEP-20)</span>
-                    </div>
-                  </div>
+                {/* Paso 3: Realizar el Depósito Asociado */}
+                <div className="p-4 rounded-2xl bg-black border border-white/5 space-y-4 text-left">
+                   <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-2.5 gap-2">
+                     <h4 className="text-[10px] uppercase font-mono tracking-wider font-extrabold text-white">
+                       💳 Paso 3: Realizar el Depósito Asociado
+                     </h4>
+                     <div className="text-[10px] font-mono text-left sm:text-right">
+                       <strong className="text-[#39FF14] font-extrabold">${getLevelPriceInUsd(selectedInitialVip)} USDT</strong>
+                       <span className="text-zinc-500"> (USDT BEP-20)</span>
+                     </div>
+                   </div>
 
-                  <div className="p-3 rounded-xl bg-zinc-950 border border-purple-500/10 space-y-2 text-[11px] font-mono leading-normal text-zinc-350">
-                    <p className="text-zinc-400 uppercase text-[9px] tracking-wider font-extrabold text-purple-400">Datos Depósito USDT BEP-20 (Binance / Wallet):</p>
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[10px] text-zinc-500 block leading-none">Dirección de Destino BEP-20:</span>
-                      <div className="flex items-center gap-1.5 bg-black p-2 rounded-lg border border-white/5">
-                        <code className="text-[10px] text-purple-300 break-all select-all font-mono">0x29f0f1edd5258ee3b7553bff665df4d1dd811af0</code>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText('0x29f0f1edd5258ee3b7553bff665df4d1dd811af0');
-                            setCopiedAddressFeedback(true);
-                            setTimeout(() => setCopiedAddressFeedback(false), 2000);
-                          }}
-                          className="p-1 rounded bg-zinc-900 border border-white/5 text-purple-400 hover:text-white hover:bg-purple-900/40 transition-all cursor-pointer select-none animate-pulse"
-                          title="Copiar billetera"
-                        >
-                          {copiedAddressFeedback ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="pt-1 border-t border-white/5 text-[9px] text-zinc-500">
-                      * Envíe exactamente <strong className="text-[#39FF14]">${getLevelPriceInUsd(selectedInitialVip)}.00 USDT</strong> a la red <strong className="text-white">BNB Smart Chain (BEP20)</strong>.
-                    </div>
-                  </div>
-                </div>
+                   <div className="p-3 bg-zinc-950 rounded-xl border border-purple-500/20 space-y-2 text-[11px] font-mono leading-relaxed text-zinc-350">
+                     <span className="text-[9px] uppercase font-mono tracking-wider font-extrabold text-purple-400 block border-b border-white/10 pb-1">
+                       Datos Depósito USDT BEP-20 (Binance / Wallet):
+                     </span>
+                     <div className="flex items-center justify-between bg-black/40 p-1.5 rounded border border-white/5">
+                       <span className="text-zinc-500 text-[9px]">Monto exacto USDT:</span>
+                       <strong className="text-white font-mono font-bold">${getLevelPriceInUsd(selectedInitialVip)} USDT</strong>
+                     </div>
+                     <div className="space-y-1">
+                       <span className="text-[9px] text-zinc-550 block leading-none">Dirección de Destino BEP-20:</span>
+                       <div className="flex items-center gap-1.5 bg-black p-2 rounded-lg border border-white/5">
+                         <code className="text-[9.5px] text-purple-300 break-all select-all flex-1 font-mono">0x29f0f1edd5258ee3b7553bff665df4d1dd811af0</code>
+                         <button
+                           type="button"
+                           onClick={() => {
+                             navigator.clipboard.writeText('0x29f0f1edd5258ee3b7553bff665df4d1dd811af0');
+                             setCopiedAddressFeedback(true);
+                             setTimeout(() => setCopiedAddressFeedback(false), 2000);
+                           }}
+                           className="p-1 rounded bg-zinc-900 border border-white/5 text-purple-400 hover:text-white hover:bg-purple-900/40 transition-all cursor-pointer select-none"
+                           title="Copiar billetera"
+                         >
+                           {copiedAddressFeedback ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                         </button>
+                       </div>
+                     </div>
+                     <div className="pt-1 border-t border-white/5 text-[8.5px] text-zinc-500">
+                       * Envíe exactamente <strong className="text-[#39FF14]">${getLevelPriceInUsd(selectedInitialVip)}.00 USDT</strong> a la red <strong className="text-white">BNB Smart Chain (BEP20)</strong>.
+                     </div>
+                   </div>
+                 </div>
 
                 {/* Paso 4: Referencia cripto */}
                 <div className="space-y-4 rounded-2xl border border-white/5 bg-black/60 p-4">

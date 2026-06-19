@@ -32,6 +32,11 @@ interface P2PTransaction {
     phone: string;
     idCard: string;
     holder: string;
+    reference?: string;
+    senderBank?: string;
+    senderPhone?: string;
+    senderIdCard?: string;
+    senderHolderName?: string;
   };
   buyerReceiptUrl?: string;
   createdAt: string;
@@ -61,25 +66,45 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
     localStorage.setItem('tapp_p2p_fondo_bs', fondoBs.toString());
   }, [fondoBs]);
 
-  // Card Deposit / BPay simulation states
-  const [depositType, setDepositType] = useState<'deposit' | 'withdraw'>('deposit');
-  const [depositMethod, setDepositMethod] = useState<'card' | 'gpay'>('card');
+  // Direct Casa de Cambio swap states (replacing BPay card deposit)
+  const [depositType, setDepositType] = useState<'deposit' | 'withdraw'>('deposit'); // 'deposit' = Buy USDT, 'withdraw' = Sell USDT
   const [depositAmount, setDepositAmount] = useState<string>("100");
-  const [depositStep, setDepositStep] = useState<number>(1); // 1: Select method & amount, 2: Insert card details & Pay, 3: Completed!
-  const [cardNumber, setCardNumber] = useState<string>("");
-  const [cardHolder, setCardHolder] = useState<string>("");
-  const [cardExpiry, setCardExpiry] = useState<string>("");
-  const [cardCvv, setCardCvv] = useState<string>("");
+  const [depositStep, setDepositStep] = useState<number>(1); // 1: Input details, 2: Review / capture submittal, 3: Completed!
   
-  // Venezuelan bank intervention rate calculator simulator states
-  const [bcvInterventionRate, setBcvInterventionRate] = useState<string>("615.5200");
-  const [bankMarkupPercent, setBankMarkupPercent] = useState<string>("0.50");
+  // Custom user input declarations for Buy (Pago Móvil to Admin)
+  const [buyerBankSender, setBuyerBankSender] = useState<string>("Banesco");
+  const [buyerPhoneSender, setBuyerPhoneSender] = useState<string>("");
+  const [buyerReference, setBuyerReference] = useState<string>("");
+  const [buyerIdCard, setBuyerIdCard] = useState<string>("");
+  const [buyerHolderName, setBuyerHolderName] = useState<string>("");
+
+  // Custom user input declarations for Sell (USDT to get BS)
+  const [sellerBankReceiver, setSellerBankReceiver] = useState<string>("Banesco");
+  const [sellerPhoneReceiver, setSellerPhoneReceiver] = useState<string>("");
+  const [sellerIdCard, setSellerIdCard] = useState<string>("");
+  const [sellerHolderName, setSellerHolderName] = useState<string>("");
+  const [sellerWalletBackup, setSellerWalletBackup] = useState<string>("");
 
   const [isProcessingDeposit, setIsProcessingDeposit] = useState<boolean>(false);
   const [adminCommissionTotal, setAdminCommissionTotal] = useState<number>(() => {
     const saved = localStorage.getItem('tapp_p2p_commissions');
     return saved ? parseFloat(saved) : 0;
   });
+
+  // Admin configuration state for receiving Pago Móvil transfers
+  const [adminPagoMovilBank, setAdminPagoMovilBank] = useState<string>(() => {
+    return localStorage.getItem('tapp_p2p_admin_pm_bank') || "Banco Mercantil (0105)";
+  });
+  const [adminPagoMovilPhone, setAdminPagoMovilPhone] = useState<string>(() => {
+    return localStorage.getItem('tapp_p2p_admin_pm_phone') || "0412-5551234";
+  });
+  const [adminPagoMovilId, setAdminPagoMovilId] = useState<string>(() => {
+    return localStorage.getItem('tapp_p2p_admin_pm_id') || "V-19.852.147";
+  });
+  const [adminPagoMovilHolder, setAdminPagoMovilHolder] = useState<string>(() => {
+    return localStorage.getItem('tapp_p2p_admin_pm_holder') || "Inversiones KervinP2P";
+  });
+  const [isEditingPmConfig, setIsEditingPmConfig] = useState<boolean>(false);
 
   const [adminPayoutAddress, setAdminPayoutAddress] = useState<string>(() => {
     return localStorage.getItem('tapp_p2p_admin_payout_address') || "TUh7b8P2vDkWqXp3Y9B9S7sTtrc20eXp20";
@@ -88,6 +113,22 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
     return localStorage.getItem('tapp_p2p_admin_payout_network') || "USDT TRC20";
   });
   const [isEditingPayout, setIsEditingPayout] = useState<boolean>(false);
+
+  useEffect(() => {
+    localStorage.setItem('tapp_p2p_admin_pm_bank', adminPagoMovilBank);
+  }, [adminPagoMovilBank]);
+
+  useEffect(() => {
+    localStorage.setItem('tapp_p2p_admin_pm_phone', adminPagoMovilPhone);
+  }, [adminPagoMovilPhone]);
+
+  useEffect(() => {
+    localStorage.setItem('tapp_p2p_admin_pm_id', adminPagoMovilId);
+  }, [adminPagoMovilId]);
+
+  useEffect(() => {
+    localStorage.setItem('tapp_p2p_admin_pm_holder', adminPagoMovilHolder);
+  }, [adminPagoMovilHolder]);
 
   useEffect(() => {
     localStorage.setItem('tapp_p2p_admin_payout_address', adminPayoutAddress);
@@ -844,13 +885,13 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
             <span className="text-[10px] text-zinc-400 block font-normal">(Escrow/{transactions.length} activas)</span>
           </button>
 
-          {/* New BPay/Mastercard/VISA Deposit Tab */}
+          {/* Casa de Cambio Directa (Direct Buy/Sell with Platform) */}
           <button 
             onClick={() => { setActiveTab('deposit'); setDepositStep(1); }}
             className={`flex-1 py-2 rounded-lg text-xs font-black transition relative ${activeTab === 'deposit' ? 'bg-gradient-to-r from-amber-500/10 to-amber-500/5 text-amber-400 shadow-[inset_0_1px_2px_rgba(245,158,11,0.15)] border-b-2 border-amber-500' : 'text-zinc-400 hover:text-white'}`}
           >
-            💳 Depósito USD (BPay)
-            <span className="text-[10px] text-zinc-400 block font-normal">(Visa/Mastercard 2.5%)</span>
+            🏦 Casa de Cambio Directa
+            <span className="text-[10px] text-zinc-400 block font-normal">(Compra/Venta Pago Móvil 0%)</span>
           </button>
 
           {/* New Binance USDT Withdrawal Tab */}
@@ -1158,475 +1199,569 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
           </div>
         )}
 
-        {/* TAB: BPay Visa/Mastercard Deposit & Withdraw */}
+        {/* TAB: Casa de Cambio Directa (Direct Buy/Sell with Platform) */}
         {activeTab === 'deposit' && (
-          <div className="max-w-md mx-auto bg-[#181a20] border border-zinc-800/80 rounded-3xl p-6 shadow-2xl text-left my-4 relative overflow-hidden">
+          <div className="max-w-lg mx-auto bg-[#181a20] border border-zinc-800/80 rounded-3xl p-6 shadow-2xl text-left my-4 relative overflow-hidden">
             {/* Ambient background glow inside the card */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
             
-            {/* Header with selector for Deposit / Withdraw */}
-            <div className="flex items-center space-x-1.5 p-1 bg-zinc-900/80 rounded-2xl border border-zinc-800/60 mb-6 relative z-10">
+            {/* Header with selector for Buy / Sell Direct */}
+            <div className="flex items-center space-x-1.5 p-1 bg-zinc-900/80 rounded-2xl border border-zinc-800/60 mb-5 relative z-10">
               <button
                 onClick={() => { setDepositType('deposit'); setDepositStep(1); }}
                 className={`flex-1 py-2.5 rounded-xl text-xs font-black tracking-tight transition duration-150 ${depositType === 'deposit' ? 'bg-[#f0b90b] text-neutral-950 shadow-md shadow-amber-500/15' : 'text-zinc-400 hover:text-white'}`}
               >
-                Depósito
+                📥 Comprar USDT (Tu Pagas Bs)
               </button>
               <button
                 onClick={() => { setDepositType('withdraw'); setDepositStep(1); }}
                 className={`flex-1 py-2.5 rounded-xl text-xs font-black tracking-tight transition duration-150 ${depositType === 'withdraw' ? 'bg-[#f0b90b] text-neutral-950 shadow-md shadow-amber-500/15' : 'text-zinc-400 hover:text-white'}`}
               >
-                Retirar
+                📤 Vender USDT (Recibes Bs)
               </button>
+            </div>
+
+            {/* Admin/Owner Configuration Section - Collapsible, highly useful for Kervin */}
+            <div className="mb-5 bg-zinc-950/90 rounded-2xl p-3 border border-zinc-800/85 relative z-10 text-[10px]">
+              <div className="flex items-center justify-between border-b border-zinc-900 pb-2 mb-2">
+                <span className="text-zinc-400 font-extrabold flex items-center gap-1 text-[9.5px]">
+                  👑 AJUSTES DEL OPERADOR (KERVIN - ADMIN)
+                </span>
+                <button 
+                  onClick={() => setIsEditingPmConfig(!isEditingPmConfig)}
+                  className="text-amber-400 font-black hover:text-amber-300 transition uppercase tracking-wider text-[8.5px]"
+                >
+                  {isEditingPmConfig ? "[ Cerrar ]" : "⚙️ Editar Pago Móvil de Destino"}
+                </button>
+              </div>
+
+              {isEditingPmConfig ? (
+                <div className="space-y-2 animate-fadeIn pt-1">
+                  <p className="text-zinc-500 text-[8.5px] leading-tight mb-2">
+                    Configura las coordenadas Pago Móvil donde tus clientes enviarán los Bolívares. Se guardan en memoria.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-zinc-500 block mb-0.5 font-bold uppercase text-[7.5px]">Banco Receptor</span>
+                      <input 
+                        type="text" 
+                        value={adminPagoMovilBank} 
+                        onChange={(e) => setAdminPagoMovilBank(e.target.value)} 
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-[9px] text-white font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-zinc-500 block mb-0.5 font-bold uppercase text-[7.5px]">Teléfono Receptor</span>
+                      <input 
+                        type="text" 
+                        value={adminPagoMovilPhone} 
+                        onChange={(e) => setAdminPagoMovilPhone(e.target.value)} 
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-[9px] text-white font-mono font-semibold"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-zinc-500 block mb-0.5 font-bold uppercase text-[7.5px]">Cédula / RIF</span>
+                      <input 
+                        type="text" 
+                        value={adminPagoMovilId} 
+                        onChange={(e) => setAdminPagoMovilId(e.target.value)} 
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-[9px] text-white font-mono font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <span className="text-zinc-500 block mb-0.5 font-bold uppercase text-[7.5px]">Nombre del Titular</span>
+                      <input 
+                        type="text" 
+                        value={adminPagoMovilHolder} 
+                        onChange={(e) => setAdminPagoMovilHolder(e.target.value)} 
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-[9px] text-white font-semibold"
+                      />
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setIsEditingPmConfig(false)}
+                    className="w-full bg-emerald-500 text-neutral-950 font-black text-[9px] py-1 rounded hover:bg-emerald-400 mt-1 uppercase"
+                  >
+                    Guardar Parámetros de la Plataforma
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-zinc-400 text-[9px]">
+                  <div>Banco Principal: <span className="text-white font-bold">{adminPagoMovilBank}</span></div>
+                  <div>Pago Móvil: <span className="text-white font-mono font-bold">{adminPagoMovilPhone}</span></div>
+                  <div>ID/Cédula: <span className="text-white font-mono font-bold">{adminPagoMovilId}</span></div>
+                  <div>Titular: <span className="text-white font-bold">{adminPagoMovilHolder}</span></div>
+                </div>
+              )}
             </div>
 
             {depositStep === 1 && (
               <div className="space-y-4 animate-fadeIn relative z-10">
-                <h3 className="text-[14px] font-black text-zinc-100 tracking-tight flex items-center gap-1.5">
-                  <Landmark className="h-4 w-4 text-amber-500" />
-                  {depositType === 'deposit' ? 'Depósito USD (Pasarela BPay)' : 'Retiro USD (Pasarela BPay)'}
-                </h3>
-
-                {/* Currency selector component */}
-                <div className="flex items-center justify-between bg-zinc-950/70 border border-zinc-800/60 rounded-2xl px-4 py-3">
-                  <div className="flex items-center space-x-2.5">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-[#f0b90b] font-black font-mono text-xs border border-amber-500/40">
-                      $
-                    </span>
-                    <span className="text-xs font-extrabold text-white">USD (Intervención Bancaria BDV)</span>
-                  </div>
-                  <span className="text-[10px] text-[#f0b90b] font-bold bg-amber-500/5 border border-amber-500/20 px-2.5 py-1 rounded-lg">
-                    Tasa Oficial BDV
+                <div className="flex items-center justify-between border-b border-zinc-850 pb-2.5">
+                  <h3 className="text-[13px] font-black text-white tracking-tight flex items-center gap-1.5">
+                    <Landmark className="h-4 w-4 text-amber-500" />
+                    {depositType === 'deposit' ? 'Paso 1: Solicitar Compra de USDT' : 'Paso 1: Solicitar Venta de USDT'}
+                  </h3>
+                  <span className="text-[10px] text-[#39FF14] bg-[#39FF14]/10 font-bold px-2 py-0.5 rounded border border-[#39FF14]/25">
+                    0% Comisiones
                   </span>
                 </div>
 
-                {/* Amount input box */}
+                {/* Amount selection block */}
                 <div>
-                  <label className="text-[10px] text-zinc-400 font-bold block mb-1.5 uppercase tracking-wider">
-                    {depositType === 'deposit' ? 'Monto que deseas comprar ($ USD)' : 'Monto a Retirar ($ USD)'}
+                  <label className="text-[9.5px] text-zinc-400 font-bold block mb-1.5 uppercase tracking-wider">
+                    {depositType === 'deposit' ? '1. Introduce la cantidad de USDT que deseas comprar:' : '1. Introduce la cantidad de USDT que deseas vender:'}
                   </label>
                   <div className="relative">
                     <input
                       type="number"
                       value={depositAmount}
                       onChange={(e) => setDepositAmount(e.target.value)}
-                      min="10"
-                      max="10000"
-                      className="w-full bg-zinc-950 border border-zinc-800 focus:border-amber-500/80 rounded-2xl px-4 py-3 text-sm font-black font-mono text-white focus:outline-none transition-all"
+                      min="5"
+                      max="5000"
+                      className="w-full bg-[#181a20] border border-zinc-800 focus:border-amber-500/80 rounded-2xl px-4 py-3 text-sm font-black font-mono text-white focus:outline-none transition-all"
                       placeholder="100"
                     />
-                    <span className="absolute right-4 top-3.5 text-xs text-zinc-400 font-extrabold font-mono">USD</span>
+                    <span className="absolute right-4 top-3.5 text-xs text-zinc-400 font-extrabold font-mono">USDT</span>
+                  </div>
+                  <div className="flex justify-between items-center mt-2 px-1 text-[10.5px]">
+                    <span className="text-zinc-500 font-medium text-[10px]">Tasa Actual de Conversión:</span>
+                    <span className="text-amber-400 font-mono font-bold">{usdtPriceInBs.toFixed(2)} Bs / USDT</span>
                   </div>
                 </div>
 
-                {/* Interactive BCV & Bank Markup Section */}
-                <div className="bg-zinc-950/90 rounded-2xl p-4 border border-zinc-800/80 space-y-3.5">
-                  <div className="flex items-center justify-between border-b border-zinc-850 pb-2">
-                    <span className="text-[10px] text-amber-450 font-black uppercase tracking-wider flex items-center gap-1">
-                      🇻🇪 Parámetros de Intervención Cambiaria
-                    </span>
-                    <span className="text-[8.5px] bg-[#39FF14]/10 text-[#39FF14] font-bold px-1.5 py-0.5 rounded uppercase">
-                      Banco de Venezuela
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[8px] text-zinc-400 font-bold block mb-1 uppercase">Tasa Negociada (Bs)</label>
-                      <input 
-                        type="text" 
-                        value={bcvInterventionRate}
-                        onChange={(e) => setBcvInterventionRate(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-xs font-mono font-bold text-white px-2.5 py-2 rounded-xl focus:border-amber-500 focus:outline-none text-center"
-                        placeholder="615.5200"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[8px] text-zinc-400 font-bold block mb-1 uppercase">Recargo Banco (%)</label>
-                      <input 
-                        type="text" 
-                        value={bankMarkupPercent}
-                        onChange={(e) => setBankMarkupPercent(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-800 text-xs font-mono font-bold text-white px-2.5 py-2 rounded-xl focus:border-amber-500 focus:outline-none text-center"
-                        placeholder="0.50"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Calculations breakdown dynamically matches the user's screenshots */}
-                  {(() => {
-                    const bcvRate = parseFloat(bcvInterventionRate) || 615.5200;
-                    const markup = parseFloat(bankMarkupPercent) || 0.50;
-                    const amt = parseFloat(depositAmount) || 100;
-                    
-                    const finalRate = bcvRate + (bcvRate * (markup / 100)); // 618.5976
-                    const totalBsDebited = amt * finalRate; // 61,859.76
-
-                    const adminCommission = amt * 0.025; // 2.5% ($2.50)
-                    const tempAm = amt - adminCommission; // 97.50
-
-                    const bpayFee = amt * 0.0351; // 3.51% de $100 es $3.51 USD
-                    const netBinance = tempAm - bpayFee; // 93.99
-
-                    return (
-                      <div className="space-y-2 pt-1 text-xs">
-                        <div className="bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-850 space-y-1.5">
-                          <div className="flex justify-between text-[9.5px]">
-                            <span className="text-zinc-400">1. Tasa Final (Tasa + {markup.toFixed(2)}%):</span>
-                            <span className="text-white font-mono font-bold">{finalRate.toFixed(4)} Bs/$</span>
-                          </div>
-                          <div className="flex justify-between text-[10.5px] font-black text-[#f0b90b] border-t border-zinc-850/45 pt-1.5">
-                            <span>Débito Cuenta Nacional Bs:</span>
-                            <span className="font-mono">{totalBsDebited.toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs</span>
-                          </div>
-                        </div>
-
-                        <div className="bg-zinc-900/40 p-2.5 rounded-xl border border-zinc-850 space-y-1.5 mt-2">
-                          <div className="flex justify-between text-[9px] text-zinc-450">
-                            <span>Monto acreditado electrónico en Banco:</span>
-                            <span className="text-white font-mono">${amt.toFixed(2)} USD</span>
-                          </div>
-                          <div className="flex justify-between text-[9px] text-amber-500 font-bold">
-                            <span>- Comisión Admin OrinocoP2P (2.5%):</span>
-                            <span className="font-mono">-${adminCommission.toFixed(2)} USD</span>
-                          </div>
-                          <div className="flex justify-between text-[9px] text-zinc-400">
-                            <span>Subtotal tras pase de fondos:</span>
-                            <span className="text-zinc-200 font-mono font-semibold">${tempAm.toFixed(2)} USD</span>
-                          </div>
-                          <div className="flex justify-between text-[9px] text-red-400 font-bold">
-                            <span>- Red BPay / Intercambiario (3.51%):</span>
-                            <span className="font-mono">-${bpayFee.toFixed(2)} USD</span>
-                          </div>
-                          <div className="flex justify-between text-[11px] font-black text-[#39FF14] border-t border-zinc-800 pt-1.5">
-                            <span>Neto Recibido en Wallet/Binance:</span>
-                            <span className="font-mono">${netBinance.toFixed(2)} USDT</span>
-                          </div>
-                        </div>
-
-                        {/* Route warning info */}
-                        <div className="bg-amber-500/5 p-2 rounded-lg border border-amber-500/10 text-[8.5px] leading-snug text-zinc-400">
-                          📌 <strong className="text-amber-450">Distribución de Fondos:</strong> El <strong className="text-white">2.5% (${adminCommission.toFixed(2)} USD)</strong> será enviado de inmediato a tu dirección real de administrador: <code className="text-white font-semibold block break-all font-mono bg-zinc-950 p-1 rounded mt-1 border border-zinc-850">{adminPayoutAddress} ({payoutNetwork})</code>. El resto neto será acreditado en el perfil de registro del usuario.
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Recommended (VISA / Mastercard) Card block */}
-                <div>
-                  <h4 className="text-[10px] font-bold text-zinc-500 mb-2 uppercase tracking-wider">Método de Pase</h4>
-                  
-                  <div 
-                    onClick={() => setDepositMethod('card')}
-                    className={`p-3.5 rounded-2.2xl border cursor-pointer transition duration-150 flex items-start space-x-3 relative ${depositMethod === 'card' ? 'bg-amber-500/5 border-amber-500 shadow-[0_0_15px_rgba(240,185,11,0.08)]' : 'bg-transparent border-zinc-800/80 hover:border-zinc-700'}`}
-                  >
-                    <div className="p-2 bg-zinc-900/90 rounded-lg border border-zinc-800 text-[#f0b90b] shrink-0">
-                      <CreditCard className="h-5 w-5" />
-                    </div>
-                    <div className="text-left space-y-0.5">
-                      <h5 className="text-[11px] font-black text-white">Tarjeta Internacional de Débito/Crédito</h5>
-                      <p className="text-[9px] text-zinc-400 font-medium leading-tight">Autorización segura en el Banco de Venezuela y BPay</p>
-                      
-                      <div className="flex items-center gap-1.5 mt-1 pt-0.5">
-                        <span className="bg-amber-500/10 text-amber-400 font-black text-[8px] px-1.5 py-0.5 rounded font-mono border border-amber-500/20">
-                          6.01% Fee Total (2.5% Admin + 3.51% Red)
-                        </span>
-                        <span className="bg-emerald-500/10 text-[#39FF14] font-black text-[8px] px-1.5 py-0.5 rounded font-mono border border-emerald-500/20 animate-pulse">
-                          Inmediato
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Golden Continue button */}
-                <button
-                  onClick={() => {
-                    const val = parseFloat(depositAmount);
-                    if (isNaN(val) || val < 10) {
-                      alert("Por favor introduce un monto mínimo de $10 USD.");
-                      return;
-                    }
-                    setDepositStep(2);
-                  }}
-                  disabled={isProcessingDeposit}
-                  className="w-full mt-2 bg-[#f0b90b] text-neutral-950 border border-yellow-500/30 hover:bg-[#dfaa0a] hover:shadow-[0_0_15px_rgba(240,185,11,0.25)] font-black uppercase text-xs rounded-2xl py-3.5 px-6 transition duration-150 active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  Continuar al Check-out
-                </button>
-              </div>
-            )}
-
-            {depositStep === 2 && (
-              <div className="space-y-4 animate-fadeIn relative z-10">
-                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2.5 mb-2">
-                  <h4 className="text-[11px] font-black text-white uppercase tracking-wider flex items-center gap-1">
-                    <CreditCard className="h-4 w-4 text-amber-500" /> Checkout Seguro BPay
-                  </h4>
-                  <button 
-                    onClick={() => setDepositStep(1)}
-                    className="text-xs text-amber-400 hover:text-amber-300 font-bold transition flex items-center gap-0.5"
-                  >
-                    ◀ Volver y Editar
-                  </button>
-                </div>
-
-                {/* Calculations showing fee & net crediting with real Venezuelan bank intervention math */}
-                {(() => {
-                  const bcvRate = parseFloat(bcvInterventionRate) || 615.5200;
-                  const markup = parseFloat(bankMarkupPercent) || 0.50;
-                  const amt = parseFloat(depositAmount) || 100;
-                  
-                  const finalRate = bcvRate + (bcvRate * (markup / 100)); // 618.5976
-                  const totalBsDebited = amt * finalRate; // 61,859.76
-
-                  const adminCommission = amt * 0.025; // 2.5%
-                  const tempAm = amt - adminCommission; // 97.50
-                  const bpayFee = amt * 0.0351; // 3.51%
-                  const netBinance = tempAm - bpayFee; // 93.99
-
-                  return (
-                    <div className="bg-zinc-950 p-4 rounded-2xl border border-zinc-850 space-y-2.5 text-xs text-left">
-                      <div className="flex justify-between text-zinc-400">
-                        <span>Debito Total (Bs nacional):</span>
-                        <strong className="text-yellow-500 font-mono text-[13px]">{totalBsDebited.toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs</strong>
-                      </div>
-                      <div className="flex justify-between text-zinc-400">
-                        <span>Compra Divisas en BDV (Bruto):</span>
-                        <strong className="text-white font-mono">${amt.toFixed(2)} USD</strong>
-                      </div>
-                      <div className="flex justify-between text-amber-500 font-semibold pl-2 border-l border-amber-500/30">
-                        <span>- Comisión Admin (2.5%):</span>
-                        <strong className="font-mono">-${adminCommission.toFixed(2)} USD</strong>
-                      </div>
-                      <div className="flex justify-between text-red-400 font-semibold pl-2 border-l border-red-500/30">
-                        <span>- Red BPay / Binance (3.51%):</span>
-                        <strong className="font-mono">-${bpayFee.toFixed(2)} USD</strong>
-                      </div>
-                      <div className="border-t border-zinc-850 my-2 pt-2 flex justify-between text-white font-black text-xs">
-                        <span>Neto a depositar en Binance:</span>
-                        <span className="text-[#39FF14] font-mono text-[13px]">${netBinance.toFixed(2)} USDT</span>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Card input simulated forms */}
-                <div className="space-y-3.5 pt-1 text-left">
+                {/* Total equivalent calculation display banner */}
+                <div className="bg-zinc-950/80 rounded-2xl p-4 border border-zinc-800/80 flex justify-between items-center text-left">
                   <div>
-                    <label className="text-[10px] text-zinc-400 font-bold block mb-1 uppercase tracking-wider">
-                      Titular de la Tarjeta o Cuenta BDV
-                    </label>
-                    <input 
-                      type="text"
-                      className="w-full bg-zinc-950 border border-zinc-800 focus:border-amber-500 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none text-white placeholder-zinc-600"
-                      placeholder="Juan José Torres"
-                      value={cardHolder}
-                      onChange={(e) => setCardHolder(e.target.value)}
-                      required
-                    />
+                    <span className="text-[8.5px] text-zinc-500 block font-black uppercase">
+                      {depositType === 'deposit' ? 'Total en Bolívares que enviarás:' : 'Total en Bolívares que recibirás:'}
+                    </span>
+                    <strong className="text-base font-black text-[#39FF14] font-mono block mt-0.5">
+                      {(parseFloat(depositAmount || "0") * usdtPriceInBs).toLocaleString('es-VE', { minimumFractionDigits: 2 })} BsS
+                    </strong>
                   </div>
-
-                  <div>
-                    <label className="text-[10px] text-zinc-400 font-bold block mb-1 uppercase tracking-wider">
-                      Número de Tarjeta (BPay o de Divisas)
-                    </label>
-                    <input 
-                      type="text"
-                      className="w-full bg-zinc-950 border border-zinc-800 focus:border-amber-500 rounded-xl px-3 py-2 text-xs font-mono tracking-widest focus:outline-none text-white placeholder-zinc-650"
-                      placeholder="5412 7500 1234 5678"
-                      value={cardNumber}
-                      maxLength={19}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, '').substring(0, 16);
-                        const parts = raw.match(/.{1,4}/g) || [];
-                        setCardNumber(parts.join(' '));
-                      }}
-                      required
-                    />
+                  <div className="text-right">
+                    <span className="text-[8px] text-zinc-400 block font-semibold">Tiempos de Ejecución</span>
+                    <span className="text-[10px] text-zinc-200 font-bold flex items-center gap-1 justify-end">
+                      ⚡ 5 a 15 Minutos
+                    </span>
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-3.5">
-                    <div>
-                      <label className="text-[10px] text-zinc-400 font-bold block mb-1 uppercase tracking-wider">
-                        Vencimiento
-                      </label>
-                      <input 
-                        type="text"
-                        className="w-full bg-zinc-950 border border-zinc-800 focus:border-amber-500 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none text-white text-center placeholder-zinc-650"
-                        placeholder="MM/YY"
-                        maxLength={5}
-                        value={cardExpiry}
-                        onChange={(e) => {
-                          let raw = e.target.value.replace(/\D/g, '').substring(0, 4);
-                          if (raw.length > 2) {
-                            raw = raw.substring(0, 2) + '/' + raw.substring(2);
-                          }
-                          setCardExpiry(raw);
-                        }}
-                        required
-                      />
+                {/* Conditional Form fields representing user registration details */}
+                {depositType === 'deposit' ? (
+                  /* Form fields for buying USDT from admin */
+                  <div className="space-y-3.5 pt-1 animate-fadeIn">
+                    <div className="bg-amber-500/10 border border-amber-500/20 text-neutral-200 p-3.5 rounded-xl text-xs space-y-1.5 leading-relaxed">
+                      <p className="font-extrabold text-amber-400 text-[11px] uppercase flex items-center gap-1">
+                        📲 PASO 2: REALIZA EL PAGO MÓVIL AL ADMINISTRADOR
+                      </p>
+                      <p className="text-[10.5px] text-zinc-350">
+                        Por favor, transfiere exactamente <strong className="text-white font-mono">{(parseFloat(depositAmount || "0") * usdtPriceInBs).toFixed(2)} Bs</strong> desde tu cuenta de banco a los datos oficiales de cobro mostrados arriba, luego registra los detalles debajo.
+                      </p>
                     </div>
-                    <div>
-                      <label className="text-[10px] text-zinc-400 font-bold block mb-1 uppercase tracking-wider">
-                        CVV / CVI Security
-                      </label>
-                      <input 
-                        type="password"
-                        className="w-full bg-zinc-950 border border-zinc-800 focus:border-amber-500 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none text-white text-center placeholder-zinc-650 tracking-widest"
-                        placeholder="***"
-                        maxLength={3}
-                        value={cardCvv}
-                        onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, '').substring(0, 3))}
-                        required
-                      />
-                    </div>
-                  </div>
 
-                  <button
-                    onClick={() => {
-                      if (!cardHolder || cardNumber.length < 15 || cardExpiry.length < 5 || cardCvv.length < 3) {
-                        alert("Por favor rellene los datos de tarjeta.");
-                        return;
-                      }
-                      setIsProcessingDeposit(true);
-                      setTimeout(() => {
-                        setIsProcessingDeposit(false);
-                        const val = parseFloat(depositAmount) || 100;
-                        const comision = val * 0.025;
-                        const finalAmount = val - comision;
-                        
-                        if (depositType === 'deposit') {
-                          // Increase platform balance (this is simulated live state)
-                          setBovedaUsdt(prev => prev + finalAmount);
-                          setAdminCommissionTotal(prev => prev + comision);
-                        } else {
-                          setBovedaUsdt(prev => Math.max(0, prev - val));
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[9px] text-zinc-400 font-black block mb-1 uppercase tracking-wider font-sans">Banco Emisor desde donde pagaste</label>
+                        <select 
+                          value={buyerBankSender}
+                          onChange={(e) => setBuyerBankSender(e.target.value)}
+                          className="w-full bg-[#181a20] border border-zinc-800 text-xs rounded-xl px-3 py-2 text-white font-semibold focus:outline-none focus:border-amber-500"
+                        >
+                          <option value="Banesco">Banesco</option>
+                          <option value="Banco de Venezuela">Banco de Venezuela</option>
+                          <option value="Banco Mercantil">Banco Mercantil</option>
+                          <option value="BBVA Provincial">BBVA Provincial</option>
+                          <option value="Bancamiga">Bancamiga</option>
+                          <option value="BNC (Banco Nacional de Crédito)">BNC (Banco Nacional de Crédito)</option>
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[9px] text-zinc-400 font-black block mb-1 uppercase tracking-wider font-sans">Teléfono de Pago Móvil</label>
+                          <input 
+                            type="text"
+                            value={buyerPhoneSender}
+                            onChange={(e) => setBuyerPhoneSender(e.target.value)}
+                            placeholder="Ej. 0414-1234567"
+                            className="w-full bg-[#181a20] border border-zinc-800 text-xs font-mono rounded-xl px-3 py-2 text-white placeholder-zinc-700 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-zinc-400 font-black block mb-1 uppercase tracking-wider font-sans">Código de Referencia</label>
+                          <input 
+                            type="text"
+                            value={buyerReference}
+                            onChange={(e) => setBuyerReference(e.target.value)}
+                            placeholder="Últimos 6 u 8 dígitos"
+                            className="w-full bg-[#181a20] border border-zinc-800 text-xs font-mono rounded-xl px-3 py-2 text-white placeholder-zinc-700 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[9px] text-zinc-400 font-black block mb-1 uppercase tracking-wider font-sans">Cédula del Titular</label>
+                          <input 
+                            type="text"
+                            value={buyerIdCard}
+                            onChange={(e) => setBuyerIdCard(e.target.value)}
+                            placeholder="Ej. V-21444555"
+                            className="w-full bg-[#181a20] border border-zinc-800 text-xs font-mono rounded-xl px-3 py-2 text-white placeholder-zinc-700 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-zinc-400 font-black block mb-1 uppercase tracking-wider font-sans">Nombre del Titular</label>
+                          <input 
+                            type="text"
+                            value={buyerHolderName}
+                            onChange={(e) => setBuyerHolderName(e.target.value)}
+                            placeholder="Nombre del Pagador"
+                            className="w-full bg-[#181a20] border border-zinc-800 text-xs rounded-xl px-3 py-2 text-white placeholder-zinc-700 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Screen capture simulation */}
+                      <div>
+                        <label className="text-[9px] text-zinc-400 font-black block mb-1 uppercase tracking-wider font-sans">Evidencia / Capture de Pago (Opcional)</label>
+                        <div className="border border-dashed border-zinc-800 rounded-xl p-3 text-center bg-[#181a20] text-[10.5px] text-zinc-400 hover:border-amber-500/40 duration-150 cursor-pointer">
+                          <Upload className="h-4 w-4 mx-auto mb-1.5 text-zinc-500" />
+                          <span className="font-bold text-zinc-300">Seleccionar o soltar capture aquí</span>
+                          <p className="text-[8px] text-zinc-500 mt-0.5">Formatos JPG, PNG, PDF permitidos</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        const amt = parseFloat(depositAmount);
+                        if (isNaN(amt) || amt < 5) {
+                          alert("El monto mínimo para comprar es de $5 USDT.");
+                          return;
                         }
-                        setDepositStep(3);
-                      }, 2500);
-                    }}
-                    disabled={isProcessingDeposit}
-                    className="w-full mt-4 bg-emerald-500 hover:bg-emerald-400 text-neutral-900 border border-emerald-450/40 hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] font-black uppercase text-xs rounded-2xl py-4 px-6 transition duration-150 active:scale-95 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                  >
-                    {isProcessingDeposit ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 animate-spin" /> Autorizando en Banco de Venezuela...
-                      </>
-                    ) : (
-                      `Pagar $${parseFloat(depositAmount).toFixed(2)} USD`
-                    )}
-                  </button>
-                </div>
+                        if (!buyerPhoneSender.trim() || !buyerReference.trim() || !buyerIdCard.trim() || !buyerHolderName.trim()) {
+                          alert("Por favor completa todos los campos del formulario para que el administrador pueda conciliar tu Pago Móvil.");
+                          return;
+                        }
+                        
+                        setIsProcessingDeposit(true);
+                        setTimeout(() => {
+                          setIsProcessingDeposit(false);
+                          // Create direct transaction object
+                          const newTx: P2PTransaction = {
+                            id: (1094 + Math.floor(Math.random() * 9000)).toString(),
+                            type: 'Comprar',
+                            offerId: 'casa_de_cambio_directo_buy',
+                            rate: usdtPriceInBs,
+                            amountUsdt: amt,
+                            amountBs: amt * usdtPriceInBs,
+                            status: 'paid_checking',
+                            paymentInfo: {
+                              bank: adminPagoMovilBank,
+                              phone: adminPagoMovilPhone,
+                              idCard: adminPagoMovilId,
+                              holder: adminPagoMovilHolder,
+                              reference: buyerReference,
+                              senderBank: buyerBankSender,
+                              senderPhone: buyerPhoneSender,
+                              senderIdCard: buyerIdCard,
+                              senderHolderName: buyerHolderName
+                            },
+                            createdAt: new Date().toISOString()
+                          };
+                          
+                          setTransactions([newTx, ...transactions]);
+                          setDepositStep(3);
+                        }, 1200);
+                      }}
+                      disabled={isProcessingDeposit}
+                      className="w-full bg-[#f0b90b] hover:bg-amber-400 text-neutral-950 font-black py-3.5 rounded-2xl text-xs transition active:scale-95 shadow-md shadow-amber-500/10 flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      {isProcessingDeposit ? (
+                        <>
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Procesando Notificación...
+                        </>
+                      ) : (
+                        "Registrar Pago Móvil y Solicitar USDT"
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  /* Form fields for selling USDT directly to platform swap */
+                  <div className="space-y-3.5 pt-1 animate-fadeIn">
+                    <div className="bg-red-500/10 border border-red-500/20 text-neutral-200 p-3.5 rounded-xl text-xs space-y-1 block leading-relaxed text-left font-sans">
+                      <p className="font-extrabold text-red-400 text-[11px] uppercase">
+                        📲 REGISTRA TUS DATOS DE COBRO (PAGO MÓVIL)
+                      </p>
+                      <p className="text-[10.5px] text-zinc-300">
+                        La plataforma debitará tus USDT de la Bóveda en resguardo (Escrow) y el Administrador te hará una transferencia bancaria inmediata (Pago Móvil) a tus coordenadas por un total de <strong className="text-[#39FF14] font-mono">{(parseFloat(depositAmount || "0") * usdtPriceInBs).toFixed(2)} Bs</strong>.
+                      </p>
+                    </div>
+
+                    <div className="space-y-3 text-left">
+                      <div>
+                        <label className="text-[9px] text-zinc-400 font-black block mb-1 uppercase tracking-wider font-sans">Banco donde quieres recibir los Bolívares</label>
+                        <select 
+                          value={sellerBankReceiver}
+                          onChange={(e) => setSellerBankReceiver(e.target.value)}
+                          className="w-full bg-[#181a20] border border-zinc-850 text-xs rounded-xl px-3 py-2 text-white font-semibold focus:outline-none focus:border-amber-500"
+                        >
+                          <option value="Banesco">Banesco</option>
+                          <option value="Banco de Venezuela">Banco de Venezuela</option>
+                          <option value="Banco Mercantil">Banco Mercantil</option>
+                          <option value="BBVA Provincial">BBVA Provincial</option>
+                          <option value="Bancamiga">Bancamiga</option>
+                          <option value="BNC (Banco Nacional de Crédito)">BNC (Banco Nacional de Crédito)</option>
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-left">
+                        <div>
+                          <label className="text-[9px] text-zinc-400 font-black block mb-1 uppercase tracking-wider font-sans">Teléfono Pago Móvil</label>
+                          <input 
+                            type="text"
+                            value={sellerPhoneReceiver}
+                            onChange={(e) => setSellerPhoneReceiver(e.target.value)}
+                            placeholder="Ej. 0416-5556677"
+                            className="w-full bg-[#181a20] border border-zinc-850 text-xs font-mono rounded-xl px-3 py-2 text-white placeholder-zinc-700 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-zinc-400 font-black block mb-1 uppercase tracking-wider font-sans">Cédula del Titular</label>
+                          <input 
+                            type="text"
+                            value={sellerIdCard}
+                            onChange={(e) => setSellerIdCard(e.target.value)}
+                            placeholder="Ej. V-18333444"
+                            className="w-full bg-[#181a20] border border-zinc-850 text-xs font-mono rounded-xl px-3 py-2 text-white placeholder-zinc-700 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-left">
+                        <div>
+                          <label className="text-[9px] text-zinc-400 font-black block mb-1 uppercase tracking-wider font-sans">Nombre del Titular Receptor</label>
+                          <input 
+                            type="text"
+                            value={sellerHolderName}
+                            onChange={(e) => setSellerHolderName(e.target.value)}
+                            placeholder="Ej. Juan Pérez"
+                            className="w-full bg-[#181a20] border border-zinc-850 text-xs rounded-xl px-3 py-2 text-white placeholder-zinc-700/70 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] text-zinc-400 font-black block mb-1 uppercase tracking-wider font-sans">ID Binance de respaldo (Opcional)</label>
+                          <input 
+                            type="text"
+                            value={sellerWalletBackup}
+                            onChange={(e) => setSellerWalletBackup(e.target.value)}
+                            placeholder="ID de Pay o Wallet Trc20"
+                            className="w-full bg-[#181a20] border border-zinc-850 text-xs font-mono rounded-xl px-3 py-2 text-white placeholder-zinc-700/70 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        const amt = parseFloat(depositAmount);
+                        if (isNaN(amt) || amt < 5) {
+                          alert("El monto mínimo para la venta directa es de $5 USDT.");
+                          return;
+                        }
+                        if (amt > bovedaUsdt) {
+                          alert(`Fondos insuficientes en Bóveda USDT. Tu saldo actual es de $${bovedaUsdt.toFixed(2)} USDT.`);
+                          return;
+                        }
+                        if (!sellerPhoneReceiver.trim() || !sellerIdCard.trim() || !sellerHolderName.trim()) {
+                          alert("Por favor completa los detalles de destino Pago Móvil donde recibirás el pago.");
+                          return;
+                        }
+                        
+                        setIsProcessingDeposit(true);
+                        setTimeout(() => {
+                          setIsProcessingDeposit(false);
+                          
+                          // Deduct balance
+                          setBovedaUsdt(prev => prev - amt);
+                          
+                          // Create direct sell transaction object
+                          const newTx: P2PTransaction = {
+                            id: (2041 + Math.floor(Math.random() * 7000)).toString(),
+                            type: 'Vender',
+                            offerId: 'casa_de_cambio_directo_sell',
+                            rate: usdtPriceInBs,
+                            amountUsdt: amt,
+                            amountBs: amt * usdtPriceInBs,
+                            status: 'pending_payment', // Waiting for administrator to transfer Bs and complete
+                            paymentInfo: {
+                              bank: sellerBankReceiver,
+                              phone: sellerPhoneReceiver,
+                              idCard: sellerIdCard,
+                              holder: sellerHolderName,
+                              reference: sellerWalletBackup || "Sin ID Binance de respaldo"
+                            },
+                            createdAt: new Date().toISOString()
+                          };
+                          
+                          setTransactions([newTx, ...transactions]);
+                          setDepositStep(3);
+                        }, 1200);
+                      }}
+                      disabled={isProcessingDeposit}
+                      className="w-full bg-[#f0b90b] hover:bg-amber-400 text-neutral-950 font-black py-3.5 rounded-2xl text-xs transition active:scale-95 shadow-md shadow-amber-500/10 flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      {isProcessingDeposit ? (
+                        <>
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Procesando Venta de USDT...
+                        </>
+                      ) : (
+                        "Vender USDT y Solicitar Pago Móvil"
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
+            
+            {/* INVISIBLE_ANCHOR_FOR_REPLACEMENT_STEP2_AND_3 */}
 
             {depositStep === 3 && (
-              <div className="space-y-4 py-4 animate-fadeIn relative z-10 text-center">
-                <div className="w-16 h-16 bg-[#39FF14]/10 border border-[#39FF14]/40 text-[#39FF14] rounded-full flex items-center justify-center mx-auto mb-1 shadow-[0_0_20px_rgba(57,255,20,0.18)]">
-                  <CheckCircle2 className="h-9 w-9" />
+              <div className="space-y-5 py-4 animate-fadeIn relative z-10 text-center">
+                <div className="w-16 h-16 bg-[#39FF14]/10 border border-[#39FF14]/40 text-[#39FF14] rounded-full flex items-center justify-center mx-auto mb-1 shadow-[0_0_20px_rgba(57,255,20,0.22)]">
+                  <CheckCircle2 className="h-9 w-9 text-[#39FF14]" />
                 </div>
+                
                 <div className="space-y-1">
-                  <h4 className="text-sm font-black text-white uppercase tracking-wider">¡Operación Exitosa!</h4>
-                  <p className="text-[10px] text-zinc-400">
-                    Tu operación bancaria e intercambio a Binance USDT se ha completado perfectamente.
+                  <h3 className="text-base font-black text-white uppercase tracking-tight">¡Solicitud Registrada con Éxito!</h3>
+                  <p className="text-[11px] text-zinc-400 max-w-sm mx-auto leading-relaxed">
+                    Tu solicitud de {depositType === 'deposit' ? 'compra' : 'venta'} directa ha sido notificada al administrador para su verificación en el Pago Móvil.
                   </p>
                 </div>
 
-                {/* Simulated Bank Receipt Voucher matching the user's BDV screenshot */}
-                {(() => {
-                  const bcvRate = parseFloat(bcvInterventionRate) || 615.5200;
-                  const markup = parseFloat(bankMarkupPercent) || 0.50;
-                  const amt = parseFloat(depositAmount) || 100;
-                  const finalRate = bcvRate + (bcvRate * (markup / 100)); // 618.5976
-                  const totalBsDebited = amt * finalRate; // 61,859.76
-
-                  const adminCommission = amt * 0.025; // 2.5%
-                  const tempAm = amt - adminCommission; // 97.50
-                  const bpayFee = amt * 0.0351; // 3.51%
-                  const netBinance = tempAm - bpayFee; // 93.99
-
-                  return (
-                    <div className="bg-zinc-950 rounded-2xl p-4 border border-zinc-800 text-left space-y-3 relative overflow-hidden">
-                      {/* Logo header similar to BDV */}
-                      <div className="flex items-center justify-between border-b border-zinc-850 pb-2">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-4 h-4 bg-gradient-to-r from-yellow-500 via-[#39FF14] to-red-500 rounded-full" />
-                          <span className="text-[9px] font-black tracking-widest text-zinc-300">COMPROBANTE BDV / BPAY</span>
-                        </div>
-                        <span className="text-[8px] text-zinc-500 font-mono">ID: {Math.floor(1000000000 + Math.random() * 9000000000)}</span>
-                      </div>
-
-                      <div className="space-y-2 text-[10px] font-medium text-zinc-350">
-                        <div className="text-center bg-zinc-900/60 py-2 rounded-lg border border-zinc-850">
-                          <span className="text-[8px] text-zinc-500 uppercase block font-bold">Monto Debitado de tu Cuenta Moneda Nacional</span>
-                          <strong className="text-sm font-mono text-[#39FF14] font-black block mt-0.5">
-                            {totalBsDebited.toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs
-                          </strong>
-                        </div>
-
-                        <div className="flex justify-between border-b border-zinc-900/80 pb-1">
-                          <span className="text-zinc-400">Concepto:</span>
-                          <span className="text-white font-bold">Intervención Cambiaria BDV</span>
-                        </div>
-                        <div className="flex justify-between border-b border-zinc-900/80 pb-1">
-                          <span className="text-zinc-400">Tasa Negociada USD:</span>
-                          <span className="text-white font-mono font-bold">{bcvRate.toFixed(4)} Bs</span>
-                        </div>
-                        <div className="flex justify-between border-b border-zinc-900/80 pb-1">
-                          <span className="text-zinc-400">Porcentaje de Recargo:</span>
-                          <span className="text-white font-bold">+{markup.toFixed(2)}%</span>
-                        </div>
-                        <div className="flex justify-between border-b border-zinc-900/80 pb-1">
-                          <span className="text-zinc-400">Monto Adquirido:</span>
-                          <span className="text-white font-mono font-bold">${amt.toFixed(2)} USD</span>
-                        </div>
-                        <div className="flex justify-between border-b border-zinc-900/80 pb-1 text-amber-400 font-semibold">
-                          <span className="text-zinc-400">Comisión Admin (2.5%):</span>
-                          <span className="font-mono">-${adminCommission.toFixed(2)} USD</span>
-                        </div>
-                        <div className="flex justify-between border-b border-zinc-900/80 pb-1 text-red-400/80 font-semibold">
-                          <span className="text-zinc-400">Comisión Red BPay (3.51%):</span>
-                          <span className="font-mono">-${bpayFee.toFixed(2)} USD</span>
-                        </div>
-                        <div className="flex justify-between text-[#39FF14] font-bold">
-                          <span>Neto Recibido en Binance:</span>
-                          <span className="font-mono">${netBinance.toFixed(2)} USDT</span>
-                        </div>
-                      </div>
-
-                      {/* Route destination confirmation */}
-                      <div className="bg-[#39FF14]/5 px-2.5 py-2 rounded-xl border border-[#39FF14]/15 space-y-1 mt-1 text-[8.5px]">
-                        <span className="text-zinc-400 block uppercase font-black text-[7.5px] text-[#39FF14]">💼 Ruteo Automático Realizado</span>
-                        <div className="flex justify-between text-zinc-350">
-                          <span>A Wallet Administrador:</span>
-                          <span className="font-mono text-zinc-300 pointer-events-none break-all select-all font-bold">
-                            {adminPayoutAddress.substring(0, 8)}...{adminPayoutAddress.substring(adminPayoutAddress.length - 8)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-zinc-350">
-                          <span>Fondo Ganancia Comisiones:</span>
-                          <strong className="font-mono text-amber-500 font-black">+${adminCommission.toFixed(2)} USDT</strong>
-                        </div>
-                      </div>
+                {/* Venezuelan Pago Movil Receipt Voucher Component */}
+                <div className="bg-zinc-950 rounded-2xl p-4 border border-zinc-800 text-left space-y-3 relative overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-zinc-850 pb-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#39FF14] animate-pulse" />
+                      <span className="text-[9px] font-black tracking-wider text-zinc-350 uppercase">RECIBO DE TRANSMISIÓN DIRECTA</span>
                     </div>
-                  );
-                })()}
+                    <span className="text-[8px] text-zinc-500 font-mono font-bold">LOTE #{Math.floor(1000 + Math.random() * 9000)}</span>
+                  </div>
 
-                <button
-                  onClick={() => {
-                    setDepositStep(1);
-                    setCardNumber("");
-                    setCardHolder("");
-                    setCardExpiry("");
-                    setCardCvv("");
-                    setActiveTab('buy'); // Redirect user to P2P market
-                  }}
-                  className="w-full bg-zinc-800 hover:bg-zinc-700 hover:text-white text-zinc-350 font-black py-3 rounded-2xl text-xs transition active:scale-95 border border-zinc-750/70"
-                >
-                  Regresar al Mercado P2P
-                </button>
+                  <div className="space-y-2.5 text-[11px] font-medium text-zinc-300">
+                    <div className="text-center bg-[#181a20] py-2 rounded-xl border border-zinc-850">
+                      <span className="text-[8.5px] text-zinc-400 uppercase block font-bold">Monto de la Operación en Bolívares (Bs)</span>
+                      <strong className="text-base font-mono text-[#39FF14] font-black block mt-0.5">
+                        {(parseFloat(depositAmount || "100") * usdtPriceInBs).toLocaleString('es-VE', { minimumFractionDigits: 2 })} BsS
+                      </strong>
+                    </div>
+
+                    <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                      <span className="text-zinc-500 font-bold">Operación:</span>
+                      <span className="text-[#f0b90b] font-black uppercase text-[10px]">
+                        {depositType === 'deposit' ? 'Compra Directa USDT' : 'Venta Directa USDT'}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                      <span className="text-zinc-500 font-bold">Equivalente Digital:</span>
+                      <strong className="text-white font-mono font-bold">{parseFloat(depositAmount || "100").toFixed(2)} USDT</strong>
+                    </div>
+
+                    <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                      <span className="text-zinc-500 font-bold">Tasa Aplicada:</span>
+                      <span className="text-zinc-300 font-mono font-semibold">{usdtPriceInBs.toFixed(2)} Bs / USDT</span>
+                    </div>
+
+                    {depositType === 'deposit' ? (
+                      <>
+                        <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                          <span className="text-zinc-500 font-semibold">Referencia Bancaria:</span>
+                          <span className="text-white font-mono font-black tracking-wide">{buyerReference || "Sin referencia"}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                          <span className="text-zinc-505 font-medium">Bco Emisor:</span>
+                          <span className="text-zinc-300 font-bold">{buyerBankSender}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                          <span className="text-zinc-505 font-medium">Nombre de Pagador:</span>
+                          <span className="text-zinc-300 font-mono">{buyerHolderName}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                          <span className="text-zinc-505 font-medium">Banco Destino:</span>
+                          <span className="text-white font-bold">{sellerBankReceiver}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                          <span className="text-zinc-505 font-medium">Titular Receptor:</span>
+                          <span className="text-white font-mono">{sellerHolderName}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                          <span className="text-zinc-505 font-medium">Teléfono Destino:</span>
+                          <span className="text-white font-mono">{sellerPhoneReceiver}</span>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="flex justify-between pb-0.5">
+                      <span className="text-zinc-500 font-semibold">Comisión de Intercambio:</span>
+                      <span className="text-emerald-400 font-bold font-mono">0.00 Bs / Gratis</span>
+                    </div>
+                  </div>
+
+                  {/* Operational disclaimer matching user early exchange instructions */}
+                  <div className="bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 text-[9.5px] leading-snug text-yellow-300 font-bold">
+                    📌 CONCILIACIÓN SEMI-AUTOMÁTICA MARCHA:
+                    <p className="text-zinc-300 font-medium font-sans mt-0.5 leading-snug">
+                       El Administrador de OrinocoP2P verificará tu transferencia y actualizará el estado de la orden {depositType === 'deposit' ? 'para cargarte los USDT solicitados' : 'para transferirte los Bolívares correspondientes'}. Tiempo promedio: <strong className="text-white">5 a 15 Minutos</strong>. Puedes realizar el seguimiento en tu panel de <button onClick={() => { setDepositStep(1); setActiveTab('orders'); }} className="text-[#f0b90b] underline font-bold hover:text-amber-300 bg-transparent border-none p-0 cursor-pointer">Órdenes Activas</button>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 max-w-xs mx-auto">
+                  <button
+                    onClick={() => {
+                      setDepositStep(1);
+                      setBuyerReference("");
+                      setBuyerPhoneSender("");
+                      setBuyerIdCard("");
+                      setBuyerHolderName("");
+                      setSellerPhoneReceiver("");
+                      setSellerIdCard("");
+                      setSellerHolderName("");
+                      setSellerWalletBackup("");
+                      setActiveTab('orders'); // Jump to orders list
+                    }}
+                    className="w-full bg-[#f0b90b] hover:bg-amber-400 text-neutral-950 font-black py-3 rounded-2xl text-xs transition active:scale-95 duration-100 shadow-md shadow-amber-500/5 cursor-pointer"
+                  >
+                    Ver Estado en "Mis Órdenes"
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDepositStep(1);
+                      setBuyerReference("");
+                      setBuyerPhoneSender("");
+                      setBuyerIdCard("");
+                      setBuyerHolderName("");
+                      setSellerPhoneReceiver("");
+                      setSellerIdCard("");
+                      setSellerHolderName("");
+                      setSellerWalletBackup("");
+                      setActiveTab('buy'); // Back to main P2P offers tab
+                    }}
+                    className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-extrabold py-3 rounded-2xl text-xs transition active:scale-95 border border-zinc-750/60 cursor-pointer"
+                  >
+                    Ir al Mercado P2P entre Usuarios
+                  </button>
+                </div>
               </div>
             )}
           </div>
