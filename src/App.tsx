@@ -5,6 +5,7 @@ import BrainLogo from './components/BrainLogo';
 import VipTasks from './components/VipTasks';
 import VipReels from './components/VipReels';
 import WithdrawalCalendar from './components/WithdrawalCalendar';
+import P2PExchangePortal from './components/P2PExchangePortal';
 import { UserProfile, VipLevel, Reel, RecoveryRequest } from './types';
 import { 
   Sparkles, ShieldCheck, Share2, CircleAlert, Globe, X, 
@@ -22,6 +23,7 @@ export default function App() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [copiedModalLink, setCopiedModalLink] = useState(false);
   const [isVipSelectorOpen, setIsVipSelectorOpen] = useState(false);
+  const [isP2PExchangeOpen, setIsP2PExchangeOpen] = useState(false);
   
   // Track if we have synced the active user profile with Firestore in this page session
   const hasSyncedWithFirestore = useRef(false);
@@ -1652,6 +1654,10 @@ export default function App() {
     }
   };
 
+  if (isP2PExchangeOpen) {
+    return <P2PExchangePortal onClose={() => setIsP2PExchangeOpen(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-black text-[#39FF14] pb-16 antialiased selection:bg-[#39FF14] selection:text-black" style={{ zoom: zoomScale } as React.CSSProperties}>
       {/* Dynamic Administrator floating check bar */}
@@ -1676,6 +1682,13 @@ export default function App() {
               title="Abrir Panel del Dueño para aprobar activaciones y retiros"
             >
               ⚙️ panel de control admin ({registrations.filter(r => r.status === 'pending').length} pend)
+            </button>
+            <button
+              onClick={() => setIsP2PExchangeOpen(true)}
+              className="flex items-center gap-1.5 bg-[#39FF14] text-neutral-950 hover:bg-[#39FF14]/80 px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wider cursor-pointer transition-all active:scale-95 whitespace-nowrap uppercase"
+              title="Iniciar modulo P2P cambiario de prueba"
+            >
+              📈 CANAL MERCADO P2P ➔
             </button>
             <button
               onClick={() => setIsAdminVerified(false)}
@@ -1707,6 +1720,18 @@ export default function App() {
         <div className="py-6 flex flex-col items-center justify-center text-center space-y-4 max-w-xl mx-auto">
           {/* Centered Golden & Purple rotating brain with headphones logo */}
           <BrainLogo size="md" />
+
+          {/* Glowing New Project P2P Announcement Badge */}
+          <button 
+            onClick={() => setIsP2PExchangeOpen(true)}
+            className="inline-flex items-center gap-2 bg-[#39FF14]/10 hover:bg-[#39FF14]/25 border border-[#39FF14]/30 text-[#39FF14] text-[11px] font-black tracking-tight px-3.5 py-1.5 rounded-full transition-all duration-150 active:scale-95 shadow-[0_0_15px_rgba(57,255,20,0.15)] cursor-pointer"
+          >
+            <span className="flex h-1.5 w-1.5 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#39FF14] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#39FF14]"></span>
+            </span>
+            🤝 PROYECTO NUEVO EN DESARROLLO: MERCADO CAMBIARIO P2P ➔
+          </button>
 
           <div className="space-y-1.5">
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-widest text-white uppercase select-all">
