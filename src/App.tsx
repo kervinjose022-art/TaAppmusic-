@@ -3610,6 +3610,11 @@ export default function App() {
                         <div className="space-y-1.5 min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-white font-extrabold text-[12px]">Retiro #{item.id.replace('TAPP-WD-', '')}</span>
+                            {item.username && (
+                              <span className="bg-purple-500/15 text-purple-400 border border-purple-500/30 px-2.5 py-0.5 rounded-full font-mono text-[10px] font-extrabold tracking-wide">
+                                👤 @{item.username}
+                              </span>
+                            )}
                              <div className="flex items-center gap-1.5 flex-wrap">
                                <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/25 px-2 py-0.5 rounded font-sans font-bold text-[10px]">
                                  {item.amountCoins} Monedas
@@ -3654,13 +3659,34 @@ export default function App() {
                             <>
                               <button
                                 onClick={async () => {
-                                  // Approve withdrawal
+                                  // Approve withdrawal and deduct coins in Firestore if they were not already deducted on submission (handles Massiel and other legacy requests)
                                   const generatedTx = '0x' + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
                                   try {
                                     await updateDoc(doc(db, 'withdrawals', item.id), {
                                       status: 'Aprobado',
-                                      txid: generatedTx
+                                      txid: generatedTx,
+                                      deducted: true
                                     });
+
+                                    // Deduct from Firestore only if this request hasn't set the deducted flag (e.g. older legacy requests)
+                                    if (!item.deducted) {
+                                      const ownerName = item.username || userProfile.username;
+                                      if (ownerName) {
+                                        const cleanOwner = ownerName.toLowerCase().trim();
+                                        const targetUser = allUsers.find(u => u.username && u.username.toLowerCase().trim() === cleanOwner);
+                                        if (targetUser) {
+                                          const updatedUser = {
+                                            ...targetUser,
+                                            earnings: Math.max(0, Number((targetUser.earnings - item.amountCoins).toFixed(2)))
+                                          };
+                                          await setDoc(doc(db, 'users', cleanOwner), updatedUser);
+                                          
+                                          if (userProfile.username && userProfile.username.toLowerCase().trim() === cleanOwner) {
+                                            saveProfile(updatedUser);
+                                          }
+                                        }
+                                      }
+                                    }
                                   } catch (err) {
                                     console.error("Approve withdrawal error:", err);
                                   }
@@ -3672,23 +3698,25 @@ export default function App() {
                               
                               <button
                                 onClick={async () => {
-                                  // Reject withdrawal and refund coins to the corresponding user profile in Firestore
+                                  // Reject withdrawal and refund coins to the corresponding user profile in Firestore ONLY if they were deducted
                                   try {
                                     await updateDoc(doc(db, 'withdrawals', item.id), {
                                       status: 'Rechazado'
                                     });
                                     
-                                    const ownerName = item.username || userProfile.username;
-                                    const targetUser = allUsers.find(u => u.username && ownerName && u.username.toLowerCase() === ownerName.toLowerCase());
-                                    if (targetUser) {
-                                      const updatedUser = {
-                                        ...targetUser,
-                                        earnings: Number((targetUser.earnings + item.amountUsdt).toFixed(2))
-                                      };
-                                      await setDoc(doc(db, 'users', ownerName.toLowerCase()), updatedUser);
-                                      
-                                      if (userProfile.username && ownerName && userProfile.username.toLowerCase() === ownerName.toLowerCase()) {
-                                        saveProfile(updatedUser);
+                                    if (item.deducted) {
+                                      const ownerName = item.username || userProfile.username;
+                                      const targetUser = allUsers.find(u => u.username && ownerName && u.username.toLowerCase() === ownerName.toLowerCase());
+                                      if (targetUser) {
+                                        const updatedUser = {
+                                          ...targetUser,
+                                          earnings: Number((targetUser.earnings + item.amountCoins).toFixed(2)) // Corrected to refund amountCoins instead of amountUsdt
+                                        };
+                                        await setDoc(doc(db, 'users', ownerName.toLowerCase()), updatedUser);
+                                        
+                                        if (userProfile.username && ownerName && userProfile.username.toLowerCase() === ownerName.toLowerCase()) {
+                                          saveProfile(updatedUser);
+                                        }
                                       }
                                     }
                                   } catch (err) {

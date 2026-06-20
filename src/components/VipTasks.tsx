@@ -67,6 +67,11 @@ export default function VipTasks({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const synthNodesRef = useRef<any[]>([]);
 
+  // Filter for ONLY the current user's withdrawals to prevent seeing others' requests in private list or blocking limits
+  const myWithdrawals = (withdrawHistory || []).filter((w: any) => 
+    w && w.username && w.username.toLowerCase().trim() === userProfile.username.toLowerCase().trim()
+  );
+
   // Pre-load and warm up Android TTS / Web Speech API voices at mount
   useEffect(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -248,7 +253,7 @@ export default function VipTasks({
 
     // Validate 10-day constraint unless bypass is checked
     if (!bypass10Days) {
-      const lastWrd = withdrawHistory.find(w => w.status === 'Aprobado' || w.status === 'Pendiente');
+      const lastWrd = myWithdrawals.find(w => w.status === 'Aprobado' || w.status === 'Pendiente');
       if (lastWrd && lastWrd.date) {
         try {
           // Date format: "03/06/2026 14:32"
@@ -300,7 +305,8 @@ export default function VipTasks({
         network: withdrawalNetwork === 'BEP20' ? 'BEP20' : 'Pago Móvil',
         date: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'Pendiente', // starts as pending approval
-        txid: randomTxid
+        txid: randomTxid,
+        deducted: true // Marks that coins have been deducted on submission
       };
 
       // Write directly to our live real-time Firestore database!
@@ -308,11 +314,15 @@ export default function VipTasks({
         console.error("Firestore submit withdrawal error:", err);
       });
 
-      // Save/update walletAddress on user account in Firestore
+      // Save/update walletAddress and deduct user's coins (earnings) in Firestore
       const cleanName = userProfile.username ? userProfile.username.toLowerCase().trim() : '';
+      const newEarnings = Math.max(0, Number((userProfile.earnings - amountVal).toFixed(2)));
       if (cleanName) {
-        setDoc(doc(db, 'users', cleanName), { walletAddress: finalAddress }, { merge: true }).catch(err => {
-          console.warn("Could not save wallet address to users collection:", err);
+        setDoc(doc(db, 'users', cleanName), { 
+          walletAddress: finalAddress,
+          earnings: newEarnings
+        }, { merge: true }).catch(err => {
+          console.warn("Could not save wallet address and earnings to users collection:", err);
         });
       }
 
@@ -323,7 +333,7 @@ export default function VipTasks({
       // Deduct from profile and update wallet address
       setUserProfile(prev => ({
         ...prev,
-        earnings: Number((prev.earnings - amountVal).toFixed(2)),
+        earnings: newEarnings,
         walletAddress: finalAddress
       }));
 
@@ -1499,10 +1509,10 @@ export default function VipTasks({
                 </div>
                 
                 <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                  {withdrawHistory.length === 0 ? (
+                  {myWithdrawals.length === 0 ? (
                     <p className="text-[9px] font-mono text-zinc-650 text-center py-4">No posees retiros anteriores realizados.</p>
                   ) : (
-                    withdrawHistory.map((item: any) => (
+                    myWithdrawals.map((item: any) => (
                       <div 
                         key={item.id} 
                         className="p-3 rounded-xl border border-white/5 bg-zinc-950/40 hover:bg-zinc-950/80 transition-all flex items-center justify-between font-mono gap-4"
