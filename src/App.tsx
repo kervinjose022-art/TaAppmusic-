@@ -2025,19 +2025,27 @@ export default function App() {
                        </span>
                      </div>
 
-                    {/* Reference No / ID */}
-                    <div className="space-y-1">
+                    {/* Capture de Pago * (Obligatorio) */}
+                    <div className="space-y-1.5">
                       <label className="text-[9px] uppercase font-mono tracking-widest text-[#39FF14] font-black block">
-                        Referencia del Pago o Transacción *
+                        Capture de Pago Voucher / Capture de Pantalla * (Obligatorio)
                       </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Ej. Hash de Tx o ID de Pago Binance / Wallet"
-                        value={inputReferenceNo}
-                        onChange={(e) => setInputReferenceNo(e.target.value)}
-                        className="w-full text-xs font-mono bg-black border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-zinc-805 focus:outline-none focus:border-[#39FF14]"
-                      />
+                      <div className="flex items-center gap-3">
+                        <label className="flex h-10 px-4 rounded-xl border border-dashed border-zinc-700 bg-zinc-950 hover:border-[#39FF14] hover:bg-[#39FF14]/5 text-zinc-400 hover:text-white transition-all cursor-pointer items-center justify-center text-xs">
+                          <span>📁 Cargar Voucher o Capture</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleFileChange}
+                          />
+                        </label>
+                        {attachedFileName && (
+                          <span className="text-xs text-[#39FF14] truncate max-w-[200px] font-mono block">
+                            {attachedFileName}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
