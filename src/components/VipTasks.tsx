@@ -256,7 +256,8 @@ export default function VipTasks({
       }
     }
 
-    // Validate 10-day constraint unless bypass is checked
+    // Validate 10-day constraint (Disabled per administrator instruction to open withdrawals)
+    /*
     if (!bypass10Days) {
       const lastWrd = myAllWithdrawals.find(w => w.status === 'Aprobado' || w.status === 'Pendiente');
       if (lastWrd && lastWrd.date) {
@@ -287,6 +288,7 @@ export default function VipTasks({
         }
       }
     }
+    */
 
     // Process simulation
     setIsSubmittingWithdrawal(true);
