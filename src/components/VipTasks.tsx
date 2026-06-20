@@ -67,9 +67,14 @@ export default function VipTasks({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const synthNodesRef = useRef<any[]>([]);
 
-  // Filter for ONLY the current user's withdrawals to prevent seeing others' requests in private list or blocking limits
-  const myWithdrawals = (withdrawHistory || []).filter((w: any) => 
+  // All withdrawals of the user (including approved ones) for background validations like 10-day limit
+  const myAllWithdrawals = (withdrawHistory || []).filter((w: any) => 
     w && w.username && w.username.toLowerCase().trim() === userProfile.username.toLowerCase().trim()
+  );
+
+  // Filtered withdrawals to display on the user interface (excludes approved or Aprobado withdrawals as requested)
+  const myWithdrawals = myAllWithdrawals.filter((w: any) =>
+    w && w.status !== 'Aprobado' && w.status !== 'aprobado'
   );
 
   // Pre-load and warm up Android TTS / Web Speech API voices at mount
@@ -253,7 +258,7 @@ export default function VipTasks({
 
     // Validate 10-day constraint unless bypass is checked
     if (!bypass10Days) {
-      const lastWrd = myWithdrawals.find(w => w.status === 'Aprobado' || w.status === 'Pendiente');
+      const lastWrd = myAllWithdrawals.find(w => w.status === 'Aprobado' || w.status === 'Pendiente');
       if (lastWrd && lastWrd.date) {
         try {
           // Date format: "03/06/2026 14:32"
