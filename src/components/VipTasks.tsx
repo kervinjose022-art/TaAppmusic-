@@ -256,39 +256,27 @@ export default function VipTasks({
       }
     }
 
-    // Validate 10-day constraint (Disabled per administrator instruction to open withdrawals)
-    /*
+    // Validate 10-day constraint (Restored and optimized: blocks second withdrawal on same calendar day)
     if (!bypass10Days) {
-      const lastWrd = myAllWithdrawals.find(w => w.status === 'Aprobado' || w.status === 'Pendiente');
-      if (lastWrd && lastWrd.date) {
-        try {
-          // Date format: "03/06/2026 14:32"
-          const parts = lastWrd.date.split(' ');
-          const dateParts = parts[0].split('/');
-          const timeParts = parts[1] ? parts[1].split(':') : ['00', '00'];
-          
-          const lastDate = new Date(
-            parseInt(dateParts[2]),
-            parseInt(dateParts[1]) - 1,
-            parseInt(dateParts[0]),
-            parseInt(timeParts[0]),
-            parseInt(timeParts[1])
-          );
-          
-          const now = new Date();
-          const diffTime = Math.abs(now.getTime() - lastDate.getTime());
-          const diffDays = diffTime / (1000 * 60 * 60 * 24);
-          
-          if (diffDays < 10) {
-            setWithdrawalError(`La normativa de Tappmusic.com exige esperar un lapso mínimo de 10 días entre retiros. Tu última solicitud fue el ${lastWrd.date} (hace ${diffDays.toFixed(1)} días).`);
-            return;
-          }
-        } catch (err) {
-          // Fallback if parsing fails
-        }
+      const today = new Date();
+      // Format today to match against withdrawal dates (e.g. DD/MM/YYYY)
+      const dd = String(today.getDate()).padStart(2, '0');
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const yyyy = today.getFullYear();
+      const todayDateStr = `${dd}/${mm}/${yyyy}`; // e.g. "20/06/2026"
+
+      // Check if user already has a pending or approved withdrawal today
+      const lastWrdToday = (myAllWithdrawals || []).find(w => {
+        if (!w || !w.date) return false;
+        const stateIsRestricted = w.status === 'Aprobado' || w.status === 'Pendiente' || w.status === 'aprobado' || w.status === 'pendiente';
+        return stateIsRestricted && w.date.startsWith(todayDateStr);
+      });
+
+      if (lastWrdToday) {
+        setWithdrawalError(`Ya has registrado una solicitud de retiro para el día de hoy (${todayDateStr}). Recuerda que los retiros están permitidos los días de retiro habilitados (10, 20 y 30 de cada mes) con un máximo de un retiro por día.`);
+        return;
       }
     }
-    */
 
     // Process simulation
     setIsSubmittingWithdrawal(true);
