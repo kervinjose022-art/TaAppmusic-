@@ -4284,19 +4284,16 @@ export default function App() {
                     </strong>
                   </button>
                   <button 
-                    onClick={() => { setAdminUserFilter('todos'); setAdminUserSearch('fershu'); }}
+                    onClick={() => setActiveAdminTab('retiros')}
                     className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
-                      adminUserSearch === 'fershu'
-                        ? 'border-purple-500 bg-purple-500/5 text-purple-300'
+                      withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').length > 0
+                        ? 'border-yellow-500/30 bg-yellow-500/5 text-yellow-400 hover:border-yellow-500/50'
                         : 'border-white/5 bg-zinc-950/30 text-zinc-400 hover:border-white/10 hover:text-white'
                     }`}
                   >
-                    <span className="text-[9px] block text-purple-400 uppercase font-black tracking-wider">De Fershu / Fershot</span>
+                    <span className="text-[9px] block text-yellow-505 uppercase font-black tracking-wider">Solicitudes de Retiro</span>
                     <strong className="text-base font-black">
-                      {allUsers.filter(u => {
-                        const inv = u.invitedBy?.toLowerCase() || '';
-                        return inv.includes('fershu') || inv.includes('fershot') || inv.includes('fersh');
-                      }).length}
+                      {withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').length}
                     </strong>
                   </button>
                 </div>
