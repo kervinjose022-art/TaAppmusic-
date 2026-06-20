@@ -888,28 +888,28 @@ export default function App() {
     localStorage.setItem('tappmusic_withdrawals', JSON.stringify(withdrawHistory));
   }, [withdrawHistory]);
 
-  const getLevelPriceInUsd = (lvl: VipLevel): number => {
-    switch (lvl) {
-      case 'VIP PLATA 10$': return 10;
-      case 'VIP ORO 20$': return 20;
-      case 'VIP RUBÍ 40$': return 40;
-      case 'VIP DIAMANTE 120$': return 120;
-      case 'VIP PLATINO 420$': return 420;
-      case 'VIP CORONA IMPERIAL 1000$': return 1000;
-      default: return 10;
+  const getLevelPriceInUsd = (lvl: VipLevel | string): number => {
+    if (!lvl) return 10;
+    // Strip everything except numeric values first to see if a value was directly embedded
+    // e.g. "VIP ORO (20 USDT)" -> "20", "VIP PLATA 10$" -> "10"
+    const digitsOnly = lvl.toString().replace(/[^0-9]/g, '');
+    const num = parseInt(digitsOnly, 10);
+    if (!isNaN(num) && num > 0) {
+      return num;
     }
+    const s = lvl.toUpperCase();
+    if (s.includes('PLATA')) return 10;
+    if (s.includes('ORO')) return 20;
+    if (s.includes('RUBÍ') || s.includes('RUBI')) return 40;
+    if (s.includes('DIAMANTE')) return 120;
+    if (s.includes('PLATINO')) return 420;
+    if (s.includes('CORONA')) return 1000;
+    return 10;
   };
 
-  const getLevelPriceInBs = (lvl: VipLevel): number => {
-    switch (lvl) {
-      case 'VIP PLATA 10$': return 7340;
-      case 'VIP ORO 20$': return 14680;
-      case 'VIP RUBÍ 40$': return 29360;
-      case 'VIP DIAMANTE 120$': return 88080;
-      case 'VIP PLATINO 420$': return 308280;
-      case 'VIP CORONA IMPERIAL 1000$': return 734000;
-      default: return 7340;
-    }
+  const getLevelPriceInBs = (lvl: VipLevel | string): number => {
+    const usd = getLevelPriceInUsd(lvl);
+    return usd * 734;
   };
 
   const getInviteCount = (): number => {
@@ -2009,7 +2009,7 @@ export default function App() {
                            <button
                              type="button"
                              onClick={() => {
-                               navigator.clipboard.writeText('0x29f0f1edd5258ee3b7553bff65df4d1dd811af0');
+                               navigator.clipboard.writeText('0x29f0f1edd5258ee3b7553bff665df4d1dd811af0');
                                setCopiedAddressFeedback(true);
                                setTimeout(() => setCopiedAddressFeedback(false), 2000);
                              }}
