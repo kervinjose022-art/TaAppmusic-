@@ -2891,9 +2891,9 @@ export default function App() {
                     { lvl: 'VIP PLATA 10$', desc: '5 Videos/Día | Recompensa: 367 monedas diarias', bonus: 'Bono x1.0', col: 'text-zinc-400' },
                     { lvl: 'VIP ORO 20$', desc: '7 Videos/Día | Recompensa: 734 monedas diarias', bonus: 'Bono x1.5', col: 'text-yellow-400' },
                     { lvl: 'VIP RUBÍ 40$', desc: '10 Videos/Día | Recompensa: 1468 monedas diarias', bonus: 'Bono x2.2', col: 'text-red-400' },
-                    { lvl: 'VIP DIAMANTE 120$', desc: '15 Videos/Día | Recompensa: 4404 monedas diarias', bonus: 'Bono x3.5', col: 'text-sky-400 border border-sky-500/20 px-1 rounded' },
-                    { lvl: 'VIP PLATINO 420$', desc: '17 Videos/Día | Recompensa: 15414 monedas diarias', bonus: 'Bono x5.0', col: 'text-purple-400 border border-purple-500/20 px-1 rounded' },
-                    { lvl: 'VIP CORONA IMPERIAL 1000$', desc: '20 Videos/Día | Recompensa: 36700  monedas diarias', bonus: 'Bono x8.0', col: 'text-emerald-400 font-extrabold border border-emerald-500/35 px-1 rounded' }
+                    { lvl: 'VIP DIAMANTE 120$', desc: '15 Videos/Día | Recompensa: 3670 monedas diarias', bonus: 'Bono x3.5', col: 'text-sky-400 border border-sky-500/20 px-1 rounded' },
+                    { lvl: 'VIP PLATINO 420$', desc: '17 Videos/Día | Recompensa: 11744 monedas diarias', bonus: 'Bono x5.0', col: 'text-purple-400 border border-purple-500/20 px-1 rounded' },
+                    { lvl: 'VIP CORONA IMPERIAL 1000$', desc: '20 Videos/Día | Recompensa: 29360  monedas diarias', bonus: 'Bono x8.0', col: 'text-emerald-400 font-extrabold border border-emerald-500/35 px-1 rounded' }
                   ].map((item) => (
                     <button
                       key={item.lvl}

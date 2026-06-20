@@ -365,7 +365,7 @@ export const TASKS_DATABASE: UserTask[] = [
     category: 'Mentalidad'
   },
 
-  // === VIP DIAMANTE 120$ (15 Tareas de $9.79 USD c/u - Total: $146.85 USD Diario / $4,405.50 USD Mensual) ===
+  // === VIP DIAMANTE 120$ (15 Tareas - Total: 5 USDT / 3670 Monedas Diarias) ===
   ...Array.from({ length: 15 }, (_, i) => ({
     id: `task_d${i + 1}`,
     title: [
@@ -386,19 +386,19 @@ export const TASKS_DATABASE: UserTask[] = [
       'Comentario: Declaro Cosecha de 100 Veces Más'
     ][i] || `Misión Diamante de Crecimiento #${i + 1}`,
     description: `Completa este paso de formación superior Diamante para optimizar tu mente de abundancia y recibir regalías.`,
-    rewardValue: 293.60,
+    rewardValue: i === 14 ? 244.76 : 244.66,
     isCompleted: false,
     vipRequired: 'VIP DIAMANTE 120$' as VipLevel,
     category: (['Video de Fe', 'Compartir', 'Familia', 'Mentalidad'][i % 4] || 'Mentalidad') as any
   })),
 
-  // === VIP PLATINO 420$ (17 Tareas de $30.22 USD c/u - Total: $513.74 USD Diario / $15,412.20 USD Mensual) ===
+  // === VIP PLATINO 420$ (17 Tareas - Total: 16 USDT / 11744 Monedas Diarias) ===
   ...Array.from({ length: 17 }, (_, i) => ({
     id: `task_pl${i + 1}`,
     title: [
       'Visualizar: Liderazgo Platino y Éxito de Negocios',
       'Compartir: Cadena de Fe de Altar Familiar',
-      'Verificar: Abundancia Sobrenatural y Sabiduría',
+      'Verificar: Abundancia Sobrenatural and Sabiduría',
       'Calificar: El Legado Familiar y Valores de Dios',
       'Comentario: Sembrando Oro de Reino en Almas',
       'Visualizar: Proverbios de Prosperidad y Negocios',
@@ -415,13 +415,13 @@ export const TASKS_DATABASE: UserTask[] = [
       'Compartir: Mensaje Celestial de Paz y Gozo'
     ][i] || `Mentoría Platino de Éxito Supremo #${i + 1}`,
     description: `Estudio bíblico de excelencia Platino en el que se reflexiona y proclaman verdades de éxito y familia.`,
-    rewardValue: i === 16 ? 906.80 : 906.70,
+    rewardValue: i === 16 ? 690.88 : 690.82,
     isCompleted: false,
     vipRequired: 'VIP PLATINO 420$' as VipLevel,
     category: (['Video de Fe', 'Sharing', 'Familia', 'Mentalidad'][i % 4] || 'Mentalidad') as any
   })),
 
-  // === VIP CORONA IMPERIAL 1000$ (20 Tareas de $61.16 USD c/u - Total: $1,223.20 USD Diario / $36,696.00 USD Mensual) ===
+  // === VIP CORONA IMPERIAL 1000$ (20 Tareas - Total: 40 USDT / 29360 Monedas Diarias) ===
   ...Array.from({ length: 20 }, (_, i) => ({
     id: `task_c${i + 1}`,
     title: [
@@ -447,7 +447,7 @@ export const TASKS_DATABASE: UserTask[] = [
       'Comentario: Declaración de Gozo Celestial Eterno'
     ][i] || `Misión Corona Imperial de Éxito #${i + 1}`,
     description: `Reflexión suprema reservada exclusivamente para miembros del Rango Corona Imperial para validar regalías reales de fe.`,
-    rewardValue: 1835.00,
+    rewardValue: 1468.00,
     isCompleted: false,
     vipRequired: 'VIP CORONA IMPERIAL 1000$' as VipLevel,
     category: (['Video de Fe', 'Compartir', 'Familia', 'Mentalidad'][i % 4] || 'Mentalidad') as any
