@@ -150,10 +150,11 @@ export default function WithdrawalCalendar({
   // Verify status of today (whether withdrawals are open right now for today)
   const todayDayOfWeek = today.getDay();
   const todayDayOfMonth = today.getDate();
-  const isWithdrawOpenToday = !config.enabled || 
-                              ((config.allowedDays.includes(todayDayOfWeek) || 
-                              config.allowedDates.includes(todayDateStr) ||
-                              allowedMonthDays.includes(todayDayOfMonth)) && today.getHours() >= 9);
+  const isDayAllowedToday = config.enabled && (
+                            config.allowedDays.includes(todayDayOfWeek) || 
+                            config.allowedDates.includes(todayDateStr) ||
+                            allowedMonthDays.includes(todayDayOfMonth));
+  const isWithdrawOpenToday = !config.enabled || (isDayAllowedToday && today.getHours() >= 9);
 
   return (
     <div id="virtual_withdrawal_calendar" className="p-5 rounded-3xl bg-zinc-950/90 border border-white/5 backdrop-blur-xl space-y-5 shadow-2xl relative overflow-hidden">
@@ -180,6 +181,11 @@ export default function WithdrawalCalendar({
             <>
               <span className="h-1.5 w-1.5 rounded-full bg-[#39FF14] animate-ping" />
               <span className="text-[#39FF14]">Abierto Hoy ✅</span>
+            </>
+          ) : isDayAllowedToday && today.getHours() < 9 ? (
+            <>
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span className="text-amber-400">Abre Hoy @ 9:00 AM ⏳</span>
             </>
           ) : (
             <>
