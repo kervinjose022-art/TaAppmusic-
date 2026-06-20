@@ -1011,6 +1011,11 @@ export default function App() {
         return;
       }
 
+      if (!attachedFileName || !previewBlob) {
+        alert("⚠️ Por favor, carga el Capture de pago o Voucher para completar tu registro.");
+        return;
+      }
+
       let startEarnings = 10.00;
       if (selectedInitialVip === 'VIP ORO 20$') startEarnings = 20.00;
       else if (selectedInitialVip === 'VIP RUBÍ 40$') startEarnings = 40.00;
@@ -1559,6 +1564,11 @@ export default function App() {
   const submitUpgradeRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!upgradeVipLevel) return;
+
+    if (!upgradeFileName || !upgradeFileBlob) {
+      alert("⚠️ Por favor, carga el Capture de pago o Voucher para completar tu solicitud de upgrade.");
+      return;
+    }
 
     const usdPrice = getLevelPriceInUsd(upgradeVipLevel);
     const bsPrice = getLevelPriceInBs(upgradeVipLevel);
@@ -2803,26 +2813,12 @@ export default function App() {
                 {/* Paso 4: Referencia cripto */}
                 <div className="space-y-4 rounded-2xl border border-white/5 bg-black/60 p-4">
                   <h4 className="text-[10px] uppercase font-mono tracking-wider font-extrabold text-white border-b border-white/5 pb-2">
-                    📝 Paso 4: Registrar Datos de Verificación
+                    📝 Paso 4: Cargar Capture de Pago
                   </h4>
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] uppercase font-mono tracking-widest text-[#39FF14] font-black block">
-                      TxHash, ID de Transacción o Referencia *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ej. Hash de Tx o ID de Pago Binance"
-                      value={inputReferenceNo}
-                      onChange={(e) => setInputReferenceNo(e.target.value)}
-                      className="w-full text-xs font-semibold bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] uppercase font-mono tracking-widest text-zinc-400 font-bold block">
-                      Capture de Pago Voucher / Capture de Pantalla (Opcional)
+                      Capture de Pago Voucher / Capture de Pantalla * (Obligatorio)
                     </label>
                     <div className="flex items-center gap-3">
                       <label className="flex h-10 px-4 rounded-xl border border-dashed border-zinc-700 bg-zinc-950 hover:border-[#39FF14] hover:bg-[#39FF14]/5 text-zinc-400 hover:text-white transition-all cursor-pointer items-center justify-center text-xs">
@@ -2932,8 +2928,8 @@ export default function App() {
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider font-sans">Pagar Cambio VIP</h3>
-                  <p className="text-[10px] text-zinc-400 leading-tight">Completa tu pago e ingresa la referencia para mejorar a <strong className="text-purple-400">{upgradeVipLevel}</strong></p>
+                  <h3 className="text-sm font-black text-white uppercase tracking-wider font-sans">Sube de Nivel VIP</h3>
+                  <p className="text-[10px] text-zinc-400 leading-tight">Completa tu pago y sube el capture del comprobante para actualizar a <strong className="text-purple-400">{upgradeVipLevel}</strong></p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-zinc-950 border border-white/5 text-left space-y-3">
@@ -2950,25 +2946,10 @@ export default function App() {
                     <p className="text-[8px] text-zinc-500 pt-0.5">* Envíe la cantidad exacta usando la red BNB Smart Chain (BEP20).</p>
                   </div>
 
-                  {/* Upgrade reference input */}
-                  <div className="space-y-1 text-left">
-                    <label className="text-[9px] uppercase font-mono tracking-widest text-[#39FF14] font-black block">
-                      TxHash o Referencia de Pago *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ej. ID de Tx o Código Binance"
-                      value={upgradeReferenceNo}
-                      onChange={(e) => setUpgradeReferenceNo(e.target.value)}
-                      className="w-full text-[11px] font-semibold bg-black border border-white/10 rounded-xl px-3 py-2 text-[#39FF14] placeholder-zinc-800 focus:outline-none focus:border-[#39FF14]"
-                    />
-                  </div>
-
                   {/* Upgrade File Uploder Capture */}
                   <div className="space-y-1.5 pt-0.5 text-left font-sans">
-                    <label className="text-[9px] uppercase font-mono tracking-widest text-zinc-400 font-bold block">
-                      Capture de Pago (Opcional)
+                    <label className="text-[9px] uppercase font-mono tracking-widest text-[#39FF14] font-black block">
+                      Capture de Pago * (Obligatorio)
                     </label>
                     <div className="flex items-center gap-2">
                       <label className="flex h-9 px-3 rounded-lg border border-dashed border-zinc-700 bg-black hover:border-purple-500 hover:bg-purple-950/20 text-gray-400 hover:text-white transition-all cursor-pointer items-center justify-center text-[10px]">
@@ -4439,6 +4420,11 @@ export default function App() {
                                   <div>Invitados Guardados: <strong className="text-zinc-300">{u.inviteCount || 0}</strong></div>
                                   <div>Comisiones Reales: <strong className="text-emerald-400">{actualCommissions.toFixed(2)} USD</strong></div>
                                   <div>Invitados Reales: <strong className="text-emerald-400">{actualCount} activos (con depósito)</strong></div>
+                                  {u.walletAddress && (
+                                    <div className="sm:col-span-2 border-t border-white/5 pt-1.5 mt-0.5 text-zinc-400">
+                                      Billetera o Pago de Retiro: <strong className="text-[#39FF14] select-all font-mono break-all">{u.walletAddress}</strong>
+                                    </div>
+                                  )}
                                   {u.proofFileBlob ? (
                                     <div className="sm:col-span-2 border-t border-white/5 pt-1.5 mt-0.5 flex items-center gap-2 flex-wrap">
                                       <span className="text-[10px] text-zinc-500 uppercase font-extrabold">Voucher de Pago:</span>

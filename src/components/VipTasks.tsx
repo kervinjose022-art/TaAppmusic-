@@ -308,14 +308,23 @@ export default function VipTasks({
         console.error("Firestore submit withdrawal error:", err);
       });
 
+      // Save/update walletAddress on user account in Firestore
+      const cleanName = userProfile.username ? userProfile.username.toLowerCase().trim() : '';
+      if (cleanName) {
+        setDoc(doc(db, 'users', cleanName), { walletAddress: finalAddress }, { merge: true }).catch(err => {
+          console.warn("Could not save wallet address to users collection:", err);
+        });
+      }
+
       const updatedHistory = [newWithdrawal, ...withdrawHistory];
       setWithdrawHistory(updatedHistory);
       localStorage.setItem('tappmusic_withdrawals', JSON.stringify(updatedHistory));
 
-      // Deduct from profile
+      // Deduct from profile and update wallet address
       setUserProfile(prev => ({
         ...prev,
-        earnings: Number((prev.earnings - amountVal).toFixed(2))
+        earnings: Number((prev.earnings - amountVal).toFixed(2)),
+        walletAddress: finalAddress
       }));
 
       setIsSubmittingWithdrawal(false);

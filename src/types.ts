@@ -82,6 +82,7 @@ export interface UserProfile {
   lastResetDate?: string;
   createdAt?: string;
   commissionPaid?: boolean;
+  walletAddress?: string;
 }
 
 export interface RecoveryRequest {
