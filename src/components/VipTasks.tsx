@@ -32,6 +32,7 @@ interface VipTasksProps {
     allowedDates: string[];
     allowedMonthDays?: number[];
   };
+  inviteCommissionsEarned?: number;
 }
 
 export default function VipTasks({ 
@@ -41,8 +42,15 @@ export default function VipTasks({
   setWithdrawHistory,
   voiceThemes = [],
   reels = [],
-  withdrawConfig = { enabled: true, allowedDays: [1, 5], allowedDates: [], allowedMonthDays: [10, 20, 30] }
+  withdrawConfig = { enabled: true, allowedDays: [1, 5], allowedDates: [], allowedMonthDays: [10, 20, 30] },
+  inviteCommissionsEarned = 0
 }: VipTasksProps) {
+  const taskEarningsCoins = userProfile.earnings || 0;
+  const taskEarningsUsdt = taskEarningsCoins / 734;
+  const inviteCommissionsCoins = inviteCommissionsEarned * 734;
+  const totalCoinsAvailable = Math.max(0, taskEarningsCoins + inviteCommissionsCoins);
+  const totalUsdtAvailable = totalCoinsAvailable / 734;
+
   const [tasks, setTasks] = useState<UserTask[]>(() => {
     // Check if task IDs already stored in user profile to mark as completed
     return TASKS_DATABASE.map(task => ({
@@ -194,8 +202,8 @@ export default function VipTasks({
       return;
     }
 
-    if (userProfile.earnings < amountVal) {
-      setWithdrawalError('Saldo de monedas insuficiente para retirar esta cantidad.');
+    if (totalCoinsAvailable < amountVal) {
+      setWithdrawalError('Saldo de monedas total (Tareas + Invitación) insuficiente para retirar esta cantidad.');
       return;
     }
 
@@ -309,15 +317,24 @@ export default function VipTasks({
         console.error("Firestore submit withdrawal error:", err);
       });
 
-      // Save/update walletAddress and deduct user's coins (earnings) in Firestore
+      // Save/update walletAddress and deduct user's coins (earnings) / invites commissions in Firestore
       const cleanName = userProfile.username ? userProfile.username.toLowerCase().trim() : '';
-      const newEarnings = Math.max(0, Number((userProfile.earnings - amountVal).toFixed(2)));
+      
+      const currentCommissionsCoins = inviteCommissionsEarned * 734;
+      const deductedFromCommissionsCoins = Math.min(currentCommissionsCoins, amountVal);
+      const deductedFromCommissionsUsd = Number((deductedFromCommissionsCoins / 734).toFixed(4));
+      const deductedFromTaskCoins = amountVal - deductedFromCommissionsCoins;
+
+      const newEarnings = Math.max(0, Number((userProfile.earnings - deductedFromTaskCoins).toFixed(2)));
+      const newInviteCommissionsEarned = Math.max(0, Number((inviteCommissionsEarned - deductedFromCommissionsUsd).toFixed(2)));
+
       if (cleanName) {
         setDoc(doc(db, 'users', cleanName), { 
           walletAddress: finalAddress,
-          earnings: newEarnings
+          earnings: newEarnings,
+          inviteCommissionsEarned: newInviteCommissionsEarned
         }, { merge: true }).catch(err => {
-          console.warn("Could not save wallet address and earnings to users collection:", err);
+          console.warn("Could not save wallet address, earnings, and commissions to users collection:", err);
         });
       }
 
@@ -329,6 +346,7 @@ export default function VipTasks({
       setUserProfile(prev => ({
         ...prev,
         earnings: newEarnings,
+        inviteCommissionsEarned: newInviteCommissionsEarned,
         walletAddress: finalAddress
       }));
 
@@ -1182,20 +1200,47 @@ export default function VipTasks({
               </div>
 
               {/* Stats boxes */}
-              <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-zinc-950/80 border border-white/5 text-left font-mono">
-                <div>
-                  <span className="text-[9px] text-zinc-500 uppercase block tracking-wider">Saldo Disponible</span>
-                  <span className="text-xl font-black text-white glow-text text-neon-green">
-                    {userProfile.earnings.toLocaleString()}
-                  </span>
-                  <span className="text-[9px] text-[#39FF14] font-bold ml-1.5 font-sans">Monedas</span>
+              <div className="space-y-2.5">
+                {/* Total Combined */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-zinc-950 to-purple-950/40 border border-emerald-500/30 text-left font-mono relative overflow-hidden">
+                  <div className="absolute top-0 right-0 h-16 w-16 bg-gradient-to-br from-[#39FF14]/10 to-purple-500/10 rounded-full blur-xl pointer-events-none" />
+                  <span className="text-[10px] text-zinc-400 uppercase block tracking-widest font-black">SALDO TOTAL RETIRABLE</span>
+                  <div className="flex justify-between items-baseline mt-1">
+                    <div>
+                      <span className="text-2xl font-black text-white glow-text text-neon-green">
+                        {totalCoinsAvailable.toLocaleString()}
+                      </span>
+                      <span className="text-[10px] text-[#39FF14] font-bold ml-1.5 font-sans">Monedas</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-2xl font-black text-[#39FF14]">
+                        ${totalUsdtAvailable.toFixed(2)}
+                      </span>
+                      <span className="text-[10px] text-zinc-400 ml-1.5 uppercase font-sans">USDT</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="border-l border-white/5 pl-4">
-                  <span className="text-[9px] text-zinc-500 uppercase block tracking-wider">Equivalente USDT</span>
-                  <span className="text-xl font-black text-[#39FF14]">
-                    ${(userProfile.earnings / 734).toFixed(2)}
-                  </span>
-                  <span className="text-[9px] text-zinc-400 ml-1.5 uppercase font-sans">USDT</span>
+
+                {/* Sub-breakdown */}
+                <div className="grid grid-cols-2 gap-3 p-3 rounded-2xl bg-zinc-950/80 border border-white/5 text-left font-mono text-[10px]">
+                  <div>
+                    <span className="text-zinc-500 block">💼 Tareas Diarias</span>
+                    <span className="font-bold text-white">
+                      {userProfile.earnings.toLocaleString()} <span className="text-[9px] text-zinc-500 font-normal font-sans">Moned.</span>
+                    </span>
+                    <span className="block text-zinc-500 text-[9px]">
+                      (${taskEarningsUsdt.toFixed(2)} USDT)
+                    </span>
+                  </div>
+                  <div className="border-l border-white/5 pl-3">
+                    <span className="text-zinc-500 block">🔗 Bono de Invitación</span>
+                    <span className="font-bold text-white">
+                      {inviteCommissionsCoins.toLocaleString()} <span className="text-[9px] text-zinc-500 font-normal font-sans">Moned.</span>
+                    </span>
+                    <span className="block text-zinc-500 text-[9px]">
+                      (${inviteCommissionsEarned.toFixed(2)} USDT)
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1403,7 +1448,7 @@ export default function VipTasks({
                     <div className="grid grid-cols-2 gap-2 mt-1.5">
                       {WITHDRAW_OPTIONS.map((opt) => {
                         const isSelected = withdrawalAmount === String(opt.coins);
-                        const canAfford = userProfile.earnings >= opt.coins;
+                        const canAfford = totalCoinsAvailable >= opt.coins;
                         return (
                           <button
                             key={opt.coins}
@@ -1474,7 +1519,7 @@ export default function VipTasks({
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2">
                     <button
                       type="submit"
-                      disabled={userProfile.earnings < (parseFloat(withdrawalAmount) || 3670)}
+                      disabled={totalCoinsAvailable < (parseFloat(withdrawalAmount) || 3670)}
                       className="sm:col-span-3 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#39FF14] to-emerald-400 hover:from-emerald-400 hover:to-[#39FF14] text-xs font-black uppercase text-black font-sans tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed text-shadow-none cursor-pointer"
                     >
                       <ArrowUpRight className="h-4 w-4 text-black" />

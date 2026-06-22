@@ -2378,6 +2378,7 @@ export default function App() {
                 voiceThemes={voiceThemes}
                 reels={reels}
                 withdrawConfig={withdrawConfig}
+                inviteCommissionsEarned={getInviteCommissions()}
               />
             </div>
 
