@@ -14,7 +14,9 @@ const WITHDRAW_OPTIONS = [
   { coins: 3670, usdt: 5 },
   { coins: 7340, usdt: 10 },
   { coins: 11010, usdt: 15 },
+  { coins: 22020, usdt: 30 },
   { coins: 36700, usdt: 50 },
+  { coins: 73400, usdt: 100 },
   { coins: 146800, usdt: 200 },
   { coins: 367000, usdt: 500 }
 ];
@@ -1201,10 +1203,10 @@ export default function VipTasks({
 
               {/* Stats boxes */}
               <div className="space-y-2.5">
-                {/* Total Combined */}
+                {/* Unified Saldo Actual Card */}
                 <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-zinc-950 to-purple-950/40 border border-emerald-500/30 text-left font-mono relative overflow-hidden">
                   <div className="absolute top-0 right-0 h-16 w-16 bg-gradient-to-br from-[#39FF14]/10 to-purple-500/10 rounded-full blur-xl pointer-events-none" />
-                  <span className="text-[10px] text-zinc-400 uppercase block tracking-widest font-black">SALDO TOTAL RETIRABLE</span>
+                  <span className="text-[10px] text-zinc-400 uppercase block tracking-widest font-black">SALDO ACTUAL DISPONIBLE</span>
                   <div className="flex justify-between items-baseline mt-1">
                     <div>
                       <span className="text-2xl font-black text-white glow-text text-neon-green">
@@ -1219,28 +1221,9 @@ export default function VipTasks({
                       <span className="text-[10px] text-zinc-400 ml-1.5 uppercase font-sans">USDT</span>
                     </div>
                   </div>
-                </div>
-
-                {/* Sub-breakdown */}
-                <div className="grid grid-cols-2 gap-3 p-3 rounded-2xl bg-zinc-950/80 border border-white/5 text-left font-mono text-[10px]">
-                  <div>
-                    <span className="text-zinc-500 block">💼 Tareas Diarias</span>
-                    <span className="font-bold text-white">
-                      {userProfile.earnings.toLocaleString()} <span className="text-[9px] text-zinc-500 font-normal font-sans">Moned.</span>
-                    </span>
-                    <span className="block text-zinc-500 text-[9px]">
-                      (${taskEarningsUsdt.toFixed(2)} USDT)
-                    </span>
-                  </div>
-                  <div className="border-l border-white/5 pl-3">
-                    <span className="text-zinc-500 block">🔗 Bono de Invitación</span>
-                    <span className="font-bold text-white">
-                      {inviteCommissionsCoins.toLocaleString()} <span className="text-[9px] text-zinc-500 font-normal font-sans">Moned.</span>
-                    </span>
-                    <span className="block text-zinc-500 text-[9px]">
-                      (${inviteCommissionsEarned.toFixed(2)} USDT)
-                    </span>
-                  </div>
+                  <p className="text-[9px] text-zinc-500 mt-2 font-sans">
+                    ✨ Tu saldo actual incluye tus recompensas de tareas diarias y comisiones por referidos acumulados de forma automática.
+                  </p>
                 </div>
               </div>
 

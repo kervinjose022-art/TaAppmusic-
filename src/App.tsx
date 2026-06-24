@@ -644,9 +644,10 @@ export default function App() {
         if (u.username && u.username.toLowerCase() === referrerUsername.toLowerCase()) {
           const currentCommissions = u.inviteCommissionsEarned || 0;
           const currentCount = u.inviteCount || 0;
+          const commissionCoins = Number((commissionUsd * 734).toFixed(2));
           const updatedUser = {
             ...u,
-            earnings: u.earnings + commissionUsd,
+            earnings: Number((u.earnings + commissionCoins).toFixed(2)),
             inviteCommissionsEarned: currentCommissions + commissionUsd,
             inviteCount: currentCount + 1
           };
@@ -1500,9 +1501,10 @@ export default function App() {
           
           if (referrerUser) {
             const commissionEarned = Number((regAmountUsd * 0.15).toFixed(2));
+            const commissionEarnedCoins = Number((commissionEarned * 734).toFixed(2));
             const updatedReferrer = {
               ...referrerUser,
-              earnings: Number((referrerUser.earnings + commissionEarned).toFixed(2)),
+              earnings: Number((referrerUser.earnings + commissionEarnedCoins).toFixed(2)),
               inviteCommissionsEarned: Number(((referrerUser.inviteCommissionsEarned || 0) + commissionEarned).toFixed(2)),
               inviteCount: (referrerUser.inviteCount || 0) + 1
             };
