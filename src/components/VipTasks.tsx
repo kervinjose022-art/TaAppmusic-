@@ -47,10 +47,7 @@ export default function VipTasks({
   withdrawConfig = { enabled: true, allowedDays: [1, 5], allowedDates: [], allowedMonthDays: [10, 20, 30] },
   inviteCommissionsEarned = 0
 }: VipTasksProps) {
-  const taskEarningsCoins = userProfile.earnings || 0;
-  const taskEarningsUsdt = taskEarningsCoins / 734;
-  const inviteCommissionsCoins = inviteCommissionsEarned * 734;
-  const totalCoinsAvailable = Math.max(0, taskEarningsCoins + inviteCommissionsCoins);
+  const totalCoinsAvailable = userProfile.earnings || 0;
   const totalUsdtAvailable = totalCoinsAvailable / 734;
 
   const [tasks, setTasks] = useState<UserTask[]>(() => {
@@ -322,13 +319,9 @@ export default function VipTasks({
       // Save/update walletAddress and deduct user's coins (earnings) / invites commissions in Firestore
       const cleanName = userProfile.username ? userProfile.username.toLowerCase().trim() : '';
       
-      const currentCommissionsCoins = inviteCommissionsEarned * 734;
-      const deductedFromCommissionsCoins = Math.min(currentCommissionsCoins, amountVal);
-      const deductedFromCommissionsUsd = Number((deductedFromCommissionsCoins / 734).toFixed(4));
-      const deductedFromTaskCoins = amountVal - deductedFromCommissionsCoins;
-
-      const newEarnings = Math.max(0, Number((userProfile.earnings - deductedFromTaskCoins).toFixed(2)));
-      const newInviteCommissionsEarned = Math.max(0, Number((inviteCommissionsEarned - deductedFromCommissionsUsd).toFixed(2)));
+      const newEarnings = Math.max(0, Number((userProfile.earnings - amountVal).toFixed(2)));
+      const amountUsdtVal = amountVal / 734;
+      const newInviteCommissionsEarned = Math.max(0, Number(((userProfile.inviteCommissionsEarned || 0) - amountUsdtVal).toFixed(2)));
 
       if (cleanName) {
         setDoc(doc(db, 'users', cleanName), { 

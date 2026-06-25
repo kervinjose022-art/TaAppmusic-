@@ -83,6 +83,7 @@ export interface UserProfile {
   createdAt?: string;
   commissionPaid?: boolean;
   walletAddress?: string;
+  commissionsMergedV4?: boolean;
 }
 
 export interface RecoveryRequest {

@@ -181,6 +181,49 @@ export default function App() {
           }
         }
 
+        // Commissions Integration Migration V4:
+        // Add existing legacy inviteCommissionsEarned (in USD, multiplied by 734 to convert to coins)
+        // directly to the user's main coin balance "earnings", and set commissionsMergedV4 to true.
+        if (!usersSnap.empty) {
+          for (const uDoc of usersSnap.docs) {
+            const u = uDoc.data() as any;
+            if (u.username && !u.commissionsMergedV4) {
+              const legacyCommissionsUsd = u.inviteCommissionsEarned || 0;
+              if (legacyCommissionsUsd > 0) {
+                const commissionCoins = Number((legacyCommissionsUsd * 734).toFixed(2));
+                const newEarnings = Number(((u.earnings || 0) + commissionCoins).toFixed(2));
+                
+                await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), {
+                  earnings: newEarnings,
+                  commissionsMergedV4: true
+                }, { merge: true });
+
+                // Sync current active local profile if it matches
+                const savedProfileStr = localStorage.getItem('tappmusic_profile');
+                if (savedProfileStr) {
+                  try {
+                    const savedObj = JSON.parse(savedProfileStr) as UserProfile;
+                    if (savedObj.username && savedObj.username.toLowerCase().trim() === u.username.toLowerCase().trim()) {
+                      const updatedLocal = {
+                        ...savedObj,
+                        earnings: newEarnings,
+                        commissionsMergedV4: true
+                      };
+                      setUserProfile(updatedLocal);
+                      localStorage.setItem('tappmusic_profile', JSON.stringify(updatedLocal));
+                    }
+                  } catch (e) {}
+                }
+              } else {
+                // No legacy commissions, just mark as merged
+                await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), {
+                  commissionsMergedV4: true
+                }, { merge: true });
+              }
+            }
+          }
+        }
+
         const latestVoices = [
           {
             id: 'jesus',
@@ -634,10 +677,9 @@ export default function App() {
     }
   };
 
-  // 15% VIP Commission Payout engine
+  // $1.50 Flat VIP Commission Payout engine
   const addCommissionToReferrer = (referrerUsername: string, level: VipLevel) => {
-    const priceUsd = getLevelPriceInUsd(level);
-    const commissionUsd = priceUsd * 0.15;
+    const commissionUsd = 1.50;
     
     setAllUsers(prev => {
       const updatedList = prev.map(u => {
@@ -937,8 +979,7 @@ export default function App() {
     
     let totalCommissions = 0;
     referredActiveUsers.forEach(u => {
-      const priceUsd = getLevelPriceInUsd(u.vipLevel);
-      totalCommissions += priceUsd * 0.15;
+      totalCommissions += 1.50;
     });
 
     let earned = Math.max(userProfile.inviteCommissionsEarned || 0, totalCommissions);
@@ -1060,6 +1101,7 @@ export default function App() {
         inviteCommissionsEarned: 0,
         inviteCount: 0,
         createdAt: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        commissionsMergedV4: true,
         ...(referredBy ? { invitedBy: referredBy } : {})
       };
 
@@ -1500,7 +1542,7 @@ export default function App() {
           }
           
           if (referrerUser) {
-            const commissionEarned = Number((regAmountUsd * 0.15).toFixed(2));
+            const commissionEarned = 1.50;
             const commissionEarnedCoins = Number((commissionEarned * 734).toFixed(2));
             const updatedReferrer = {
               ...referrerUser,
@@ -2309,8 +2351,8 @@ export default function App() {
                   <Sparkles className="h-4 w-4 text-purple-400" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-black tracking-wider text-white uppercase font-sans">🔗 Sistema de Comisión por Invitación (15%)</h3>
-                  <p className="text-[10px] text-zinc-500 font-mono">¡Gana el 15% del valor de activación de cada amigo que invites!</p>
+                  <h3 className="text-xs font-black tracking-wider text-white uppercase font-sans">🔗 Sistema de Comisión por Invitación ($1.50)</h3>
+                  <p className="text-[10px] text-zinc-500 font-mono">¡Gana $1.50 USD exactos por cada amigo activo que invites!</p>
                 </div>
               </div>
 
@@ -2347,7 +2389,7 @@ export default function App() {
               <div className="p-3 rounded-2xl bg-zinc-950 border border-white/5 font-mono text-[11px] space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-[9px] font-bold text-purple-400 uppercase tracking-widest block">Tu Enlace Personal De Invitación:</span>
-                  <span className="text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded uppercase font-black">Activo • 15% Comisión</span>
+                  <span className="text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded uppercase font-black">Activo • $1.50 USD</span>
                 </div>
                 <div className="flex items-center gap-2 bg-black border border-white/5 rounded-xl px-3 py-2">
                   <span className="text-zinc-400 truncate flex-1 leading-tight lowercase font-medium">
@@ -2356,7 +2398,7 @@ export default function App() {
                   <button
                     onClick={() => {
                       robustCopyToClipboard(`${sharedUrl}/?ref=${userProfile.username}`);
-                      alert("✅ ¡Enlace de invitación personalizado copiado con éxito! Compártelo para ganar 15% de comisión.");
+                      alert("✅ ¡Enlace de invitación personalizado copiado con éxito! Compártelo para ganar $1.50 por cada invitado activo.");
                     }}
                     className="h-7 px-2.5 rounded-lg bg-purple-950 text-purple-300 border border-purple-500/30 hover:border-purple-400 hover:text-white transition-all text-[9.5px] uppercase font-black shrink-0 tracking-wide cursor-pointer active:scale-95"
                   >
@@ -4442,8 +4484,7 @@ export default function App() {
                             });
                             const actualCount = actualReferred.length;
                             const actualCommissions = actualReferred.reduce((total, refUser) => {
-                              const priceUsd = getLevelPriceInUsd(refUser.vipLevel);
-                              return total + (priceUsd * 0.15);
+                              return total + 1.50;
                             }, 0);
 
                             return (
