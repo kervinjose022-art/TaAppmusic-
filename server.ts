@@ -198,6 +198,14 @@ async function startServer() {
   });
 }
 
+process.on("uncaughtException", (error) => {
+  console.error("[Tappmusic] Caught uncaughtException to prevent crash:", error);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("[Tappmusic] Caught unhandledRejection to prevent crash. Reason:", reason);
+});
+
 startServer().catch((error) => {
   console.error("[Tappmusic] Critical error during server startup:", error);
   process.exit(1);
