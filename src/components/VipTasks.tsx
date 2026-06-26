@@ -58,6 +58,14 @@ export default function VipTasks({
     }));
   });
 
+  // Synchronize tasks state when user profile changes to prevent stale completion checks across logins/updates
+  useEffect(() => {
+    setTasks(TASKS_DATABASE.map(task => ({
+      ...task,
+      isCompleted: (userProfile.completedTaskIds || []).includes(task.id)
+    })));
+  }, [userProfile.completedTaskIds, userProfile.vipLevel]);
+
   const [activeTab, setActiveTab] = useState<'disponibles' | 'completadas'>('disponibles');
   
   // Custom interactive countdown player states
