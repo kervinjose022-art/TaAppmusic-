@@ -622,6 +622,12 @@ export default function VipTasks({
       return;
     }
 
+    const todayStr = new Date().toLocaleDateString('es-ES');
+    if (userProfile.blockedTasksUntilDate === todayStr) {
+      alert(`⚠️ Has ascendido de VIP hoy y ya habías completado tus tareas de hoy. Tus nuevas tareas del nivel ${userProfile.vipLevel} estarán disponibles mañana.`);
+      return;
+    }
+
     // Guard of VIP level: Check exact level match
     if (task.vipRequired !== userProfile.vipLevel) {
       alert(`⚠️ Tu cuenta se encuentra en el rango ${userProfile.vipLevel}. Solo puedes realizar tareas correspondientes a tu nivel exacto.`);
@@ -843,7 +849,7 @@ export default function VipTasks({
               : 'text-gray-500 hover:text-white'
           }`}
         >
-          Disponibles ({tasks.filter(t => t.vipRequired === userProfile.vipLevel && !userProfile.completedTaskIds.includes(t.id)).length})
+          Disponibles ({userProfile.blockedTasksUntilDate === new Date().toLocaleDateString('es-ES') ? 0 : tasks.filter(t => t.vipRequired === userProfile.vipLevel && !userProfile.completedTaskIds.includes(t.id)).length})
         </button>
 
         <button
@@ -859,7 +865,17 @@ export default function VipTasks({
       </div>
 
       {/* Tasks Render lists */}
-      {currentFilteredTasks.length === 0 ? (
+      {userProfile.blockedTasksUntilDate === new Date().toLocaleDateString('es-ES') && activeTab === 'disponibles' ? (
+        <div className="py-10 px-4 text-center rounded-2xl border border-yellow-500/20 bg-yellow-950/10 font-sans text-xs">
+          <div className="mx-auto w-10 h-10 rounded-full bg-yellow-500/15 flex items-center justify-center mb-3">
+            <Lock className="h-5 w-5 text-yellow-500" />
+          </div>
+          <h4 className="text-yellow-400 font-bold text-sm mb-1.5 uppercase tracking-wide">Regalías de hoy completadas</h4>
+          <p className="text-zinc-400 leading-relaxed max-w-sm mx-auto font-mono text-[11px]">
+            Has ascendido de rango VIP el día de hoy y ya habías realizado tus tareas diarias. Como son tareas de asignación diaria, tus nuevas tareas del nivel <strong className="text-white">{userProfile.vipLevel}</strong> se habilitarán mañana. ¡Te esperamos mañana para seguir ganando regalías!
+          </p>
+        </div>
+      ) : currentFilteredTasks.length === 0 ? (
         <div className="py-12 text-center text-gray-600 font-mono text-xs">
           {activeTab === 'disponibles' 
             ? '¡Excelente! Has completado todas las tareas disponibles de tu VIP.'

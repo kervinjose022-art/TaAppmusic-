@@ -6,6 +6,8 @@ interface WithdrawConfig {
   allowedDays: number[]; // 0 for Sunday, 1 for Monday... 5 for Friday, 6 for Saturday
   allowedDates: string[]; // "YYYY-MM-DD"
   allowedMonthDays?: number[]; // Days of the month (1-31), e.g. [10, 20, 30]
+  apkDownloadUrl?: string;
+  depositAddress?: string;
 }
 
 interface WithdrawalCalendarProps {
@@ -421,6 +423,32 @@ export default function WithdrawalCalendar({
               </div>
             </div>
           )}
+
+          {/* Secure Dynamic Deposit Address Admin Input */}
+          <div className="space-y-2 mt-4 pt-4 border-t border-white/5 bg-black/35 p-3 rounded-2xl">
+            <span className="text-[9px] font-mono font-extrabold text-[#39FF14] uppercase tracking-widest block">
+              🛡️ DIRECCIÓN DE DEPÓSITO USDT (BEP-20) ACTUAL DE LA PLATAFORMA:
+            </span>
+            <p className="text-[9px] font-sans text-zinc-500 leading-normal">
+              Esta es la dirección USDT que ven los usuarios al solicitar subir de VIP o comprar membresías. Cambiarla aquí la actualiza instantáneamente en toda la aplicación bajo los protocolos de seguridad de Firebase, previniendo alteraciones locales no autorizadas.
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={config.depositAddress || '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0'}
+                onChange={(e) => {
+                  if (onUpdateConfig) {
+                    onUpdateConfig({
+                      ...config,
+                      depositAddress: e.target.value.trim()
+                    });
+                  }
+                }}
+                placeholder="Ej. 0x29f0..."
+                className="flex-1 h-9 px-3 bg-black border border-white/10 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-[#39FF14]"
+              />
+            </div>
+          </div>
         </div>
       )}
 

@@ -401,12 +401,13 @@ export default function App() {
                   const statusChanged = prevProfile.status !== updatedProfile.status;
                   const inviteCountChanged = prevProfile.inviteCount !== updatedProfile.inviteCount;
                   const inviteCommissionsChanged = prevProfile.inviteCommissionsEarned !== updatedProfile.inviteCommissionsEarned;
+                  const blockChanged = prevProfile.blockedTasksUntilDate !== updatedProfile.blockedTasksUntilDate;
                   
                   const prevTasksStr = [...(prevProfile.completedTaskIds || [])].sort().join(',');
                   const updatedTasksStr = [...(updatedProfile.completedTaskIds || [])].sort().join(',');
                   const tasksChanged = prevTasksStr !== updatedTasksStr;
 
-                  if (earningsChanged || vipLevelChanged || statusChanged || inviteCountChanged || inviteCommissionsChanged || tasksChanged) {
+                  if (earningsChanged || vipLevelChanged || statusChanged || inviteCountChanged || inviteCommissionsChanged || tasksChanged || blockChanged) {
                     return {
                       ...prevProfile,
                       ...updatedProfile
@@ -472,6 +473,12 @@ export default function App() {
           needsUpdate = true;
         }
 
+        // Auto-initialize the secure deposit address
+        if (!data.depositAddress) {
+          data.depositAddress = '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0';
+          needsUpdate = true;
+        }
+
         // Self-healing: If there are leftover weekdays or missing allowedMonthDays, automatically clear them
         // and set the standard 10, 20, and 30 of each month to avoid user confusion.
         if ((data.allowedDays && data.allowedDays.length > 0) || !data.hasOwnProperty('allowedMonthDays')) {
@@ -493,7 +500,8 @@ export default function App() {
           allowedDays: [], // Only month days 10, 20, 30
           allowedDates: [],
           allowedMonthDays: [10, 20, 30],
-          apkDownloadUrl: 'https://drive.google.com/file/d/1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5/view?usp=drivesdk'
+          apkDownloadUrl: 'https://drive.google.com/file/d/1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5/view?usp=drivesdk',
+          depositAddress: '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0'
         };
         setDoc(doc(db, 'config', 'withdrawals'), defaultVal).catch(err => {
           console.warn("Could not seed config/withdrawals in Firestore:", err);
@@ -555,6 +563,33 @@ export default function App() {
   });
   const [showAdminCodePrompt, setShowAdminCodePrompt] = useState(false);
   const [adminUnlockCode, setAdminUnlockCode] = useState('');
+
+  // Automatically synchronize active admin session UID in Firestore
+  useEffect(() => {
+    let active = true;
+    if (isAdminVerified && auth.currentUser) {
+      const savedProfile = localStorage.getItem('tappmusic_profile');
+      let enteredPass = '7340';
+      if (savedProfile) {
+        try {
+          const u = JSON.parse(savedProfile);
+          if (u.password) {
+            enteredPass = u.password;
+          }
+        } catch (e) {}
+      }
+      setDoc(doc(db, 'config', 'admin_session'), {
+        uid: auth.currentUser.uid,
+        adminPassword: enteredPass,
+        updatedAt: new Date().toISOString()
+      }).catch(err => {
+        console.warn("Could not sync admin session to Firestore:", err);
+      });
+    }
+    return () => {
+      active = false;
+    };
+  }, [isAdminVerified, auth.currentUser]);
 
   // VIP Upgrade Request States
   const [upgradeVipLevel, setUpgradeVipLevel] = useState<VipLevel | null>(null);
@@ -1499,11 +1534,18 @@ export default function App() {
         const targetVip = regVipLevel ? (regVipLevel as VipLevel) : userData.vipLevel;
         // Consider commission already paid if commissionPaid is true OR user was already active!
         const isAlreadyPaid = !!userData.commissionPaid || userData.status === 'active';
+        
+        // Detect if they had already completed tasks today and are upgrading/changing their VIP level
+        const hasDoneTasksToday = userData.completedTaskIds && userData.completedTaskIds.length > 0;
+        const isUpgrade = userData.vipLevel !== targetVip;
+        const todayDateStr = new Date().toLocaleDateString('es-ES');
+
         const activatedTarget = { 
           ...userData, 
           status: 'active' as const,
           vipLevel: targetVip,
-          commissionPaid: true
+          commissionPaid: true,
+          ...(hasDoneTasksToday && isUpgrade ? { blockedTasksUntilDate: todayDateStr } : {})
         };
         
         // Clean any undefined properties to satisfy Firestore setDoc constraints
@@ -2049,11 +2091,11 @@ export default function App() {
                        <div className="space-y-1">
                          <span className="text-[9px] text-zinc-500 block leading-tight">Dirección USDT BEP-20 (BNB Smart Chain):</span>
                          <div className="flex items-center gap-1.5 bg-black p-2 rounded-lg border border-white/5">
-                           <code className="text-[9.5px] text-purple-300 break-all select-all flex-1 font-mono">0x29f0f1edd5258ee3b7553bff665df4d1dd811af0</code>
+                           <code className="text-[9.5px] text-purple-300 break-all select-all flex-1 font-mono">{withdrawConfig?.depositAddress || '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0'}</code>
                            <button
                              type="button"
                              onClick={() => {
-                               navigator.clipboard.writeText('0x29f0f1edd5258ee3b7553bff665df4d1dd811af0');
+                               navigator.clipboard.writeText(withdrawConfig?.depositAddress || '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0');
                                setCopiedAddressFeedback(true);
                                setTimeout(() => setCopiedAddressFeedback(false), 2000);
                              }}
@@ -2846,7 +2888,7 @@ export default function App() {
                          <button
                            type="button"
                            onClick={() => {
-                             navigator.clipboard.writeText('0x29f0f1edd5258ee3b7553bff665df4d1dd811af0');
+                             navigator.clipboard.writeText(withdrawConfig?.depositAddress || '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0');
                              setCopiedAddressFeedback(true);
                              setTimeout(() => setCopiedAddressFeedback(false), 2000);
                            }}
@@ -2994,7 +3036,7 @@ export default function App() {
                   <div className="p-2.5 rounded-xl bg-black border border-purple-500/15 space-y-1.5 font-mono text-[9px] leading-normal text-zinc-350">
                     <span className="text-zinc-500 block font-bold">Dirección USDT BEP-20 (BNB Chain):</span>
                     <div className="flex items-center gap-1 bg-zinc-950 p-1.5 rounded border border-white/5">
-                      <code className="text-purple-300 break-all select-all font-mono text-[8px] flex-1">0x29f0f1edd5258ee3b7553bff665df4d1dd811af0</code>
+                      <code className="text-purple-300 break-all select-all font-mono text-[8px] flex-1">{withdrawConfig?.depositAddress || '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0'}</code>
                     </div>
                     <p className="text-[8px] text-zinc-500 pt-0.5">* Envíe la cantidad exacta usando la red BNB Smart Chain (BEP20).</p>
                   </div>

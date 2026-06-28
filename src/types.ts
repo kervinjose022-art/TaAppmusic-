@@ -84,6 +84,7 @@ export interface UserProfile {
   commissionPaid?: boolean;
   walletAddress?: string;
   commissionsMergedV4?: boolean;
+  blockedTasksUntilDate?: string;
 }
 
 export interface RecoveryRequest {

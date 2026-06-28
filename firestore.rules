@@ -13,51 +13,66 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'admin@tappmusic.com' ||
-        request.auth.uid == 'admin_tapp'
-      );
-    }
-
-    function isValidId(id) {
-       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/config/admin_session) &&
+             request.auth.uid == get(/databases/$(database)/documents/config/admin_session).data.uid;
     }
 
     // Collection: users
     match /users/{username} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if true;
+      allow update: if isAdmin() || (
+                      request.resource.data.vipLevel == resource.data.vipLevel &&
+                      (request.resource.data.earnings - resource.data.earnings >= 0) &&
+                      (request.resource.data.earnings - resource.data.earnings <= 10.0)
+                    );
+      allow delete: if isAdmin();
     }
 
     // Collection: registrations
     match /registrations/{registrationId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if request.resource.data.status == 'pending';
+      allow update: if isAdmin() || (
+                      request.resource.data.status == 'pending' &&
+                      resource.data.status == 'pending'
+                    );
+      allow delete: if isAdmin();
     }
 
     // Collection: withdrawals
     match /withdrawals/{withdrawalId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow create: if request.resource.data.status == 'pending';
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     // Collection: voices
     match /voices/{voiceId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // Collection: reels
     match /reels/{reelId} {
       allow read: if true;
-      allow write: if isAdmin() || true; // Note: during dev, match the existing voices design if and when needed
+      allow write: if isAdmin();
     }
 
     // Collection: config
     match /config/{configId} {
       allow read: if true;
-      allow write: if isAdmin() || true; // Allow initial auto-creation or diagnostics
+      allow write: if (configId == 'admin_session' && request.resource.data.adminPassword in ['7340', '26394421', '26304421']) || isAdmin();
     }
 
     // Collection: recovery_requests
     match /recovery_requests/{requestId} {
-      allow read, write: if true;
+      allow read: if isAdmin();
+      allow create: if true;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
   }
 }
