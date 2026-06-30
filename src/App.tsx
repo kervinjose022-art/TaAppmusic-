@@ -671,7 +671,20 @@ export default function App() {
 
   // Synchronous and on-demand helper to force sync admin session before any sensitive write
   const ensureAdminSessionSync = async () => {
-    if (isAdminVerified && authUser) {
+    if (!isAdminVerified) return;
+
+    let currentAuthUser = authUser || auth.currentUser;
+    if (!currentAuthUser) {
+      try {
+        const credential = await signInAnonymously(auth);
+        currentAuthUser = credential.user;
+        setAuthUser(currentAuthUser);
+      } catch (err) {
+        console.warn("Could not sign in anonymously on-demand:", err);
+      }
+    }
+
+    if (currentAuthUser) {
       const savedProfile = localStorage.getItem('tappmusic_profile');
       let enteredPass = '7340';
       let currentAdminUsername = 'admin_tapp';
@@ -694,16 +707,20 @@ export default function App() {
           }
         } catch (e) {}
       }
-      await setDoc(doc(db, 'config', 'admin_session'), {
-        uid: authUser.uid,
-        adminPassword: enteredPass,
-        updatedAt: new Date().toISOString()
-      });
+      try {
+        await setDoc(doc(db, 'config', 'admin_session'), {
+          uid: currentAuthUser.uid,
+          adminPassword: enteredPass,
+          updatedAt: new Date().toISOString()
+        });
+      } catch (err) {
+        console.warn("Could not write config/admin_session:", err);
+      }
 
       const cleanAdminName = currentAdminUsername.toLowerCase().trim();
       try {
         await setDoc(doc(db, 'users', cleanAdminName), {
-          uid: authUser.uid
+          uid: currentAuthUser.uid
         }, { merge: true });
       } catch (e) {
         console.warn("Could not force sync uid to user doc:", e);
@@ -4972,10 +4989,16 @@ export default function App() {
                                       const newCoins = parseFloat(el.value);
                                       if (!isNaN(newCoins)) {
                                         const updatedUser = { ...u, earnings: newCoins };
+                                        // Clean any undefined properties to satisfy Firestore setDoc constraints
+                                        Object.keys(updatedUser).forEach(key => {
+                                          if ((updatedUser as any)[key] === undefined) {
+                                            delete (updatedUser as any)[key];
+                                          }
+                                        });
                                         try {
                                           await ensureAdminSessionSync();
                                           await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), updatedUser);
-                                          setAllUsers(prev => prev.map(usr => usr.username.toLowerCase() === u.username.toLowerCase() ? updatedUser : usr));
+                                          setAllUsers(prev => prev.map(usr => usr.username && u.username && usr.username.toLowerCase() === u.username.toLowerCase() ? updatedUser : usr));
                                           if (userProfile.username && u.username && userProfile.username.toLowerCase() === u.username.toLowerCase()) {
                                             saveProfile(updatedUser);
                                           }
