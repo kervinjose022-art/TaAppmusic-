@@ -76,7 +76,7 @@ service cloud.firestore {
 
     // Collection: recovery_requests
     match /recovery_requests/{requestId} {
-      allow read: if isAdmin();
+      allow read: if true;
       allow create: if true;
       allow update: if isAdmin();
       allow delete: if isAdmin();
