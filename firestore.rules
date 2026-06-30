@@ -24,8 +24,15 @@ service cloud.firestore {
       allow create: if true;
       allow update: if isAdmin() || (
                       request.resource.data.vipLevel == resource.data.vipLevel &&
-                      (request.resource.data.earnings - resource.data.earnings >= 0) &&
-                      (request.resource.data.earnings - resource.data.earnings <= 10.0)
+                      (
+                        // User can decrease their earnings (withdrawal)
+                        (request.resource.data.earnings < resource.data.earnings) ||
+                        // User can increase their earnings by up to 10.0 coins per update (task completion)
+                        (
+                          (request.resource.data.earnings - resource.data.earnings >= 0) &&
+                          (request.resource.data.earnings - resource.data.earnings <= 10.0)
+                        )
+                      )
                     );
       allow delete: if isAdmin();
     }
@@ -33,10 +40,10 @@ service cloud.firestore {
     // Collection: registrations
     match /registrations/{registrationId} {
       allow read: if true;
-      allow create: if request.resource.data.status == 'pending';
+      allow create: if request.resource.data.status in ['pending', 'pendiente', 'Pendiente'];
       allow update: if isAdmin() || (
-                      request.resource.data.status == 'pending' &&
-                      resource.data.status == 'pending'
+                      request.resource.data.status in ['pending', 'pendiente', 'Pendiente'] &&
+                      resource.data.status in ['pending', 'pendiente', 'Pendiente']
                     );
       allow delete: if isAdmin();
     }
@@ -44,7 +51,7 @@ service cloud.firestore {
     // Collection: withdrawals
     match /withdrawals/{withdrawalId} {
       allow read: if true;
-      allow create: if request.resource.data.status == 'pending';
+      allow create: if request.resource.data.status in ['pending', 'pendiente', 'Pendiente'];
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }

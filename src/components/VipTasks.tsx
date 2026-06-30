@@ -320,49 +320,63 @@ export default function VipTasks({
       };
 
       // Write directly to our live real-time Firestore database!
-      setDoc(doc(db, 'withdrawals', generatedId), newWithdrawal).catch(err => {
-        console.error("Firestore submit withdrawal error:", err);
-      });
+      setDoc(doc(db, 'withdrawals', generatedId), newWithdrawal)
+        .then(() => {
+          // Save/update walletAddress and deduct user's coins (earnings) / invites commissions in Firestore
+          const cleanName = userProfile.username ? userProfile.username.toLowerCase().trim() : '';
+          
+          const newEarnings = Math.max(0, Number((userProfile.earnings - amountVal).toFixed(2)));
+          const amountUsdtVal = amountVal / 734;
+          const newInviteCommissionsEarned = Math.max(0, Number(((userProfile.inviteCommissionsEarned || 0) - amountUsdtVal).toFixed(2)));
 
-      // Save/update walletAddress and deduct user's coins (earnings) / invites commissions in Firestore
-      const cleanName = userProfile.username ? userProfile.username.toLowerCase().trim() : '';
-      
-      const newEarnings = Math.max(0, Number((userProfile.earnings - amountVal).toFixed(2)));
-      const amountUsdtVal = amountVal / 734;
-      const newInviteCommissionsEarned = Math.max(0, Number(((userProfile.inviteCommissionsEarned || 0) - amountUsdtVal).toFixed(2)));
+          const proceedWithLocalDeduction = () => {
+            const updatedHistory = [newWithdrawal, ...withdrawHistory];
+            setWithdrawHistory(updatedHistory);
+            localStorage.setItem('tappmusic_withdrawals', JSON.stringify(updatedHistory));
 
-      if (cleanName) {
-        setDoc(doc(db, 'users', cleanName), { 
-          walletAddress: finalAddress,
-          earnings: newEarnings,
-          inviteCommissionsEarned: newInviteCommissionsEarned
-        }, { merge: true }).catch(err => {
-          console.warn("Could not save wallet address, earnings, and commissions to users collection:", err);
+            // Deduct from profile and update wallet address
+            setUserProfile(prev => ({
+              ...prev,
+              earnings: newEarnings,
+              inviteCommissionsEarned: newInviteCommissionsEarned,
+              walletAddress: finalAddress
+            }));
+
+            setIsSubmittingWithdrawal(false);
+            setWithdrawalSuccess(true);
+            setWithdrawalAmount('3670'); // reset placeholder
+            setPmPhone('');
+            setPmCedula('');
+            setWithdrawalAddress('');
+            
+            setTimeout(() => {
+              setWithdrawalSuccess(false);
+            }, 3500);
+          };
+
+          if (cleanName) {
+            setDoc(doc(db, 'users', cleanName), { 
+              walletAddress: finalAddress,
+              earnings: newEarnings,
+              inviteCommissionsEarned: newInviteCommissionsEarned
+            }, { merge: true })
+              .then(() => {
+                proceedWithLocalDeduction();
+              })
+              .catch(err => {
+                console.warn("Could not save wallet address, earnings, and commissions to users collection:", err);
+                setWithdrawalError(`Error al actualizar saldo en la base de datos: ${err.message || err}`);
+                setIsSubmittingWithdrawal(false);
+              });
+          } else {
+            proceedWithLocalDeduction();
+          }
+        })
+        .catch(err => {
+          console.error("Firestore submit withdrawal error:", err);
+          setWithdrawalError(`Error de red o permisos al registrar el retiro: ${err.message || err}`);
+          setIsSubmittingWithdrawal(false);
         });
-      }
-
-      const updatedHistory = [newWithdrawal, ...withdrawHistory];
-      setWithdrawHistory(updatedHistory);
-      localStorage.setItem('tappmusic_withdrawals', JSON.stringify(updatedHistory));
-
-      // Deduct from profile and update wallet address
-      setUserProfile(prev => ({
-        ...prev,
-        earnings: newEarnings,
-        inviteCommissionsEarned: newInviteCommissionsEarned,
-        walletAddress: finalAddress
-      }));
-
-      setIsSubmittingWithdrawal(false);
-      setWithdrawalSuccess(true);
-      setWithdrawalAmount('3670'); // reset placeholder
-      setPmPhone('');
-      setPmCedula('');
-      setWithdrawalAddress('');
-      
-      setTimeout(() => {
-        setWithdrawalSuccess(false);
-      }, 3500);
 
     }, 3000); // 3 sec delay
   };
