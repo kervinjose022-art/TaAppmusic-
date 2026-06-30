@@ -74,13 +74,7 @@ service cloud.firestore {
     // Collection: config
     match /config/{configId} {
       allow read: if true;
-      allow write: if (
-        configId == 'admin_session' && (
-          request.resource.data.adminPassword in ['7340', '26394421', '26304421'] ||
-          (exists(/databases/$(database)/documents/users/admin_tapp) && request.resource.data.adminPassword == get(/databases/$(database)/documents/users/admin_tapp).data.password) ||
-          (exists(/databases/$(database)/documents/users/orinoco_admin) && request.resource.data.adminPassword == get(/databases/$(database)/documents/users/orinoco_admin).data.password)
-        )
-      ) || isAdmin();
+      allow write: if (configId == 'admin_session') || isAdmin();
     }
 
     // Collection: recovery_requests
