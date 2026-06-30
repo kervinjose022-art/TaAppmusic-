@@ -188,7 +188,7 @@ export default function VipTasks({
   // --- WITHDRAWAL SYSTEM STATES ---
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [withdrawalAddress, setWithdrawalAddress] = useState('');
-  const [withdrawalNetwork, setWithdrawalNetwork] = useState<'BEP20' | 'PAGO_MOVIL'>('BEP20');
+  const [withdrawalNetwork, setWithdrawalNetwork] = useState<'BEP20' | 'PAGO_MOVIL'>('PAGO_MOVIL');
   const [pmPhone, setPmPhone] = useState('');
   const [pmCedula, setPmCedula] = useState('');
   const [pmBank, setPmBank] = useState('Banco de Venezuela (0102)');
@@ -1325,18 +1325,11 @@ export default function VipTasks({
 
                       <button
                         type="button"
-                        onClick={() => {
-                          setWithdrawalNetwork('BEP20');
-                          setWithdrawalError('');
-                        }}
-                        className={`py-2 px-3 rounded-xl text-xs font-bold font-mono border flex flex-col items-center gap-0.5 transition-all cursor-pointer ${
-                          withdrawalNetwork === 'BEP20'
-                            ? 'bg-purple-950/40 text-purple-400 border-purple-500/50'
-                            : 'bg-zinc-950 border-zinc-805 text-zinc-500 hover:text-zinc-300'
-                        }`}
+                        disabled
+                        className="py-2 px-3 rounded-xl text-xs font-bold font-mono border flex flex-col items-center gap-0.5 transition-all opacity-40 bg-zinc-950 border-zinc-800 text-zinc-650 cursor-not-allowed"
                       >
                         <span className="font-sans font-black">USDT BEP-20</span>
-                        <span className="text-[8px] opacity-80 font-mono text-center">Ecológico y Seguro</span>
+                        <span className="text-[8px] opacity-80 font-mono text-center">Desactivado Temporalmente</span>
                       </button>
                     </div>
                   </div>
