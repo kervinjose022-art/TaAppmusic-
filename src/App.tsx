@@ -1641,20 +1641,25 @@ export default function App() {
 
   const handleApproveUser = async (regUsername: string, regAmountUsd: number, regVipLevel?: string) => {
     const targetName = regUsername.toLowerCase().trim();
+    let dbSuccess = false;
     
     try {
-      await ensureAdminSessionSync();
-      const userRef = doc(db, 'users', targetName);
-      const userSnap = await getDoc(userRef);
-      
       let userData: UserProfile | null = null;
-      if (userSnap.exists()) {
-        userData = userSnap.data() as UserProfile;
+      
+      // Look up locally first to avoid database-blocking dependencies
+      const localUser = allUsers.find(u => u.username && u.username.toLowerCase().trim() === targetName);
+      if (localUser) {
+        userData = { ...localUser };
       } else {
-        // Fallback to local react state allUsers
-        const localUser = allUsers.find(u => u.username && u.username.toLowerCase().trim() === targetName);
-        if (localUser) {
-          userData = localUser;
+        // Fallback: Non-blocking attempt to read from Firestore
+        try {
+          await ensureAdminSessionSync();
+          const userSnap = await getDoc(doc(db, 'users', targetName));
+          if (userSnap.exists()) {
+            userData = userSnap.data() as UserProfile;
+          }
+        } catch (dbErr) {
+          console.warn("Could not read user profile from Firestore:", dbErr);
         }
       }
       
@@ -1701,7 +1706,7 @@ export default function App() {
         const isUpgrade = userData.vipLevel !== targetVip;
         const todayDateStr = new Date().toLocaleDateString('es-ES');
 
-        const activatedTarget = { 
+        const activatedTarget: UserProfile = { 
           ...userData, 
           status: 'active' as const,
           vipLevel: targetVip,
@@ -1716,14 +1721,7 @@ export default function App() {
           }
         });
 
-        try {
-          await setDoc(userRef, activatedTarget);
-        } catch (dbErr) {
-          console.warn("Could not save approved user to Firestore (using offline fallback):", dbErr);
-          setIsQuotaExceeded(true);
-        }
-
-        // Update allUsers local state for reactive display updates (ensuring the user is appended if they are new)
+        // Update allUsers local state immediately
         setAllUsers(prev => {
           const index = prev.findIndex(u => u.username && u.username.toLowerCase().trim() === targetName);
           if (index !== -1) {
@@ -1732,26 +1730,40 @@ export default function App() {
             return [...prev, activatedTarget];
           }
         });
+
+        // If currently logged in user is being approved, update session state
+        if (userProfile.username && userProfile.username.toLowerCase().trim() === targetName) {
+          setUserProfile(activatedTarget);
+          localStorage.setItem('tappmusic_profile', JSON.stringify(activatedTarget));
+        }
+
+        // Attempt Firestore write
+        try {
+          await ensureAdminSessionSync();
+          const userRef = doc(db, 'users', targetName);
+          await setDoc(userRef, activatedTarget);
+          dbSuccess = true;
+        } catch (dbErr) {
+          console.warn("Could not save approved user to Firestore (using offline fallback):", dbErr);
+          setIsQuotaExceeded(true);
+        }
         
         // 2. Pay 15% commission if referrer exists and was not already paid
         if (userData.invitedBy && !isAlreadyPaid) {
           const referrerName = userData.invitedBy.toLowerCase().trim();
-          const referrerRef = doc(db, 'users', referrerName);
-          
-          let referrerSnap: any = null;
-          try {
-            referrerSnap = await getDoc(referrerRef);
-          } catch (dbErr) {
-            console.warn("Could not read referrer from Firestore (using local list):", dbErr);
-          }
           
           let referrerUser: UserProfile | null = null;
-          if (referrerSnap && referrerSnap.exists()) {
-            referrerUser = referrerSnap.data() as UserProfile;
+          const localReferrer = allUsers.find(u => u.username && u.username.toLowerCase().trim() === referrerName);
+          if (localReferrer) {
+            referrerUser = { ...localReferrer };
           } else {
-            const localReferrer = allUsers.find(u => u.username && u.username.toLowerCase().trim() === referrerName);
-            if (localReferrer) {
-              referrerUser = localReferrer;
+            try {
+              const referrerSnap = await getDoc(doc(db, 'users', referrerName));
+              if (referrerSnap.exists()) {
+                referrerUser = referrerSnap.data() as UserProfile;
+              }
+            } catch (dbErr) {
+              console.warn("Could not read referrer from Firestore:", dbErr);
             }
           }
           
@@ -1772,19 +1784,27 @@ export default function App() {
               }
             });
 
+            // Local state updates for referrer immediately
+            setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase().trim() === referrerName ? updatedReferrer : u));
+            
+            if (userProfile.username && userProfile.username.toLowerCase().trim() === referrerName) {
+              setUserProfile(updatedReferrer);
+              localStorage.setItem('tappmusic_profile', JSON.stringify(updatedReferrer));
+            }
+
             try {
-              await setDoc(referrerRef, updatedReferrer);
+              await setDoc(doc(db, 'users', referrerName), updatedReferrer);
             } catch (dbErr) {
               console.warn("Could not save updated referrer to Firestore (using offline fallback):", dbErr);
               setIsQuotaExceeded(true);
             }
-            setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase().trim() === referrerName ? updatedReferrer : u));
           }
         }
       }
     } catch (err) {
       console.error("handleApproveUser error:", err);
     }
+    return dbSuccess;
   };
 
   // Self-healing check for approved registrations with missing/inactive user accounts in the master database
@@ -3787,14 +3807,27 @@ export default function App() {
                               <button
                                 onClick={async () => {
                                   // Update status in live registrations list
+                                  let regDbSuccess = false;
                                   try {
                                     await ensureAdminSessionSync();
                                     await updateDoc(doc(db, 'registrations', reg.id), { status: 'approved' });
+                                    regDbSuccess = true;
                                   } catch (err) {
                                     console.error("Error approving registration:", err);
+                                    setIsQuotaExceeded(true);
                                   }
+
+                                  // Local State synchronization fallback
+                                  setRegistrations(prev => prev.map(r => r.id === reg.id ? { ...r, status: 'approved' } : r));
+
                                   // Call master approve solver for database-wide activation + commissions
-                                  handleApproveUser(reg.username, reg.amountUsd, reg.vipLevel);
+                                  const userDbSuccess = await handleApproveUser(reg.username, reg.amountUsd, reg.vipLevel);
+
+                                  if (regDbSuccess && userDbSuccess) {
+                                    alert(`✅ Usuario @${reg.username} aprobado y activado exitosamente.`);
+                                  } else {
+                                    alert(`⚡ Usuario @${reg.username} aprobado y activado en modo local (sincronización en segundo plano activa).`);
+                                  }
                                 }}
                                 className="flex-1 md:flex-initial h-9 px-3.5 rounded-xl bg-[#39FF14] text-black font-black text-xs uppercase hover:bg-[#34e512] transition-all cursor-pointer flex items-center justify-center gap-1"
                               >
@@ -3804,21 +3837,41 @@ export default function App() {
                               <button
                                 onClick={async () => {
                                   // Reject/Remove registration request from Firestore
+                                  let regDbSuccess = false;
                                   try {
                                     await ensureAdminSessionSync();
                                     await deleteDoc(doc(db, 'registrations', reg.id));
-                                    
-                                    // Reset target user's profile registration status
-                                    const targetUser = allUsers.find(u => u.username && reg.username && u.username.toLowerCase() === reg.username.toLowerCase());
-                                    if (targetUser) {
-                                      const resetUser = { ...targetUser, isRegistered: false, status: 'pending' as const };
-                                      await setDoc(doc(db, 'users', reg.username.toLowerCase()), resetUser);
-                                      if (reg.username === userProfile.username) {
-                                        saveProfile(resetUser);
-                                      }
-                                    }
+                                    regDbSuccess = true;
                                   } catch (err) {
                                     console.error("Error rejecting registration:", err);
+                                    setIsQuotaExceeded(true);
+                                  }
+
+                                  // Local State Fallback
+                                  setRegistrations(prev => prev.filter(r => r.id !== reg.id));
+                                  
+                                  const targetUser = allUsers.find(u => u.username && reg.username && u.username.toLowerCase() === reg.username.toLowerCase());
+                                  if (targetUser) {
+                                    const resetUser = { ...targetUser, isRegistered: false, status: 'pending' as const };
+                                    
+                                    try {
+                                      await setDoc(doc(db, 'users', reg.username.toLowerCase()), resetUser);
+                                    } catch (err) {
+                                      console.warn("Could not reset user in Firestore:", err);
+                                    }
+
+                                    setAllUsers(prev => prev.map(u => u.username && reg.username && u.username.toLowerCase() === reg.username.toLowerCase() ? resetUser : u));
+
+                                    if (reg.username === userProfile.username) {
+                                      setUserProfile(resetUser);
+                                      localStorage.setItem('tappmusic_profile', JSON.stringify(resetUser));
+                                    }
+                                  }
+
+                                  if (regDbSuccess) {
+                                    alert(`❌ Solicitud de @${reg.username} rechazada exitosamente.`);
+                                  } else {
+                                    alert(`❌ Solicitud de @${reg.username} rechazada en modo local.`);
                                   }
                                 }}
                                 className="h-9 px-3.5 rounded-xl bg-red-950 text-red-400 border border-red-500/30 font-black text-xs uppercase hover:bg-red-900 hover:text-white transition-all cursor-pointer flex items-center justify-center"
