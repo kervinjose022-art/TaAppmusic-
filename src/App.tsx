@@ -608,6 +608,27 @@ export default function App() {
     };
   }, [isAdminVerified, authUser]);
 
+  // Synchronous and on-demand helper to force sync admin session before any sensitive write
+  const ensureAdminSessionSync = async () => {
+    if (isAdminVerified && authUser) {
+      const savedProfile = localStorage.getItem('tappmusic_profile');
+      let enteredPass = '7340';
+      if (savedProfile) {
+        try {
+          const u = JSON.parse(savedProfile);
+          if (u.password) {
+            enteredPass = u.password;
+          }
+        } catch (e) {}
+      }
+      await setDoc(doc(db, 'config', 'admin_session'), {
+        uid: authUser.uid,
+        adminPassword: enteredPass,
+        updatedAt: new Date().toISOString()
+      });
+    }
+  };
+
   // VIP Upgrade Request States
   const [upgradeVipLevel, setUpgradeVipLevel] = useState<VipLevel | null>(null);
   const [upgradePayMethod, setUpgradePayMethod] = useState<'Pago Móvil' | 'USDT BEP-20'>('USDT BEP-20');
@@ -1472,6 +1493,7 @@ export default function App() {
       return;
     }
     try {
+      await ensureAdminSessionSync();
       const usernameLower = username.toLowerCase().trim();
       const userRef = doc(db, 'users', usernameLower);
       const userSnap = await getDoc(userRef);
@@ -1500,6 +1522,7 @@ export default function App() {
     const targetName = regUsername.toLowerCase().trim();
     
     try {
+      await ensureAdminSessionSync();
       const userRef = doc(db, 'users', targetName);
       const userSnap = await getDoc(userRef);
       
@@ -3628,6 +3651,7 @@ export default function App() {
                                 onClick={async () => {
                                   // Update status in live registrations list
                                   try {
+                                    await ensureAdminSessionSync();
                                     await updateDoc(doc(db, 'registrations', reg.id), { status: 'approved' });
                                   } catch (err) {
                                     console.error("Error approving registration:", err);
@@ -3644,6 +3668,7 @@ export default function App() {
                                 onClick={async () => {
                                   // Reject/Remove registration request from Firestore
                                   try {
+                                    await ensureAdminSessionSync();
                                     await deleteDoc(doc(db, 'registrations', reg.id));
                                     
                                     // Reset target user's profile registration status
@@ -3774,6 +3799,7 @@ export default function App() {
                                   // Approve withdrawal and deduct coins in Firestore if they were not already deducted on submission (handles Massiel and other legacy requests)
                                   const generatedTx = '0x' + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
                                   try {
+                                    await ensureAdminSessionSync();
                                     await updateDoc(doc(db, 'withdrawals', item.id), {
                                       status: 'Aprobado',
                                       txid: generatedTx,
@@ -3814,6 +3840,7 @@ export default function App() {
                                 onClick={async () => {
                                   // Reject withdrawal and refund coins to the corresponding user profile in Firestore ONLY if they were deducted
                                   try {
+                                    await ensureAdminSessionSync();
                                     await updateDoc(doc(db, 'withdrawals', item.id), {
                                       status: 'Rechazado'
                                     });
@@ -4607,6 +4634,7 @@ export default function App() {
                                     onClick={async () => {
                                       if (window.confirm(`🔄 ¿Quieres ajustar las estadísticas guardadas de @${u.username} en la base de datos?\n\nActuales en DB:\n- Invitados: ${u.inviteCount || 0}\n- Comisiones: ${u.inviteCommissionsEarned || 0} USD\n\nNuevos Valores Reales:\n- Invitados: ${actualCount}\n- Comisiones: ${actualCommissions.toFixed(2)} USD`)) {
                                         try {
+                                          await ensureAdminSessionSync();
                                           const userRef = doc(db, 'users', cleanUsrName);
                                           await updateDoc(userRef, {
                                             inviteCount: actualCount,
@@ -4643,6 +4671,7 @@ export default function App() {
                                   const newLvl = e.target.value as VipLevel;
                                   const price = getLevelPriceInUsd(newLvl);
                                   try {
+                                    await ensureAdminSessionSync();
                                     await handleApproveUser(u.username, price, newLvl);
                                     alert(`✅ ¡El rango VIP de @${u.username} ha sido cambiado a ${newLvl}!`);
                                   } catch (err: any) {
@@ -4679,6 +4708,7 @@ export default function App() {
                                       if (!isNaN(newCoins)) {
                                         const updatedUser = { ...u, earnings: newCoins };
                                         try {
+                                          await ensureAdminSessionSync();
                                           await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), updatedUser);
                                           setAllUsers(prev => prev.map(usr => usr.username.toLowerCase() === u.username.toLowerCase() ? updatedUser : usr));
                                           if (userProfile.username && u.username && userProfile.username.toLowerCase() === u.username.toLowerCase()) {
@@ -4708,6 +4738,7 @@ export default function App() {
                                   onClick={async () => {
                                     const price = getLevelPriceInUsd(u.vipLevel || 'VIP PLATA 10$');
                                     try {
+                                      await ensureAdminSessionSync();
                                       await handleApproveUser(u.username, price, u.vipLevel);
                                       alert(`✅ @${u.username} ha sido ACTIVADO exitosamente con sus comisiones calculadas y pagadas.`);
                                     } catch (err: any) {
@@ -4726,6 +4757,7 @@ export default function App() {
                                     if (window.confirm(`⚠️ ¿Estás COMPLETAMENTE seguro de ELIMINAR al usuario @${u.username}? Esta acción es irreversible y borrará su cuenta y sus datos de Firestore.`)) {
                                       if (window.confirm(`⚠️ Por favor, confirma nuevamente la eliminación definitiva de @${u.username}:`)) {
                                         try {
+                                          await ensureAdminSessionSync();
                                           const targetUsernameClean = u.username.toLowerCase().trim();
                                           
                                           // 1. Delete user from 'users'
