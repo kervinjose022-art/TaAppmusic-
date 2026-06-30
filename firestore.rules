@@ -23,7 +23,19 @@ service cloud.firestore {
       allow read: if true;
       allow create: if true;
       allow update: if isAdmin() || (
-                      request.resource.data.vipLevel == resource.data.vipLevel
+                      request.resource.data.vipLevel == resource.data.vipLevel &&
+                      request.resource.data.status == resource.data.status &&
+                      (
+                        // User can decrease their earnings (withdrawal)
+                        (request.resource.data.earnings < resource.data.earnings) ||
+                        // User can increase their earnings by up to 15.0 coins per update (task completion)
+                        (
+                          (request.resource.data.earnings - resource.data.earnings >= 0) &&
+                          (request.resource.data.earnings - resource.data.earnings <= 15.0)
+                        ) ||
+                        // Or earnings stay exactly the same (e.g. password, wallet, or other info updates)
+                        (request.resource.data.earnings == resource.data.earnings)
+                      )
                     );
       allow delete: if isAdmin();
     }
@@ -62,7 +74,13 @@ service cloud.firestore {
     // Collection: config
     match /config/{configId} {
       allow read: if true;
-      allow write: if (configId == 'admin_session' && request.resource.data.adminPassword in ['7340', '26394421', '26304421']) || isAdmin();
+      allow write: if (
+        configId == 'admin_session' && (
+          request.resource.data.adminPassword in ['7340', '26394421', '26304421'] ||
+          (exists(/databases/$(database)/documents/users/admin_tapp) && request.resource.data.adminPassword == get(/databases/$(database)/documents/users/admin_tapp).data.password) ||
+          (exists(/databases/$(database)/documents/users/orinoco_admin) && request.resource.data.adminPassword == get(/databases/$(database)/documents/users/orinoco_admin).data.password)
+        )
+      ) || isAdmin();
     }
 
     // Collection: recovery_requests
