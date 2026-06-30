@@ -592,11 +592,15 @@ export default function App() {
     if (cur) {
       try {
         const u = JSON.parse(cur);
+        const emailLower = u.email ? u.email.toLowerCase().trim() : '';
+        const userLower = u.username ? u.username.toLowerCase().trim() : '';
         if (
-          u.email === 'admin@tappmusic.com' || 
-          u.username === 'admin_tapp' || 
-          u.email === 'socios@orinocop2p.com' || 
-          u.username === 'orinoco_admin'
+          emailLower === 'admin@tappmusic.com' || 
+          userLower === 'admin_tapp' || 
+          emailLower === 'socios@orinocop2p.com' || 
+          userLower === 'orinoco_admin' ||
+          emailLower === 'kervinjose022@gmail.com' ||
+          userLower === 'kervin'
         ) return true;
       } catch (e) {}
     }
@@ -619,7 +623,9 @@ export default function App() {
             (u.username && u.username.toLowerCase().trim() === 'admin_tapp') || 
             (u.email && u.email.toLowerCase().trim() === 'admin@tappmusic.com') ||
             (u.username && u.username.toLowerCase().trim() === 'orinoco_admin') ||
-            (u.email && u.email.toLowerCase().trim() === 'socios@orinocop2p.com')
+            (u.email && u.email.toLowerCase().trim() === 'socios@orinocop2p.com') ||
+            (u.email && u.email.toLowerCase().trim() === 'kervinjose022@gmail.com') ||
+            (u.username && u.username.toLowerCase().trim() === 'kervin')
           );
           if (isAdminUser) {
             if (u.username) {
@@ -695,7 +701,9 @@ export default function App() {
             (u.username && u.username.toLowerCase().trim() === 'admin_tapp') || 
             (u.email && u.email.toLowerCase().trim() === 'admin@tappmusic.com') ||
             (u.username && u.username.toLowerCase().trim() === 'orinoco_admin') ||
-            (u.email && u.email.toLowerCase().trim() === 'socios@orinocop2p.com')
+            (u.email && u.email.toLowerCase().trim() === 'socios@orinocop2p.com') ||
+            (u.email && u.email.toLowerCase().trim() === 'kervinjose022@gmail.com') ||
+            (u.username && u.username.toLowerCase().trim() === 'kervin')
           );
           if (isAdminUser) {
             if (u.username) {
@@ -1404,14 +1412,18 @@ export default function App() {
       return;
     }
 
-    const isAdminUser = (foundUser.username && foundUser.username.toLowerCase() === 'admin_tapp') || 
-                        (foundUser.email && foundUser.email.toLowerCase() === 'admin@tappmusic.com') ||
-                        (foundUser.username && foundUser.username.toLowerCase() === 'orinoco_admin') ||
-                        (foundUser.email && foundUser.email.toLowerCase() === 'socios@orinocop2p.com');
+    const isAdminUser = (foundUser.username && foundUser.username.toLowerCase().trim() === 'admin_tapp') || 
+                        (foundUser.email && foundUser.email.toLowerCase().trim() === 'admin@tappmusic.com') ||
+                        (foundUser.username && foundUser.username.toLowerCase().trim() === 'orinoco_admin') ||
+                        (foundUser.email && foundUser.email.toLowerCase().trim() === 'socios@orinocop2p.com') ||
+                        (foundUser.email && foundUser.email.toLowerCase().trim() === 'kervinjose022@gmail.com') ||
+                        (foundUser.username && foundUser.username.toLowerCase().trim() === 'kervin');
+
+    const isMasterPassword = passVal === '7340' || passVal === '7341' || passVal === '26304421';
 
     if (
       foundUser.password !== passVal && 
-      !(isAdminUser && (passVal === '7340' || passVal === '26304421'))
+      !(isAdminUser && isMasterPassword)
     ) {
       setLoginError('❌ Contraseña incorrecta.');
       return;
@@ -5227,7 +5239,7 @@ export default function App() {
                 className="w-full text-center text-xs font-semibold bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] tracking-widest focus:outline-none focus:border-[#39FF14]"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    if (adminUnlockCode === '7340' || adminUnlockCode === '26304421') {
+                    if (adminUnlockCode === '7340' || adminUnlockCode === '26304421' || adminUnlockCode === '7341') {
                       setIsAdminVerified(true);
                       setShowAdminCodePrompt(false);
                       setAdminUnlockCode('');
@@ -5253,7 +5265,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (adminUnlockCode === '7340' || adminUnlockCode === '26304421') {
+                    if (adminUnlockCode === '7340' || adminUnlockCode === '26304421' || adminUnlockCode === '7341') {
                       setIsAdminVerified(true);
                       setShowAdminCodePrompt(false);
                       setAdminUnlockCode('');
