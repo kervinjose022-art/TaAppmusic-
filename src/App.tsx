@@ -579,6 +579,7 @@ export default function App() {
     if (isAdminVerified && authUser) {
       const savedProfile = localStorage.getItem('tappmusic_profile');
       let enteredPass = '7340';
+      let currentAdminUsername = 'admin_tapp';
       if (savedProfile) {
         try {
           const u = JSON.parse(savedProfile);
@@ -588,10 +589,13 @@ export default function App() {
             (u.username && u.username.toLowerCase().trim() === 'orinoco_admin') ||
             (u.email && u.email.toLowerCase().trim() === 'socios@orinocop2p.com')
           );
-          if (isAdminUser && u.password) {
-            enteredPass = u.password;
-          } else {
-            enteredPass = '7340'; // Fallback to standard admin password if logged in as a normal user but admin is verified
+          if (isAdminUser) {
+            if (u.username) {
+              currentAdminUsername = u.username.toLowerCase().trim();
+            }
+            if (u.password) {
+              enteredPass = u.password;
+            }
           }
         } catch (e) {}
       }
@@ -601,6 +605,31 @@ export default function App() {
         updatedAt: new Date().toISOString()
       }).catch(err => {
         console.warn("Could not sync admin session to Firestore:", err);
+      });
+
+      // ALSO sync uid to the actual user document so we have a super robust fallback
+      const cleanAdminName = currentAdminUsername.toLowerCase().trim();
+      getDoc(doc(db, 'users', cleanAdminName)).then((snap) => {
+        if (snap.exists()) {
+          const uData = snap.data();
+          if (uData.uid !== authUser.uid) {
+            updateDoc(doc(db, 'users', cleanAdminName), {
+              uid: authUser.uid
+            }).catch(e => console.warn("Could not sync uid directly to user doc:", e));
+          }
+        } else {
+          // If the admin user document doesn't exist, create it!
+          setDoc(doc(db, 'users', cleanAdminName), {
+            username: cleanAdminName,
+            password: enteredPass,
+            uid: authUser.uid,
+            status: 'active',
+            vipLevel: 'VIP CORONA IMPERIAL 1000$',
+            earnings: 1000.00,
+            isRegistered: true,
+            createdAt: new Date().toISOString()
+          }).catch(e => console.warn("Could not create admin user doc with uid:", e));
+        }
       });
     }
     return () => {
@@ -613,11 +642,23 @@ export default function App() {
     if (isAdminVerified && authUser) {
       const savedProfile = localStorage.getItem('tappmusic_profile');
       let enteredPass = '7340';
+      let currentAdminUsername = 'admin_tapp';
       if (savedProfile) {
         try {
           const u = JSON.parse(savedProfile);
-          if (u.password) {
-            enteredPass = u.password;
+          const isAdminUser = u && (
+            (u.username && u.username.toLowerCase().trim() === 'admin_tapp') || 
+            (u.email && u.email.toLowerCase().trim() === 'admin@tappmusic.com') ||
+            (u.username && u.username.toLowerCase().trim() === 'orinoco_admin') ||
+            (u.email && u.email.toLowerCase().trim() === 'socios@orinocop2p.com')
+          );
+          if (isAdminUser) {
+            if (u.username) {
+              currentAdminUsername = u.username.toLowerCase().trim();
+            }
+            if (u.password) {
+              enteredPass = u.password;
+            }
           }
         } catch (e) {}
       }
@@ -626,6 +667,15 @@ export default function App() {
         adminPassword: enteredPass,
         updatedAt: new Date().toISOString()
       });
+
+      const cleanAdminName = currentAdminUsername.toLowerCase().trim();
+      try {
+        await setDoc(doc(db, 'users', cleanAdminName), {
+          uid: authUser.uid
+        }, { merge: true });
+      } catch (e) {
+        console.warn("Could not force sync uid to user doc:", e);
+      }
     }
   };
 
