@@ -14,12 +14,21 @@ import {
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from './firebase';
 import { collection, doc, onSnapshot, setDoc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
-import { signInAnonymously } from 'firebase/auth';
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { REELS_DATABASE } from './data';
 // @ts-ignore
 import tappmusicLogo from './assets/images/logo_tappmusic_1781384373669.jpg';
 
 export default function App() {
+  const [authUser, setAuthUser] = useState<any>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [copiedModalLink, setCopiedModalLink] = useState(false);
   const [isVipSelectorOpen, setIsVipSelectorOpen] = useState(false);
@@ -567,7 +576,7 @@ export default function App() {
   // Automatically synchronize active admin session UID in Firestore
   useEffect(() => {
     let active = true;
-    if (isAdminVerified && auth.currentUser) {
+    if (isAdminVerified && authUser) {
       const savedProfile = localStorage.getItem('tappmusic_profile');
       let enteredPass = '7340';
       if (savedProfile) {
@@ -587,7 +596,7 @@ export default function App() {
         } catch (e) {}
       }
       setDoc(doc(db, 'config', 'admin_session'), {
-        uid: auth.currentUser.uid,
+        uid: authUser.uid,
         adminPassword: enteredPass,
         updatedAt: new Date().toISOString()
       }).catch(err => {
@@ -597,7 +606,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [isAdminVerified, auth.currentUser]);
+  }, [isAdminVerified, authUser]);
 
   // VIP Upgrade Request States
   const [upgradeVipLevel, setUpgradeVipLevel] = useState<VipLevel | null>(null);

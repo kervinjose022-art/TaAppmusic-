@@ -23,16 +23,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if true;
       allow update: if isAdmin() || (
-                      request.resource.data.vipLevel == resource.data.vipLevel &&
-                      (
-                        // User can decrease their earnings (withdrawal)
-                        (request.resource.data.earnings < resource.data.earnings) ||
-                        // User can increase their earnings by up to 10.0 coins per update (task completion)
-                        (
-                          (request.resource.data.earnings - resource.data.earnings >= 0) &&
-                          (request.resource.data.earnings - resource.data.earnings <= 10.0)
-                        )
-                      )
+                      request.resource.data.vipLevel == resource.data.vipLevel
                     );
       allow delete: if isAdmin();
     }
@@ -40,7 +31,7 @@ service cloud.firestore {
     // Collection: registrations
     match /registrations/{registrationId} {
       allow read: if true;
-      allow create: if request.resource.data.status in ['pending', 'pendiente', 'Pendiente'];
+      allow create: if true;
       allow update: if isAdmin() || (
                       request.resource.data.status in ['pending', 'pendiente', 'Pendiente'] &&
                       resource.data.status in ['pending', 'pendiente', 'Pendiente']
@@ -51,7 +42,7 @@ service cloud.firestore {
     // Collection: withdrawals
     match /withdrawals/{withdrawalId} {
       allow read: if true;
-      allow create: if request.resource.data.status in ['pending', 'pendiente', 'Pendiente'];
+      allow create: if true;
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
