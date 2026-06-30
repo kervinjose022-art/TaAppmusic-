@@ -1394,7 +1394,7 @@ export default function App() {
 
     if (
       foundUser.password !== passVal && 
-      !(isAdminUser && (passVal === '7340' || passVal === '26394421' || passVal === '26304421'))
+      !(isAdminUser && (passVal === '7340' || passVal === '26304421'))
     ) {
       setLoginError('❌ Contraseña incorrecta.');
       return;
@@ -5151,7 +5151,7 @@ export default function App() {
                 className="w-full text-center text-xs font-semibold bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] tracking-widest focus:outline-none focus:border-[#39FF14]"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    if (adminUnlockCode === '7340' || adminUnlockCode === '26394421') {
+                    if (adminUnlockCode === '7340' || adminUnlockCode === '26304421') {
                       setIsAdminVerified(true);
                       setShowAdminCodePrompt(false);
                       setAdminUnlockCode('');
@@ -5177,7 +5177,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (adminUnlockCode === '7340' || adminUnlockCode === '26394421') {
+                    if (adminUnlockCode === '7340' || adminUnlockCode === '26304421') {
                       setIsAdminVerified(true);
                       setShowAdminCodePrompt(false);
                       setAdminUnlockCode('');
