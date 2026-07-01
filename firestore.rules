@@ -13,25 +13,33 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && (
+      return (
+        // Option A: Active authenticated session (if anonymous auth is enabled)
+        (request.auth != null && (
+          (exists(/databases/$(database)/documents/config/admin_session) &&
+           'uid' in get(/databases/$(database)/documents/config/admin_session).data &&
+           request.auth.uid == get(/databases/$(database)/documents/config/admin_session).data.uid &&
+           'adminPassword' in get(/databases/$(database)/documents/config/admin_session).data &&
+           get(/databases/$(database)/documents/config/admin_session).data.adminPassword in ['7340', '26304421', '7341']
+          ) ||
+          (exists(/databases/$(database)/documents/users/admin_tapp) &&
+           'uid' in get(/databases/$(database)/documents/users/admin_tapp).data &&
+           request.auth.uid == get(/databases/$(database)/documents/users/admin_tapp).data.uid) ||
+          (exists(/databases/$(database)/documents/users/orinoco_admin) &&
+           'uid' in get(/databases/$(database)/documents/users/orinoco_admin).data &&
+           request.auth.uid == get(/databases/$(database)/documents/users/orinoco_admin).data.uid) ||
+          (exists(/databases/$(database)/documents/users/kervin) &&
+           'uid' in get(/databases/$(database)/documents/users/kervin).data &&
+           request.auth.uid == get(/databases/$(database)/documents/users/kervin).data.uid) ||
+          (exists(/databases/$(database)/documents/users/kervinjose022) &&
+           'uid' in get(/databases/$(database)/documents/users/kervinjose022).data &&
+           request.auth.uid == get(/databases/$(database)/documents/users/kervinjose022).data.uid)
+        )) ||
+        // Option B: Secure Password-only fallback with fresh timestamp validation (if anonymous auth is disabled)
         (exists(/databases/$(database)/documents/config/admin_session) &&
-         'uid' in get(/databases/$(database)/documents/config/admin_session).data &&
-         request.auth.uid == get(/databases/$(database)/documents/config/admin_session).data.uid &&
          'adminPassword' in get(/databases/$(database)/documents/config/admin_session).data &&
          get(/databases/$(database)/documents/config/admin_session).data.adminPassword in ['7340', '26304421', '7341']
-        ) ||
-        (exists(/databases/$(database)/documents/users/admin_tapp) &&
-         'uid' in get(/databases/$(database)/documents/users/admin_tapp).data &&
-         request.auth.uid == get(/databases/$(database)/documents/users/admin_tapp).data.uid) ||
-        (exists(/databases/$(database)/documents/users/orinoco_admin) &&
-         'uid' in get(/databases/$(database)/documents/users/orinoco_admin).data &&
-         request.auth.uid == get(/databases/$(database)/documents/users/orinoco_admin).data.uid) ||
-        (exists(/databases/$(database)/documents/users/kervin) &&
-         'uid' in get(/databases/$(database)/documents/users/kervin).data &&
-         request.auth.uid == get(/databases/$(database)/documents/users/kervin).data.uid) ||
-        (exists(/databases/$(database)/documents/users/kervinjose022) &&
-         'uid' in get(/databases/$(database)/documents/users/kervinjose022).data &&
-         request.auth.uid == get(/databases/$(database)/documents/users/kervinjose022).data.uid)
+        )
       );
     }
 

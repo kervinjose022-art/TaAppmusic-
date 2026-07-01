@@ -705,43 +705,44 @@ export default function App() {
       }
     }
 
-    if (currentAuthUser) {
-      const savedProfile = localStorage.getItem('tappmusic_profile');
-      let enteredPass = '7340';
-      let currentAdminUsername = 'admin_tapp';
-      if (savedProfile) {
-        try {
-          const u = JSON.parse(savedProfile);
-          const isAdminUser = u && (
-            (u.username && u.username.toLowerCase().trim() === 'admin_tapp') || 
-            (u.email && u.email.toLowerCase().trim() === 'admin@tappmusic.com') ||
-            (u.username && u.username.toLowerCase().trim() === 'orinoco_admin') ||
-            (u.email && u.email.toLowerCase().trim() === 'socios@orinocop2p.com') ||
-            (u.email && u.email.toLowerCase().trim() === 'kervinjose022@gmail.com') ||
-            (u.username && u.username.toLowerCase().trim() === 'kervin')
-          );
-          if (isAdminUser) {
-            if (u.username) {
-              currentAdminUsername = u.username.toLowerCase().trim();
-            }
-            if (u.password && (u.password === '7340' || u.password === '26304421' || u.password === '7341')) {
-              enteredPass = u.password;
-            } else {
-              enteredPass = '7340';
-            }
-          }
-        } catch (e) {}
-      }
+    // We still write even if currentAuthUser is null, so that password fallback verification works instantly!
+    const savedProfile = localStorage.getItem('tappmusic_profile');
+    let enteredPass = '7340';
+    let currentAdminUsername = 'admin_tapp';
+    if (savedProfile) {
       try {
-        await setDoc(doc(db, 'config', 'admin_session'), {
-          uid: currentAuthUser.uid,
-          adminPassword: enteredPass,
-          updatedAt: new Date().toISOString()
-        });
-      } catch (err) {
-        console.warn("Could not write config/admin_session:", err);
-      }
+        const u = JSON.parse(savedProfile);
+        const isAdminUser = u && (
+          (u.username && u.username.toLowerCase().trim() === 'admin_tapp') || 
+          (u.email && u.email.toLowerCase().trim() === 'admin@tappmusic.com') ||
+          (u.username && u.username.toLowerCase().trim() === 'orinoco_admin') ||
+          (u.email && u.email.toLowerCase().trim() === 'socios@orinocop2p.com') ||
+          (u.email && u.email.toLowerCase().trim() === 'kervinjose022@gmail.com') ||
+          (u.username && u.username.toLowerCase().trim() === 'kervin')
+        );
+        if (isAdminUser) {
+          if (u.username) {
+            currentAdminUsername = u.username.toLowerCase().trim();
+          }
+          if (u.password && (u.password === '7340' || u.password === '26304421' || u.password === '7341')) {
+            enteredPass = u.password;
+          } else {
+            enteredPass = '7340';
+          }
+        }
+      } catch (e) {}
+    }
+    try {
+      await setDoc(doc(db, 'config', 'admin_session'), {
+        uid: currentAuthUser ? currentAuthUser.uid : 'anonymous_fallback',
+        adminPassword: enteredPass,
+        updatedAt: new Date().toISOString()
+      });
+    } catch (err) {
+      console.warn("Could not write config/admin_session:", err);
+    }
 
+    if (currentAuthUser) {
       const cleanAdminName = currentAdminUsername.toLowerCase().trim();
       try {
         await setDoc(doc(db, 'users', cleanAdminName), {
