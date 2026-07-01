@@ -91,9 +91,12 @@ service cloud.firestore {
     }
 
     // Collection: config
+    match /config/admin_session {
+      allow read, write: if true;
+    }
     match /config/{configId} {
       allow read: if true;
-      allow write: if (configId == 'admin_session') || isAdmin();
+      allow write: if isAdmin();
     }
 
     // Collection: recovery_requests
