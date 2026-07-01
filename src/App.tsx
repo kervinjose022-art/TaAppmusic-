@@ -185,79 +185,6 @@ export default function App() {
           await setDoc(doc(db, 'users', 'admin_tapp'), adminSeed);
         }
 
-        // 4 Users Yesterday Progress Migration V3: Set 367 coins once and track it on each user's document
-        if (!usersSnap.empty) {
-          const todayDateStr = new Date().toLocaleDateString('es-ES');
-          for (const uDoc of usersSnap.docs) {
-            const u = uDoc.data() as any;
-            if (u.username && u.username.toLowerCase() !== 'admin_tapp' && !u.migratedV3) {
-              const migratedUser: any = {
-                ...u,
-                earnings: 367.0,
-                completedTaskIds: [],
-                lastResetDate: todayDateStr,
-                migratedV3: true
-              };
-              await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), migratedUser);
-              
-              // If the current logged-in user matches, update their active profile state
-              const savedProfileStr = localStorage.getItem('tappmusic_profile');
-              if (savedProfileStr) {
-                try {
-                  const savedObj = JSON.parse(savedProfileStr) as UserProfile;
-                  if (savedObj.username && savedObj.username.toLowerCase().trim() !== 'usuario_vip' && savedObj.username.toLowerCase().trim() !== 'visitante_tapp' && savedObj.username.toLowerCase() === u.username.toLowerCase()) {
-                    setUserProfile(migratedUser);
-                    localStorage.setItem('tappmusic_profile', JSON.stringify(migratedUser));
-                  }
-                } catch (e) {}
-              }
-            }
-          }
-        }
-
-        // Commissions Integration Migration V4:
-        // Add existing legacy inviteCommissionsEarned (in USD, multiplied by 734 to convert to coins)
-        // directly to the user's main coin balance "earnings", and set commissionsMergedV4 to true.
-        if (!usersSnap.empty) {
-          for (const uDoc of usersSnap.docs) {
-            const u = uDoc.data() as any;
-            if (u.username && !u.commissionsMergedV4) {
-              const legacyCommissionsUsd = u.inviteCommissionsEarned || 0;
-              if (legacyCommissionsUsd > 0) {
-                const commissionCoins = Number((legacyCommissionsUsd * 734).toFixed(2));
-                const newEarnings = Number(((u.earnings || 0) + commissionCoins).toFixed(2));
-                
-                await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), {
-                  earnings: newEarnings,
-                  commissionsMergedV4: true
-                }, { merge: true });
-
-                // Sync current active local profile if it matches
-                const savedProfileStr = localStorage.getItem('tappmusic_profile');
-                if (savedProfileStr) {
-                  try {
-                    const savedObj = JSON.parse(savedProfileStr) as UserProfile;
-                    if (savedObj.username && savedObj.username.toLowerCase().trim() === u.username.toLowerCase().trim()) {
-                      const updatedLocal = {
-                        ...savedObj,
-                        earnings: newEarnings,
-                        commissionsMergedV4: true
-                      };
-                      setUserProfile(updatedLocal);
-                      localStorage.setItem('tappmusic_profile', JSON.stringify(updatedLocal));
-                    }
-                  } catch (e) {}
-                }
-              } else {
-                // No legacy commissions, just mark as merged
-                await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), {
-                  commissionsMergedV4: true
-                }, { merge: true });
-              }
-            }
-          }
-        }
-
         const latestVoices = [
           {
             id: 'jesus',
@@ -459,7 +386,14 @@ export default function App() {
                       inviteCommissionsEarned: updatedProfile.inviteCommissionsEarned !== undefined ? updatedProfile.inviteCommissionsEarned : prevProfile.inviteCommissionsEarned,
                       earnings: (isInitialSync || localIsEmpty) ? updatedProfile.earnings : prevProfile.earnings,
                       completedTaskIds: (isInitialSync || localIsEmpty) ? (updatedProfile.completedTaskIds || []) : prevProfile.completedTaskIds,
-                      ...(isInitialSync ? updatedProfile : {})
+                      ...(isInitialSync ? updatedProfile : {}),
+                      isSyncedFromDb: true
+                    };
+                  }
+                  if (!prevProfile.isSyncedFromDb) {
+                    return {
+                      ...prevProfile,
+                      isSyncedFromDb: true
                     };
                   }
                   return prevProfile;
@@ -850,7 +784,7 @@ export default function App() {
       // Synchronize in real-time with Firestore so coins/tasks are never lost on updates or refresh
       // Only write to firestore if we have synced with Firestore at least once in this session.
       // This prevents local stale state on start-up from overwriting updated database values (e.g. status approvals).
-      if (hasSyncedWithFirestore.current && userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip' && userProfile.username.toLowerCase().trim() !== 'visitante_tapp') {
+      if (hasSyncedWithFirestore.current && userProfile.isSyncedFromDb && userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip' && userProfile.username.toLowerCase().trim() !== 'visitante_tapp') {
         const userDocRef = doc(db, 'users', userProfile.username.toLowerCase().trim());
         setDoc(userDocRef, userProfile).catch(err => {
           console.warn("Background setDoc failed for userProfile:", err);
@@ -867,7 +801,8 @@ export default function App() {
         setUserProfile(prev => ({
           ...prev,
           completedTaskIds: [],
-          lastResetDate: todayDateStr
+          lastResetDate: todayDateStr,
+          isSyncedFromDb: prev.isSyncedFromDb
         }));
       }
     }
@@ -876,10 +811,11 @@ export default function App() {
   // Save profile to local storage helper & live Firestore database
   const saveProfile = (newProfile: UserProfile) => {
     hasSyncedWithFirestore.current = true;
-    setUserProfile(newProfile);
-    localStorage.setItem('tappmusic_profile', JSON.stringify(newProfile));
-    if (newProfile && newProfile.username && newProfile.username.toLowerCase().trim() !== 'usuario_vip' && newProfile.username.toLowerCase().trim() !== 'visitante_tapp') {
-      setDoc(doc(db, 'users', newProfile.username.toLowerCase().trim()), newProfile).catch(err => {
+    const profileWithSync = { ...newProfile, isSyncedFromDb: true };
+    setUserProfile(profileWithSync);
+    localStorage.setItem('tappmusic_profile', JSON.stringify(profileWithSync));
+    if (profileWithSync.username && profileWithSync.username.toLowerCase().trim() !== 'usuario_vip' && profileWithSync.username.toLowerCase().trim() !== 'visitante_tapp') {
+      setDoc(doc(db, 'users', profileWithSync.username.toLowerCase().trim()), profileWithSync).catch(err => {
         // Background sync fail silent
       });
     }

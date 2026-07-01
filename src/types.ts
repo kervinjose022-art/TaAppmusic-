@@ -85,6 +85,7 @@ export interface UserProfile {
   walletAddress?: string;
   commissionsMergedV4?: boolean;
   blockedTasksUntilDate?: string;
+  isSyncedFromDb?: boolean;
 }
 
 export interface RecoveryRequest {
