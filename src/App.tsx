@@ -368,8 +368,8 @@ export default function App() {
     // 2. Setup real-time listener for registrations collection
     const unsubRegistrations = onSnapshot(collection(db, 'registrations'), (snapshot) => {
       const items: any[] = [];
-      snapshot.forEach((doc) => {
-        items.push(doc.data());
+      snapshot.forEach((docSnap) => {
+        items.push({ ...docSnap.data(), id: docSnap.id });
       });
       // Direct assignment ensures deleted registrations are instantly cleared from local state
       setRegistrations(items);
@@ -381,8 +381,8 @@ export default function App() {
     // 3. Setup real-time listener for withdrawals collection
     const unsubWithdrawals = onSnapshot(collection(db, 'withdrawals'), (snapshot) => {
       const items: any[] = [];
-      snapshot.forEach((doc) => {
-        items.push(doc.data());
+      snapshot.forEach((docSnap) => {
+        items.push({ ...docSnap.data(), id: docSnap.id });
       });
       // Direct assignment ensures deleted/completed withdrawals are perfectly in sync
       setWithdrawHistory(items);
