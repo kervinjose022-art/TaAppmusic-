@@ -47,10 +47,10 @@ service cloud.firestore {
                       (
                         // User can decrease their earnings (withdrawal)
                         (request.resource.data.earnings < resource.data.earnings) ||
-                        // User can increase their earnings by up to 15.0 coins per update (task completion)
+                        // User can increase their earnings by up to 2500.0 coins per update (task completion)
                         (
                           (request.resource.data.earnings - resource.data.earnings >= 0) &&
-                          (request.resource.data.earnings - resource.data.earnings <= 15.0)
+                          (request.resource.data.earnings - resource.data.earnings <= 2500.0)
                         ) ||
                         // Or earnings stay exactly the same (e.g. password, wallet, or other info updates)
                         (request.resource.data.earnings == resource.data.earnings)
