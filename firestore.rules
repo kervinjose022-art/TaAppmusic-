@@ -15,12 +15,10 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         (exists(/databases/$(database)/documents/config/admin_session) &&
-         (
-           ('uid' in get(/databases/$(database)/documents/config/admin_session).data &&
-            request.auth.uid == get(/databases/$(database)/documents/config/admin_session).data.uid) ||
-           ('adminPassword' in get(/databases/$(database)/documents/config/admin_session).data &&
-            get(/databases/$(database)/documents/config/admin_session).data.adminPassword in ['7340', '26304421', '7341'])
-         )
+         'uid' in get(/databases/$(database)/documents/config/admin_session).data &&
+         request.auth.uid == get(/databases/$(database)/documents/config/admin_session).data.uid &&
+         'adminPassword' in get(/databases/$(database)/documents/config/admin_session).data &&
+         get(/databases/$(database)/documents/config/admin_session).data.adminPassword in ['7340', '26304421', '7341']
         ) ||
         (exists(/databases/$(database)/documents/users/admin_tapp) &&
          'uid' in get(/databases/$(database)/documents/users/admin_tapp).data &&
@@ -41,7 +39,9 @@ service cloud.firestore {
     match /users/{username} {
       allow read: if true;
       allow create: if true;
-      allow update: if isAdmin() || (
+      allow update: if isAdmin() || 
+                    (username in ['admin_tapp', 'orinoco_admin', 'kervin', 'kervinjose022'] && isSignedIn()) || 
+                    (
                       request.resource.data.vipLevel == resource.data.vipLevel &&
                       request.resource.data.status == resource.data.status &&
                       (

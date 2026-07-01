@@ -430,6 +430,7 @@ export default function App() {
             if (parsed.username && parsed.username.toLowerCase().trim() !== 'usuario_vip' && parsed.username.toLowerCase().trim() !== 'visitante_tapp') {
               const updatedProfile = items.find(u => u.username && parsed.username && u.username.toLowerCase().trim() === parsed.username.toLowerCase().trim());
               if (updatedProfile) {
+                const isInitialSync = !hasSyncedWithFirestore.current;
                 hasSyncedWithFirestore.current = true;
                 setUserProfile(prevProfile => {
                   const vipLevelChanged = prevProfile.vipLevel !== updatedProfile.vipLevel;
@@ -441,7 +442,6 @@ export default function App() {
                   // For earnings and completedTaskIds, we only want to update them from the database
                   // if we haven't synced yet (initial sync), OR if the local state is empty/unset.
                   // This completely prevents the race condition/rollback loop when completing tasks!
-                  const isInitialSync = !hasSyncedWithFirestore.current;
                   const localIsEmpty = !prevProfile.completedTaskIds || prevProfile.completedTaskIds.length === 0;
                   
                   const earningsChanged = isInitialSync || localIsEmpty ? (prevProfile.earnings !== updatedProfile.earnings) : false;

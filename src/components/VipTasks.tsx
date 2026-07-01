@@ -778,18 +778,28 @@ export default function VipTasks({
     
     const payout = activeTask.rewardValue;
     
-    setUserProfile(prev => {
-      if (prev.completedTaskIds.includes(activeTask.id)) return prev;
-      
-      const updatedIds = [...prev.completedTaskIds, activeTask.id];
-      const updatedEarnings = prev.earnings + payout;
+    if (userProfile.completedTaskIds.includes(activeTask.id)) return;
+    
+    const updatedIds = [...userProfile.completedTaskIds, activeTask.id];
+    const updatedEarnings = Number((userProfile.earnings + payout).toFixed(2));
 
-      return {
-        ...prev,
-        completedTaskIds: updatedIds,
-        earnings: Number(updatedEarnings.toFixed(2))
-      };
-    });
+    const updatedProfile = {
+      ...userProfile,
+      completedTaskIds: updatedIds,
+      earnings: updatedEarnings
+    };
+
+    // Save locally
+    setUserProfile(updatedProfile);
+    localStorage.setItem('tappmusic_profile', JSON.stringify(updatedProfile));
+
+    // Save directly to Firestore for durable cloud persistence!
+    if (updatedProfile.username && updatedProfile.username.toLowerCase().trim() !== 'usuario_vip' && updatedProfile.username.toLowerCase().trim() !== 'visitante_tapp') {
+      setDoc(doc(db, 'users', updatedProfile.username.toLowerCase().trim()), updatedProfile)
+        .catch(err => {
+          console.warn("Could not save task completion to Firestore:", err);
+        });
+    }
 
     setTasks(prev => prev.map(t => t.id === activeTask.id ? { ...t, isCompleted: true } : t));
     
