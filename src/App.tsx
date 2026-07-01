@@ -691,8 +691,8 @@ export default function App() {
   }, [isAdminVerified, authUser]);
 
   // Synchronous and on-demand helper to force sync admin session before any sensitive write
-  const ensureAdminSessionSync = async () => {
-    if (!isAdminVerified) return;
+  const ensureAdminSessionSync = async (forceCode?: string) => {
+    if (!isAdminVerified && !forceCode) return;
 
     let currentAuthUser = authUser || auth.currentUser;
     if (!currentAuthUser) {
@@ -707,7 +707,7 @@ export default function App() {
 
     // We still write even if currentAuthUser is null, so that password fallback verification works instantly!
     const savedProfile = localStorage.getItem('tappmusic_profile');
-    let enteredPass = '7340';
+    let enteredPass = forceCode || '7340';
     let currentAdminUsername = 'admin_tapp';
     if (savedProfile) {
       try {
@@ -724,14 +724,24 @@ export default function App() {
           if (u.username) {
             currentAdminUsername = u.username.toLowerCase().trim();
           }
-          if (u.password && (u.password === '7340' || u.password === '26304421' || u.password === '7341')) {
-            enteredPass = u.password;
-          } else {
-            enteredPass = '7340';
+          if (!forceCode) {
+            if (u.password && (u.password === '7340' || u.password === '26304421' || u.password === '7341')) {
+              enteredPass = u.password;
+            }
           }
         }
       } catch (e) {}
     }
+
+    if (forceCode) {
+      localStorage.setItem('admin_override_password', forceCode);
+    } else {
+      const storedOverride = localStorage.getItem('admin_override_password');
+      if (storedOverride) {
+        enteredPass = storedOverride;
+      }
+    }
+
     try {
       await setDoc(doc(db, 'config', 'admin_session'), {
         uid: currentAuthUser ? currentAuthUser.uid : 'anonymous_fallback',
@@ -5260,8 +5270,12 @@ export default function App() {
                     if (adminUnlockCode === '7340' || adminUnlockCode === '26304421' || adminUnlockCode === '7341') {
                       setIsAdminVerified(true);
                       setShowAdminCodePrompt(false);
+                      const code = adminUnlockCode;
                       setAdminUnlockCode('');
                       alert("🔓 ¡Sesión administrativa verificada exitosamente! El panel superior de control ha sido habilitado.");
+                      setTimeout(() => {
+                        ensureAdminSessionSync(code);
+                      }, 50);
                     } else {
                       alert("❌ Código incorrecto.");
                     }
@@ -5286,8 +5300,12 @@ export default function App() {
                     if (adminUnlockCode === '7340' || adminUnlockCode === '26304421' || adminUnlockCode === '7341') {
                       setIsAdminVerified(true);
                       setShowAdminCodePrompt(false);
+                      const code = adminUnlockCode;
                       setAdminUnlockCode('');
                       alert("🔓 ¡Sesión administrativa verificada exitosamente! El panel superior de control ha sido habilitado.");
+                      setTimeout(() => {
+                        ensureAdminSessionSync(code);
+                      }, 50);
                     } else {
                       alert("❌ Código incorrecto.");
                     }
