@@ -13,7 +13,7 @@ import {
   Smartphone, Download
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from './firebase';
-import { collection, doc, onSnapshot, setDoc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc, getDoc, updateDoc, deleteDoc, getDocs, query, where } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { REELS_DATABASE } from './data';
 // @ts-ignore
@@ -292,127 +292,11 @@ export default function App() {
       console.warn("Firebase Anonymous Auth warning:", err);
     });
 
-    // 2. Setup real-time listener for registrations collection
-    const unsubRegistrations = onSnapshot(collection(db, 'registrations'), (snapshot) => {
-      const items: any[] = [];
-      snapshot.forEach((docSnap) => {
-        items.push({ ...docSnap.data(), id: docSnap.id });
-      });
-      // Direct assignment ensures deleted registrations are instantly cleared from local state
-      setRegistrations(items);
-    }, (error) => {
-      console.error("Firestore listening registrations error:", error);
-      setIsQuotaExceeded(true);
-    });
-
-    // 3. Setup real-time listener for withdrawals collection
-    const unsubWithdrawals = onSnapshot(collection(db, 'withdrawals'), (snapshot) => {
-      const items: any[] = [];
-      snapshot.forEach((docSnap) => {
-        items.push({ ...docSnap.data(), id: docSnap.id });
-      });
-      // Direct assignment ensures deleted/completed withdrawals are perfectly in sync
-      setWithdrawHistory(items);
-    }, (error) => {
-      console.error("Firestore listening withdrawals error:", error);
-      setIsQuotaExceeded(true);
-    });
-
-    // 4. Setup real-time listener for users collection
-    const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-      const items: UserProfile[] = [];
-      snapshot.forEach((doc) => {
-        items.push(doc.data() as UserProfile);
-      });
-      if (items.length > 0) {
-        setAllUsers(prev => {
-          // Filter local master users pool to keep only users that exist in the database (or the default admin_tapp)
-          const filtered = prev.filter(u => {
-            if (!u.username) return false;
-            if (u.username.toLowerCase().trim() === 'admin_tapp') return true;
-            return items.some(item => item.username && item.username.toLowerCase().trim() === u.username.toLowerCase().trim());
-          });
-
-          // Merge Firestore users' updated values
-          const merged = [...filtered];
-          items.forEach(item => {
-            const index = merged.findIndex(u => u.username && item.username && u.username.toLowerCase().trim() === item.username.toLowerCase().trim());
-            if (index !== -1) {
-              merged[index] = {
-                ...merged[index],
-                ...item
-              };
-            } else {
-              merged.push(item);
-            }
-          });
-          return merged;
-        });
-        
-        // Also sync profile in active session
-        const currentLocal = localStorage.getItem('tappmusic_profile');
-        if (currentLocal) {
-          try {
-            const parsed = JSON.parse(currentLocal) as UserProfile;
-            if (parsed.username && parsed.username.toLowerCase().trim() !== 'usuario_vip' && parsed.username.toLowerCase().trim() !== 'visitante_tapp') {
-              const updatedProfile = items.find(u => u.username && parsed.username && u.username.toLowerCase().trim() === parsed.username.toLowerCase().trim());
-              if (updatedProfile) {
-                const isInitialSync = !hasSyncedWithFirestore.current;
-                hasSyncedWithFirestore.current = true;
-                setUserProfile(prevProfile => {
-                  const vipLevelChanged = prevProfile.vipLevel !== updatedProfile.vipLevel;
-                  const statusChanged = prevProfile.status !== updatedProfile.status;
-                  const inviteCountChanged = prevProfile.inviteCount !== updatedProfile.inviteCount;
-                  const inviteCommissionsChanged = prevProfile.inviteCommissionsEarned !== updatedProfile.inviteCommissionsEarned;
-                  const blockChanged = prevProfile.blockedTasksUntilDate !== updatedProfile.blockedTasksUntilDate;
-                  
-                  // For earnings and completedTaskIds, we only want to update them from the database
-                  // if we haven't synced yet (initial sync), OR if the local state is empty/unset.
-                  // This completely prevents the race condition/rollback loop when completing tasks!
-                  const localIsEmpty = !prevProfile.completedTaskIds || prevProfile.completedTaskIds.length === 0;
-                  
-                  const earningsChanged = isInitialSync || localIsEmpty ? (prevProfile.earnings !== updatedProfile.earnings) : false;
-                  const prevTasksStr = [...(prevProfile.completedTaskIds || [])].sort().join(',');
-                  const updatedTasksStr = [...(updatedProfile.completedTaskIds || [])].sort().join(',');
-                  const tasksChanged = isInitialSync || localIsEmpty ? (prevTasksStr !== updatedTasksStr) : false;
-
-                  if (earningsChanged || vipLevelChanged || statusChanged || inviteCountChanged || inviteCommissionsChanged || tasksChanged || blockChanged) {
-                    return {
-                      ...prevProfile,
-                      status: updatedProfile.status,
-                      vipLevel: updatedProfile.vipLevel,
-                      blockedTasksUntilDate: updatedProfile.blockedTasksUntilDate,
-                      inviteCount: updatedProfile.inviteCount !== undefined ? updatedProfile.inviteCount : prevProfile.inviteCount,
-                      inviteCommissionsEarned: updatedProfile.inviteCommissionsEarned !== undefined ? updatedProfile.inviteCommissionsEarned : prevProfile.inviteCommissionsEarned,
-                      earnings: (isInitialSync || localIsEmpty) ? updatedProfile.earnings : prevProfile.earnings,
-                      completedTaskIds: (isInitialSync || localIsEmpty) ? (updatedProfile.completedTaskIds || []) : prevProfile.completedTaskIds,
-                      ...(isInitialSync ? updatedProfile : {}),
-                      isSyncedFromDb: true
-                    };
-                  }
-                  if (!prevProfile.isSyncedFromDb) {
-                    return {
-                      ...prevProfile,
-                      isSyncedFromDb: true
-                    };
-                  }
-                  return prevProfile;
-                });
-              }
-            }
-          } catch (e) {}
-        }
-      }
-    }, (error) => {
-      console.error("Firestore listening users error:", error);
-      setIsQuotaExceeded(true);
-    });
-
-    // 5. Setup real-time listener for voices collection
+    // 2. Setup real-time listener for voices collection
     const unsubVoices = onSnapshot(collection(db, 'voices'), (snapshot) => {
       const items: any[] = [];
-      snapshot.forEach((doc) => {
-        items.push({ id: doc.id, ...doc.data() });
+      snapshot.forEach((docSnap) => {
+        items.push({ id: docSnap.id, ...docSnap.data() });
       });
       if (items.length > 0) {
         setVoiceThemes(prev => {
@@ -433,11 +317,11 @@ export default function App() {
       setIsQuotaExceeded(true);
     });
 
-    // 6. Setup real-time listener for reels collection
+    // 3. Setup real-time listener for reels collection
     const unsubReels = onSnapshot(collection(db, 'reels'), (snapshot) => {
       const items: Reel[] = [];
-      snapshot.forEach((doc) => {
-        items.push({ id: doc.id, ...doc.data() } as Reel);
+      snapshot.forEach((docSnap) => {
+        items.push({ id: docSnap.id, ...docSnap.data() } as Reel);
       });
       if (items.length > 0) {
         setReels(items);
@@ -447,7 +331,7 @@ export default function App() {
       setIsQuotaExceeded(true);
     });
 
-    // 7. Setup real-time listener for withdrawals calendar configuration
+    // 4. Setup real-time listener for withdrawals calendar configuration
     const unsubWithdrawalConfig = onSnapshot(doc(db, 'config', 'withdrawals'), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -499,28 +383,201 @@ export default function App() {
       setIsQuotaExceeded(true);
     });
 
-    // 8. Setup real-time listener for recovery_requests collection
-    const unsubRecoveryRequests = onSnapshot(collection(db, 'recovery_requests'), (snapshot) => {
-      const items: RecoveryRequest[] = [];
-      snapshot.forEach((doc) => {
-        items.push({ id: doc.id, ...doc.data() } as RecoveryRequest);
-      });
-      setRecoveryRequests(items);
-    }, (error) => {
-      console.error("Firestore listening recovery_requests error:", error);
-      setIsQuotaExceeded(true);
-    });
+    return () => {
+      unsubVoices();
+      unsubReels();
+      unsubWithdrawalConfig();
+    };
+  }, []);
+
+  // Dynamic user-specific Firestore subscription engine (optimized to reduce read operations)
+  useEffect(() => {
+    const usernameClean = userProfile.username ? userProfile.username.toLowerCase().trim() : '';
+    const isOfflineUser = !usernameClean || usernameClean === 'usuario_vip' || usernameClean === 'visitante_tapp';
+    const isAdmin = usernameClean && (
+      usernameClean === 'admin_tapp' ||
+      usernameClean === 'orinoco_admin' ||
+      userProfile.email === 'admin@tappmusic.com'
+    );
+
+    let unsubRegistrations: () => void = () => {};
+    let unsubWithdrawals: () => void = () => {};
+    let unsubUsers: () => void = () => {};
+    let unsubRecoveryRequests: () => void = () => {};
+    let unsubOwnUser: () => void = () => {};
+    let unsubReferredUsers: () => void = () => {};
+
+    // Helper to merge fetched profiles into local state and update the active user profile securely
+    const syncUsers = (items: UserProfile[]) => {
+      if (items.length > 0) {
+        setAllUsers(prev => {
+          const merged = [...prev];
+          items.forEach(item => {
+            const index = merged.findIndex(u => u.username && item.username && u.username.toLowerCase().trim() === item.username.toLowerCase().trim());
+            if (index !== -1) {
+              merged[index] = {
+                ...merged[index],
+                ...item
+              };
+            } else {
+              merged.push(item);
+            }
+          });
+          return merged;
+        });
+        
+        // Synchronize logged-in user profile with live values from Firestore
+        const currentLocal = localStorage.getItem('tappmusic_profile');
+        if (currentLocal) {
+          try {
+            const parsed = JSON.parse(currentLocal) as UserProfile;
+            const parsedUsernameClean = parsed.username ? parsed.username.toLowerCase().trim() : '';
+            if (parsedUsernameClean && parsedUsernameClean !== 'usuario_vip' && parsedUsernameClean !== 'visitante_tapp') {
+              const updatedProfile = items.find(u => u.username && u.username.toLowerCase().trim() === parsedUsernameClean);
+              if (updatedProfile) {
+                const isInitialSync = !hasSyncedWithFirestore.current;
+                hasSyncedWithFirestore.current = true;
+                setUserProfile(prevProfile => {
+                  const vipLevelChanged = prevProfile.vipLevel !== updatedProfile.vipLevel;
+                  const statusChanged = prevProfile.status !== updatedProfile.status;
+                  const inviteCountChanged = prevProfile.inviteCount !== updatedProfile.inviteCount;
+                  const inviteCommissionsChanged = prevProfile.inviteCommissionsEarned !== updatedProfile.inviteCommissionsEarned;
+                  const blockedChanged = prevProfile.blockedTasksUntilDate !== updatedProfile.blockedTasksUntilDate;
+                  
+                  const localIsEmpty = !prevProfile.completedTaskIds || prevProfile.completedTaskIds.length === 0;
+                  const earningsChanged = isInitialSync || localIsEmpty ? (prevProfile.earnings !== updatedProfile.earnings) : false;
+                  const prevTasksStr = [...(prevProfile.completedTaskIds || [])].sort().join(',');
+                  const updatedTasksStr = [...(updatedProfile.completedTaskIds || [])].sort().join(',');
+                  const tasksChanged = isInitialSync || localIsEmpty ? (prevTasksStr !== updatedTasksStr) : false;
+
+                  if (earningsChanged || vipLevelChanged || statusChanged || inviteCountChanged || inviteCommissionsChanged || tasksChanged || blockedChanged) {
+                    return {
+                      ...prevProfile,
+                      status: updatedProfile.status,
+                      vipLevel: updatedProfile.vipLevel,
+                      blockedTasksUntilDate: updatedProfile.blockedTasksUntilDate,
+                      inviteCount: updatedProfile.inviteCount !== undefined ? updatedProfile.inviteCount : prevProfile.inviteCount,
+                      inviteCommissionsEarned: updatedProfile.inviteCommissionsEarned !== undefined ? updatedProfile.inviteCommissionsEarned : prevProfile.inviteCommissionsEarned,
+                      earnings: (isInitialSync || localIsEmpty) ? updatedProfile.earnings : prevProfile.earnings,
+                      completedTaskIds: (isInitialSync || localIsEmpty) ? (updatedProfile.completedTaskIds || []) : prevProfile.completedTaskIds,
+                      ...(isInitialSync ? updatedProfile : {}),
+                      isSyncedFromDb: true
+                    };
+                  }
+                  if (!prevProfile.isSyncedFromDb) {
+                    return {
+                      ...prevProfile,
+                      isSyncedFromDb: true
+                    };
+                  }
+                  return prevProfile;
+                });
+              }
+            }
+          } catch (e) {}
+        }
+      }
+    };
+
+    if (!isOfflineUser) {
+      if (isAdmin) {
+        // Admin needs real-time feed of all registrations, withdrawals, recovery requests, and users
+        unsubRegistrations = onSnapshot(collection(db, 'registrations'), (snapshot) => {
+          const items: any[] = [];
+          snapshot.forEach((docSnap) => {
+            items.push({ ...docSnap.data(), id: docSnap.id });
+          });
+          setRegistrations(items);
+        }, (error) => {
+          console.error("Firestore listening registrations error:", error);
+          setIsQuotaExceeded(true);
+        });
+
+        unsubWithdrawals = onSnapshot(collection(db, 'withdrawals'), (snapshot) => {
+          const items: any[] = [];
+          snapshot.forEach((docSnap) => {
+            items.push({ ...docSnap.data(), id: docSnap.id });
+          });
+          setWithdrawHistory(items);
+        }, (error) => {
+          console.error("Firestore listening withdrawals error:", error);
+          setIsQuotaExceeded(true);
+        });
+
+        unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+          const items: UserProfile[] = [];
+          snapshot.forEach((docSnap) => {
+            items.push(docSnap.data() as UserProfile);
+          });
+          syncUsers(items);
+        }, (error) => {
+          console.error("Firestore listening users error:", error);
+          setIsQuotaExceeded(true);
+        });
+
+        unsubRecoveryRequests = onSnapshot(collection(db, 'recovery_requests'), (snapshot) => {
+          const items: RecoveryRequest[] = [];
+          snapshot.forEach((docSnap) => {
+            items.push({ id: docSnap.id, ...docSnap.data() } as RecoveryRequest);
+          });
+          setRecoveryRequests(items);
+        }, (error) => {
+          console.error("Firestore listening recovery_requests error:", error);
+          setIsQuotaExceeded(true);
+        });
+      } else {
+        // Regular users only listen to their own user profile document, their referred users, and their own withdrawals
+        unsubOwnUser = onSnapshot(doc(db, 'users', usernameClean), (docSnap) => {
+          if (docSnap.exists()) {
+            syncUsers([docSnap.data() as UserProfile]);
+          }
+        }, (error) => {
+          console.error("Firestore listening own user error:", error);
+          setIsQuotaExceeded(true);
+        });
+
+        // Query active referrals of this user
+        unsubReferredUsers = onSnapshot(
+          query(collection(db, 'users'), where('invitedBy', 'in', [usernameClean, '@' + usernameClean])),
+          (snapshot) => {
+            const items: UserProfile[] = [];
+            snapshot.forEach((docSnap) => {
+              items.push(docSnap.data() as UserProfile);
+            });
+            syncUsers(items);
+          },
+          (error) => {
+            console.error("Firestore listening referred users error:", error);
+            setIsQuotaExceeded(true);
+          }
+        );
+
+        // Query withdrawals belonging only to this user
+        unsubWithdrawals = onSnapshot(
+          query(collection(db, 'withdrawals'), where('username', '==', usernameClean)),
+          (snapshot) => {
+            const items: any[] = [];
+            snapshot.forEach((docSnap) => {
+              items.push({ ...docSnap.data(), id: docSnap.id });
+            });
+            setWithdrawHistory(items);
+          }, (error) => {
+            console.error("Firestore listening withdrawals error:", error);
+            setIsQuotaExceeded(true);
+          }
+        );
+      }
+    }
 
     return () => {
       unsubRegistrations();
       unsubWithdrawals();
       unsubUsers();
-      unsubVoices();
-      unsubReels();
-      unsubWithdrawalConfig();
       unsubRecoveryRequests();
+      unsubOwnUser();
+      unsubReferredUsers();
     };
-  }, []);
+  }, [userProfile.username, userProfile.email]);
 
   // Referral hook: detects ?ref=username in address bar
   const [referredBy, setReferredBy] = useState<string>(() => {
@@ -2035,6 +2092,30 @@ export default function App() {
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-8 text-center">
+        
+        {/* Graceful Database Quota Banner (Non-blocking alert) */}
+        {isQuotaExceeded && (
+          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs py-3 px-4 flex items-center justify-between gap-3 max-w-xl mx-auto rounded-2xl text-left shadow-[0_0_20px_rgba(245,158,11,0.05)]">
+            <div className="flex items-start gap-2.5">
+              <CircleAlert className="h-4.5 w-4.5 shrink-0 text-amber-400 mt-0.5 animate-pulse" />
+              <div>
+                <strong className="text-amber-200 block mb-0.5">Sincronización Local Activa ⚙️</strong>
+                <span className="text-[11px] leading-relaxed text-zinc-400">
+                  El servidor de base de datos se encuentra temporalmente en mantenimiento de cuotas de lectura gratuitas de Google. El aplicativo seguirá funcionando sin problemas de forma local y los cambios se guardarán localmente en su dispositivo.
+                </span>
+              </div>
+            </div>
+            <button 
+              onClick={() => {
+                setIsQuotaExceeded(false);
+                localStorage.setItem('tappmusic_quota_exceeded', 'false');
+              }} 
+              className="text-zinc-500 hover:text-white font-bold p-1 hover:bg-white/5 rounded-lg shrink-0 transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         
         {/* CENTERED BRANDING LOGO & LED SLOGAN AREA */}
         <div className="py-6 flex flex-col items-center justify-center text-center space-y-4 max-w-xl mx-auto">
