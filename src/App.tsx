@@ -432,21 +432,34 @@ export default function App() {
               if (updatedProfile) {
                 hasSyncedWithFirestore.current = true;
                 setUserProfile(prevProfile => {
-                  const earningsChanged = prevProfile.earnings !== updatedProfile.earnings;
                   const vipLevelChanged = prevProfile.vipLevel !== updatedProfile.vipLevel;
                   const statusChanged = prevProfile.status !== updatedProfile.status;
                   const inviteCountChanged = prevProfile.inviteCount !== updatedProfile.inviteCount;
                   const inviteCommissionsChanged = prevProfile.inviteCommissionsEarned !== updatedProfile.inviteCommissionsEarned;
                   const blockChanged = prevProfile.blockedTasksUntilDate !== updatedProfile.blockedTasksUntilDate;
                   
+                  // For earnings and completedTaskIds, we only want to update them from the database
+                  // if we haven't synced yet (initial sync), OR if the local state is empty/unset.
+                  // This completely prevents the race condition/rollback loop when completing tasks!
+                  const isInitialSync = !hasSyncedWithFirestore.current;
+                  const localIsEmpty = !prevProfile.completedTaskIds || prevProfile.completedTaskIds.length === 0;
+                  
+                  const earningsChanged = isInitialSync || localIsEmpty ? (prevProfile.earnings !== updatedProfile.earnings) : false;
                   const prevTasksStr = [...(prevProfile.completedTaskIds || [])].sort().join(',');
                   const updatedTasksStr = [...(updatedProfile.completedTaskIds || [])].sort().join(',');
-                  const tasksChanged = prevTasksStr !== updatedTasksStr;
+                  const tasksChanged = isInitialSync || localIsEmpty ? (prevTasksStr !== updatedTasksStr) : false;
 
                   if (earningsChanged || vipLevelChanged || statusChanged || inviteCountChanged || inviteCommissionsChanged || tasksChanged || blockChanged) {
                     return {
                       ...prevProfile,
-                      ...updatedProfile
+                      status: updatedProfile.status,
+                      vipLevel: updatedProfile.vipLevel,
+                      blockedTasksUntilDate: updatedProfile.blockedTasksUntilDate,
+                      inviteCount: updatedProfile.inviteCount !== undefined ? updatedProfile.inviteCount : prevProfile.inviteCount,
+                      inviteCommissionsEarned: updatedProfile.inviteCommissionsEarned !== undefined ? updatedProfile.inviteCommissionsEarned : prevProfile.inviteCommissionsEarned,
+                      earnings: (isInitialSync || localIsEmpty) ? updatedProfile.earnings : prevProfile.earnings,
+                      completedTaskIds: (isInitialSync || localIsEmpty) ? (updatedProfile.completedTaskIds || []) : prevProfile.completedTaskIds,
+                      ...(isInitialSync ? updatedProfile : {})
                     };
                   }
                   return prevProfile;
