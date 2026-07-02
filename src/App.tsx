@@ -1070,6 +1070,44 @@ export default function App() {
           return r;
         }));
 
+        // PERSIST DIRECTLY TO FIRESTORE SO USERS RECEIVE THEIR UPGRADE INSTANTLY
+        const userDocRef = doc(db, 'users', targetUser);
+        getDoc(userDocRef).then((snap) => {
+          if (snap.exists()) {
+            const existingData = snap.data();
+            updateDoc(userDocRef, {
+              status: 'active',
+              vipLevel: newVip,
+              earnings: earningsCoins || existingData.earnings || 0,
+              isRegistered: true
+            }).catch(e => console.error("Firestore update user error:", e));
+          } else {
+            setDoc(userDocRef, {
+              username: targetUser,
+              email: `${targetUser}@tappmusic.com`,
+              password: '12345',
+              vipLevel: newVip,
+              earnings: earningsCoins || getLevelPriceInUsd(newVip),
+              completedTaskIds: [],
+              isRegistered: true,
+              status: 'active',
+              createdAt: new Date().toLocaleDateString('es-ES')
+            }).catch(e => console.error("Firestore create user error:", e));
+          }
+        }).catch(e => console.error("Firestore lookup user error:", e));
+
+        // Also update registration document in Firestore if any exists
+        getDocs(collection(db, 'registrations')).then((snap) => {
+          snap.forEach((docSnap) => {
+            const rData = docSnap.data();
+            if (rData.username && rData.username.toLowerCase().trim() === targetUser) {
+              updateDoc(doc(db, 'registrations', docSnap.id), {
+                status: 'active'
+              }).catch(e => console.error("Firestore update registration status error:", e));
+            }
+          });
+        }).catch(e => console.error("Firestore registrations list fetch error:", e));
+
         alert(`🎉 ¡ÉXITO! Has activado/actualizado al usuario @${targetUser} a ${newVip} de forma manual en tu base de datos de administración.`);
         setManualCodeInput('');
       } else {
@@ -1151,6 +1189,24 @@ export default function App() {
         if (prev.some(u => u.username && u.username.toLowerCase().trim() === regUser)) return prev;
         return [...prev, newUser];
       });
+
+      // PERSIST DIRECTLY TO FIRESTORE SO OTHERS AND FUTURE LOADS RECEIVE IT
+      setDoc(doc(db, 'registrations', regId), newReg).catch(e => console.error("Firestore create registration error:", e));
+
+      const userDocRef = doc(db, 'users', regUser);
+      getDoc(userDocRef).then((snap) => {
+        if (!snap.exists()) {
+          setDoc(userDocRef, newUser).catch(e => console.error("Firestore create user error:", e));
+        } else {
+          updateDoc(userDocRef, {
+            email: regEmail,
+            vipLevel: regVip,
+            referenceNo: regRef,
+            invitedBy: regInvitedBy,
+            status: 'pending'
+          }).catch(e => console.error("Firestore update user error:", e));
+        }
+      }).catch(e => console.error("Firestore user registration lookup error:", e));
 
       alert(`✅ ¡Registro de @${regUser} importado localmente con éxito! Ya puedes verlo en tu lista de Activaciones para aprobarlo.`);
       setManualCodeInput('');
