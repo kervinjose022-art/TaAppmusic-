@@ -977,22 +977,75 @@ export default function App() {
       const newVip = parts[3] as VipLevel;
       const earningsCoins = parseFloat(parts[4]) || 0;
 
-      if (userProfile.username && userProfile.username.toLowerCase().trim() === targetUser) {
-        const updatedProfile = {
-          ...userProfile,
-          status: 'active' as const,
-          vipLevel: newVip,
-          earnings: earningsCoins,
-          isRegistered: true,
-          commissionPaid: true
-        };
-        setUserProfile(updatedProfile);
-        localStorage.setItem('tappmusic_profile', JSON.stringify(updatedProfile));
-        setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase().trim() === targetUser ? updatedProfile : u));
-        alert(`🎉 ¡ÉXITO! Tu cuenta ha sido activada/actualizada manualmente a ${newVip} con saldo de ${earningsCoins} monedas. ¡Ya puedes hacer tus tareas!`);
+      const isAdmin = isAdminVerified || (
+        userProfile.username && (
+          userProfile.username.toLowerCase().trim() === 'admin_tapp' ||
+          userProfile.username.toLowerCase().trim() === 'orinoco_admin'
+        )
+      );
+
+      if (isAdmin) {
+        // The admin is applying an UPGRADE code for a customer (e.g. Brian) on their own screen
+        setAllUsers(prev => {
+          const exists = prev.some(u => u.username && u.username.toLowerCase().trim() === targetUser);
+          if (exists) {
+            return prev.map(u => {
+              if (u.username && u.username.toLowerCase().trim() === targetUser) {
+                return {
+                  ...u,
+                  status: 'active' as const,
+                  vipLevel: newVip,
+                  earnings: earningsCoins || u.earnings,
+                  isRegistered: true
+                };
+              }
+              return u;
+            });
+          } else {
+            const newUser: UserProfile = {
+              username: targetUser,
+              email: `${targetUser}@tappmusic.com`,
+              password: '12345',
+              vipLevel: newVip,
+              earnings: earningsCoins || getLevelPriceInUsd(newVip),
+              completedTaskIds: [],
+              isRegistered: true,
+              status: 'active',
+              createdAt: new Date().toLocaleDateString('es-ES')
+            };
+            return [...prev, newUser];
+          }
+        });
+
+        // Also approve registration if any
+        setRegistrations(prev => prev.map(r => {
+          if (r.username.toLowerCase().trim() === targetUser) {
+            return { ...r, status: 'active' };
+          }
+          return r;
+        }));
+
+        alert(`🎉 ¡ÉXITO! Has activado/actualizado al usuario @${targetUser} a ${newVip} de forma manual en tu base de datos de administración.`);
         setManualCodeInput('');
       } else {
-        alert(`❌ Este código es para el usuario @${targetUser}. Tu usuario actual es @${userProfile.username}.`);
+        // Normal user applying their own code
+        if (userProfile.username && userProfile.username.toLowerCase().trim() === targetUser) {
+          const updatedProfile = {
+            ...userProfile,
+            status: 'active' as const,
+            vipLevel: newVip,
+            earnings: earningsCoins,
+            isRegistered: true,
+            commissionPaid: true
+          };
+          setUserProfile(updatedProfile);
+          localStorage.setItem('tappmusic_profile', JSON.stringify(updatedProfile));
+          setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase().trim() === targetUser ? updatedProfile : u));
+          alert(`🎉 ¡ÉXITO! Tu cuenta ha sido activada/actualizada manualmente a ${newVip} con saldo de ${earningsCoins} de forma instantánea.`);
+          setManualCodeInput('');
+        } else {
+          alert(`❌ Este código es para el usuario @${targetUser}. Tu usuario actual es @${userProfile.username}. Pídele al usuario que aplique este código en su propia aplicación.`);
+        }
       }
     } else if (parts[1] === 'REG') {
       // Format: TAPPMUSIC::REG::[username]::[vipLevel]::[email]::[referenceNo]::[invitedBy]
@@ -2667,25 +2720,36 @@ export default function App() {
                   </div>
                   
                   {/* Copy-pasteable Registration Sync Code for the Admin */}
-                  <div className="pt-2 border-t border-white/5 space-y-1">
+                  <div className="pt-2 border-t border-white/5 space-y-2">
                     <span className="text-[10px] text-zinc-500 font-bold block uppercase font-mono">
-                      Tu Código de Sincronización para enviar al Admin:
+                      Tu Código de Sincronización para enviar al Admin / Patrocinador:
                     </span>
-                    <div className="flex items-center gap-2 bg-black p-2 rounded-xl border border-white/5">
-                      <code className="text-[10px] text-purple-300 break-all select-all flex-1 font-mono leading-tight">
-                        {`TAPPMUSIC::REG::${userProfile.username.toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}`}
-                      </code>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const code = `TAPPMUSIC::REG::${userProfile.username.toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}`;
-                          navigator.clipboard.writeText(code);
-                          alert("📋 ¡Código de Sincronización copiado! Envíaselo al Admin por WhatsApp.");
-                        }}
-                        className="p-1.5 bg-zinc-900 hover:bg-zinc-800 rounded border border-white/10 text-[10px] text-zinc-300 font-bold uppercase transition-all shrink-0 font-sans cursor-pointer"
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2 bg-black p-2 rounded-xl border border-white/5">
+                        <code className="text-[10px] text-purple-300 break-all select-all flex-1 font-mono leading-tight">
+                          {`TAPPMUSIC::REG::${userProfile.username.toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}`}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const code = `TAPPMUSIC::REG::${userProfile.username.toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}`;
+                            navigator.clipboard.writeText(code);
+                            alert("📋 ¡Código de Sincronización copiado! Envíaselo al Admin por WhatsApp.");
+                          }}
+                          className="p-1.5 bg-zinc-900 hover:bg-zinc-800 rounded border border-white/10 text-[10px] text-zinc-300 font-bold uppercase transition-all shrink-0 font-sans cursor-pointer"
+                        >
+                          Copiar
+                        </button>
+                      </div>
+
+                      <a
+                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Hola! Me acabo de registrar en Tappmusic.com. Mi Código de Sincronización es:\n\nTAPPMUSIC::REG::${userProfile.username.toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}\n\nPor favor, impórtalo en tu Panel de Activaciones para verificar mi pago y aprobar mi cuenta. ¡Gracias! 🙏`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full h-10 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-extrabold uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.2)] text-center font-sans select-none"
                       >
-                        Copiar
-                      </button>
+                        <span>🟢 Enviar Código por WhatsApp</span>
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -3974,6 +4038,14 @@ export default function App() {
                       👤 Invitados por @fershu / fershot
                     </button>
                     <button
+                      onClick={() => setAdminRegSearch('massiel')}
+                      className={`px-2.5 py-1 rounded bg-purple-950/40 text-purple-305 border text-[10px] font-bold uppercase cursor-pointer hover:bg-purple-900/40 transition-all ${
+                        adminRegSearch === 'massiel' ? 'border-[#39FF14] text-[#39FF14]' : 'border-purple-500/20 text-purple-300'
+                      }`}
+                    >
+                      👤 Invitados por @massiel / massi
+                    </button>
+                    <button
                       onClick={() => setAdminRegSearch('')}
                       className={`px-2.5 py-1 rounded bg-zinc-900 text-zinc-400 border text-[10px] font-bold uppercase cursor-pointer hover:bg-zinc-800 transition-all ${
                         adminRegSearch === '' ? 'border-zinc-500 text-white' : 'border-white/5'
@@ -4000,6 +4072,15 @@ export default function App() {
                         inv.includes('fershu') ||
                         inv.includes('fershot') ||
                         inv.includes('fersh') ||
+                        usr.includes(query) ||
+                        email.includes(query)
+                      );
+                    }
+
+                    if (query === 'massiel' || query === 'massi') {
+                      return (
+                        inv.includes('massiel') ||
+                        inv.includes('massi') ||
                         usr.includes(query) ||
                         email.includes(query)
                       );
