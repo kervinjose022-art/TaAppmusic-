@@ -122,14 +122,7 @@ export default function App() {
   }, [withdrawConfig]);
 
   // Fail-safe State to handle Firestore daily free quota limit exceeded elegantly
-  const [isQuotaExceeded, setIsQuotaExceeded] = useState<boolean>(() => {
-    const saved = localStorage.getItem('tappmusic_quota_exceeded');
-    return saved === 'true';
-  });
-
-  useEffect(() => {
-    localStorage.setItem('tappmusic_quota_exceeded', isQuotaExceeded ? 'true' : 'false');
-  }, [isQuotaExceeded]);
+  const [isQuotaExceeded, setIsQuotaExceeded] = useState<boolean>(false);
 
   // Zoom level state for responsive scale (acercar y alejar)
   const [zoomScale, setZoomScale] = useState<number>(() => {
@@ -592,6 +585,51 @@ export default function App() {
       unsubReferredUsers();
     };
   }, [userProfile.username, userProfile.email, isQuotaExceeded]);
+
+  // Self-healing automatic status check for pending accounts
+  useEffect(() => {
+    if (userProfile.status !== 'pending') return;
+    const cleanName = userProfile.username ? userProfile.username.toLowerCase().trim() : '';
+    if (!cleanName || cleanName === 'usuario_vip' || cleanName === 'visitante_tapp') return;
+
+    let intervalId: any;
+    
+    const checkLiveStatus = async () => {
+      try {
+        const userSnap = await getDoc(doc(db, 'users', cleanName));
+        if (userSnap.exists()) {
+          const data = userSnap.data() as UserProfile;
+          if (data.status === 'active') {
+            const updated = {
+              ...userProfile,
+              status: 'active' as const,
+              vipLevel: data.vipLevel || userProfile.vipLevel,
+              earnings: data.earnings !== undefined ? data.earnings : userProfile.earnings,
+              completedTaskIds: data.completedTaskIds || [],
+              isSyncedFromDb: true
+            };
+            saveProfile(updated);
+            
+            // Sync in allUsers state too
+            setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase().trim() === cleanName ? updated : u));
+          }
+        }
+      } catch (err) {
+        console.warn("Background pending status check failed:", err);
+      }
+    };
+
+    // Run once on mount after 1.5 seconds
+    const initialTimeout = setTimeout(checkLiveStatus, 1500);
+
+    // Then poll every 12 seconds
+    intervalId = setInterval(checkLiveStatus, 12000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(intervalId);
+    };
+  }, [userProfile.status, userProfile.username]);
 
   // Referral hook: detects ?ref=username in address bar
   const [referredBy, setReferredBy] = useState<string>(() => {
@@ -2653,6 +2691,53 @@ export default function App() {
                   <p className="text-[#39FF14] text-[11px] leading-relaxed font-mono font-bold">
                     ⚠️ NOTA: El cobro y realización de tareas VIP remuneradas se activará una vez que el Administrador verifique tu depósito.
                   </p>
+
+                  <button
+                    onClick={async () => {
+                      const cleanName = userProfile.username ? userProfile.username.toLowerCase().trim() : '';
+                      if (!cleanName) return;
+                      
+                      const btn = document.getElementById('btn-verify-status');
+                      if (btn) btn.innerText = '⏳ VERIFICANDO CON EL SERVIDOR...';
+                      
+                      try {
+                        setIsQuotaExceeded(false); // Reset to clear transient limitations
+                        const userSnap = await getDoc(doc(db, 'users', cleanName));
+                        if (userSnap.exists()) {
+                          const data = userSnap.data() as UserProfile;
+                          if (data.status === 'active') {
+                            const updated = {
+                              ...userProfile,
+                              status: 'active' as const,
+                              vipLevel: data.vipLevel || userProfile.vipLevel,
+                              earnings: data.earnings !== undefined ? data.earnings : userProfile.earnings,
+                              completedTaskIds: data.completedTaskIds || [],
+                              isSyncedFromDb: true
+                            };
+                            saveProfile(updated);
+                            
+                            // Also update the global allUsers state
+                            setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase().trim() === cleanName ? updated : u));
+                            
+                            alert("🎉 ¡Felicidades! Tu depósito ha sido verificado y tu cuenta está activa. Ya puedes realizar tus tareas VIP.");
+                          } else {
+                            alert("⌛ Tu activación aún se encuentra pendiente de verificación por el administrador. Asegúrate de haber enviado tu capture al administrador por WhatsApp.");
+                          }
+                        } else {
+                          alert("⚠️ No se encontró un perfil creado para tu usuario en el servidor. Consulta con el Administrador.");
+                        }
+                      } catch (err) {
+                        console.error(err);
+                        alert("❌ Error de conexión al verificar el servidor. Por favor inténtalo de nuevo en unos momentos o pídele un Código de Activación al Administrador.");
+                      } finally {
+                        if (btn) btn.innerText = '🔄 RE-VERIFICAR MI ACTIVACIÓN';
+                      }
+                    }}
+                    id="btn-verify-status"
+                    className="w-full h-10 mt-3 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-black font-extrabold text-xs uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(234,179,8,0.2)] border-none"
+                  >
+                    <span>🔄 RE-VERIFICAR MI ACTIVACIÓN</span>
+                  </button>
                 </div>
 
                 {/* Compact Receipt Box */}
