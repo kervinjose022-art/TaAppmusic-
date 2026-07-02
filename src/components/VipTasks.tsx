@@ -52,9 +52,10 @@ export default function VipTasks({
 
   const [tasks, setTasks] = useState<UserTask[]>(() => {
     // Check if task IDs already stored in user profile to mark as completed
+    const completedIds = userProfile.completedTaskIds || [];
     return TASKS_DATABASE.map(task => ({
       ...task,
-      isCompleted: userProfile.completedTaskIds.includes(task.id)
+      isCompleted: completedIds.includes(task.id)
     }));
   });
 
@@ -610,7 +611,7 @@ export default function VipTasks({
   };
 
   const currentFilteredTasks = tasks.filter(task => {
-    const isCompleted = userProfile.completedTaskIds.includes(task.id);
+    const isCompleted = (userProfile.completedTaskIds || []).includes(task.id);
     const matchesTab = activeTab === 'completadas' ? isCompleted : !isCompleted;
     const matchesVip = task.vipRequired === userProfile.vipLevel;
     return matchesTab && matchesVip;
@@ -778,9 +779,10 @@ export default function VipTasks({
     
     const payout = activeTask.rewardValue;
     
-    if (userProfile.completedTaskIds.includes(activeTask.id)) return;
+    const completedIds = userProfile.completedTaskIds || [];
+    if (completedIds.includes(activeTask.id)) return;
     
-    const updatedIds = [...userProfile.completedTaskIds, activeTask.id];
+    const updatedIds = [...completedIds, activeTask.id];
     const updatedEarnings = Number((userProfile.earnings + payout).toFixed(2));
 
     const updatedProfile = {
@@ -873,7 +875,7 @@ export default function VipTasks({
               : 'text-gray-500 hover:text-white'
           }`}
         >
-          Disponibles ({userProfile.blockedTasksUntilDate === new Date().toLocaleDateString('es-ES') ? 0 : tasks.filter(t => t.vipRequired === userProfile.vipLevel && !userProfile.completedTaskIds.includes(t.id)).length})
+          Disponibles ({userProfile.blockedTasksUntilDate === new Date().toLocaleDateString('es-ES') ? 0 : tasks.filter(t => t.vipRequired === userProfile.vipLevel && !(userProfile.completedTaskIds || []).includes(t.id)).length})
         </button>
 
         <button
@@ -884,7 +886,7 @@ export default function VipTasks({
               : 'text-gray-500 hover:text-white'
           }`}
         >
-          Completadas ({tasks.filter(t => t.vipRequired === userProfile.vipLevel && userProfile.completedTaskIds.includes(t.id)).length})
+          Completadas ({tasks.filter(t => t.vipRequired === userProfile.vipLevel && (userProfile.completedTaskIds || []).includes(t.id)).length})
         </button>
       </div>
 
