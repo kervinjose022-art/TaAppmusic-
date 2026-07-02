@@ -5327,6 +5327,12 @@ export default function App() {
                                 <span className="text-[10px] text-zinc-500 font-mono bg-zinc-900 px-1.5 py-0.5 rounded border border-white/5">
                                   📅 {u.createdAt || registrations.find(r => r.username && r.username.toLowerCase().trim() === u.username.toLowerCase().trim())?.date || '11/06/2026'}
                                 </span>
+                                <span className="text-[#39FF14] font-mono font-bold text-[10px] bg-[#39FF14]/10 px-2 py-0.5 rounded border border-[#39FF14]/30 shadow-[0_0_8px_rgba(57,255,20,0.05)]">
+                                  💰 {u.earnings ? u.earnings.toLocaleString() : '0'} Monedas
+                                </span>
+                                <span className="text-purple-400 font-mono font-bold text-[10px] bg-purple-950/40 px-2 py-0.5 rounded border border-purple-500/20">
+                                  ✅ {u.completedTaskIds?.length || 0} Tareas Hoy
+                                </span>
                               </div>
                               {u.invitedBy && (
                                 <span className="text-[10px] text-zinc-500 font-normal block mt-1">
@@ -5373,6 +5379,8 @@ export default function App() {
                                   <div>Email: <strong className="text-zinc-300 select-all">{u.email || 'N/A'}</strong></div>
                                   <div>Contraseña: <strong className="text-yellow-500 select-all">{u.password || 'N/A'}</strong></div>
                                   <div>VIP Actual: <strong className="text-purple-300 uppercase font-bold">{u.vipLevel}</strong></div>
+                                  <div>Saldo Actual: <strong className="text-[#39FF14] font-mono">{u.earnings ? u.earnings.toLocaleString() : 0} Monedas (~${((u.earnings || 0) / 734).toFixed(2)} USD)</strong></div>
+                                  <div>Tareas Completadas: <strong className="text-purple-300">{(u.completedTaskIds && u.completedTaskIds.length > 0) ? `${u.completedTaskIds.length} (${u.completedTaskIds.join(', ')})` : '0 realizadas hoy'}</strong></div>
                                   <div>Comisiones Guardadas: <strong className="text-[#39FF14]">{u.inviteCommissionsEarned || 0} USD</strong></div>
                                   <div>Invitados Guardados: <strong className="text-zinc-300">{u.inviteCount || 0}</strong></div>
                                   <div>Comisiones Reales: <strong className="text-emerald-400">{actualCommissions.toFixed(2)} USD</strong></div>
@@ -5576,7 +5584,7 @@ export default function App() {
                                             await deleteDoc(doc(db, 'registrations', reg.id));
                                           }
                                           
-                                          setAllUsers(prev => prev.filter(usr => usr.username.toLowerCase() !== u.username.toLowerCase()));
+                                          setAllUsers(prev => prev.filter(usr => usr.username && usr.username.toLowerCase() !== u.username.toLowerCase()));
                                           alert(`✅ ¡Usuario @${u.username} y sus registros de activación fueron eliminados de la base de datos!`);
                                         } catch (err: any) {
                                           alert("Error al eliminar usuario: " + err.message);

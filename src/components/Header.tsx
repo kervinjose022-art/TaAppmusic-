@@ -83,27 +83,27 @@ export default function Header({ userProfile, onOpenShareModal, onOpenVipSelecto
           <button
             onClick={onOpenVipSelector}
             className={`flex items-center gap-2 rounded-xl border p-1 bg-zinc-950 hover:bg-zinc-900 transition-all text-left group pr-2.5 cursor-pointer max-w-[140px] sm:max-w-none ${
-              userProfile.vipLevel === 'VIP CORONA IMPERIAL 1000$' 
+              (userProfile.vipLevel || '') === 'VIP CORONA IMPERIAL 1000$' 
                 ? 'border-emerald-500/40 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.15)] bg-gradient-to-tr from-black to-emerald-950/20' 
-                : userProfile.vipLevel === 'VIP PLATINO 420$'
+                : (userProfile.vipLevel || '') === 'VIP PLATINO 420$'
                 ? 'border-purple-500/30 text-purple-400'
-                : userProfile.vipLevel === 'VIP DIAMANTE 120$'
+                : (userProfile.vipLevel || '') === 'VIP DIAMANTE 120$'
                 ? 'border-sky-500/30 text-sky-450'
-                : userProfile.vipLevel === 'VIP RUBÍ 40$'
+                : (userProfile.vipLevel || '') === 'VIP RUBÍ 40$'
                 ? 'border-red-500/30 text-red-400'
-                : userProfile.vipLevel === 'VIP ORO 20$'
+                : (userProfile.vipLevel || '') === 'VIP ORO 20$'
                 ? 'border-yellow-400/35 text-yellow-300'
                 : 'border-zinc-500/30 text-zinc-300'
             }`}
             title="Cambiar Nivel VIP"
           >
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#303138] text-[9px] font-black uppercase text-white px-0.5">
-              {userProfile.vipLevel.split(' ')[1]}
+              {(userProfile.vipLevel || 'VIP PLATA 10$').split(' ')[1] || 'PLATA'}
             </div>
             <div className="text-left leading-none">
-              <p className="text-[10px] font-bold text-white group-hover:underline">@{userProfile.username}</p>
+              <p className="text-[10px] font-bold text-white group-hover:underline">@{userProfile.username || 'usuario'}</p>
               <p className="text-[8px] font-mono tracking-wider opacity-80 mt-0.5 uppercase">
-                {userProfile.vipLevel}
+                {userProfile.vipLevel || 'VIP PLATA 10$'}
               </p>
             </div>
           </button>
