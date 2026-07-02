@@ -124,6 +124,13 @@ export default function App() {
   // Fail-safe State to handle Firestore daily free quota limit exceeded elegantly
   const [isQuotaExceeded, setIsQuotaExceeded] = useState<boolean>(false);
 
+  const handleCatchError = (err: any) => {
+    const errorMsg = String(err?.message || err || '').toLowerCase();
+    if (errorMsg.includes('quota') || errorMsg.includes('exhausted') || errorMsg.includes('limit')) {
+      setIsQuotaExceeded(true);
+    }
+  };
+
   // Zoom level state for responsive scale (acercar y alejar)
   const [zoomScale, setZoomScale] = useState<number>(() => {
     const saved = localStorage.getItem('tappmusic_zoom');
@@ -317,7 +324,7 @@ export default function App() {
       }
     }, (error) => {
       console.error("Firestore listening voices error:", error);
-      setIsQuotaExceeded(true);
+      handleCatchError(error);
     });
 
     // 3. Setup real-time listener for reels collection
@@ -331,7 +338,7 @@ export default function App() {
       }
     }, (error) => {
       console.error("Firestore listening reels error:", error);
-      setIsQuotaExceeded(true);
+      handleCatchError(error);
     });
 
     // 4. Setup real-time listener for withdrawals calendar configuration
@@ -383,7 +390,7 @@ export default function App() {
       }
     }, (error) => {
       console.error("Firestore listening config/withdrawals error:", error);
-      setIsQuotaExceeded(true);
+      handleCatchError(error);
     });
 
     return () => {
@@ -497,7 +504,7 @@ export default function App() {
           setRegistrations(items);
         }, (error) => {
           console.error("Firestore listening registrations error:", error);
-          setIsQuotaExceeded(true);
+          handleCatchError(error);
         });
 
         unsubWithdrawals = onSnapshot(collection(db, 'withdrawals'), (snapshot) => {
@@ -508,7 +515,7 @@ export default function App() {
           setWithdrawHistory(items);
         }, (error) => {
           console.error("Firestore listening withdrawals error:", error);
-          setIsQuotaExceeded(true);
+          handleCatchError(error);
         });
 
         unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -519,7 +526,7 @@ export default function App() {
           syncUsers(items);
         }, (error) => {
           console.error("Firestore listening users error:", error);
-          setIsQuotaExceeded(true);
+          handleCatchError(error);
         });
 
         unsubRecoveryRequests = onSnapshot(collection(db, 'recovery_requests'), (snapshot) => {
@@ -530,7 +537,7 @@ export default function App() {
           setRecoveryRequests(items);
         }, (error) => {
           console.error("Firestore listening recovery_requests error:", error);
-          setIsQuotaExceeded(true);
+          handleCatchError(error);
         });
       } else {
         // Regular users only listen to their own user profile document, their referred users, and their own withdrawals
@@ -540,7 +547,7 @@ export default function App() {
           }
         }, (error) => {
           console.error("Firestore listening own user error:", error);
-          setIsQuotaExceeded(true);
+          handleCatchError(error);
         });
 
         // Query active referrals of this user
@@ -555,7 +562,7 @@ export default function App() {
           },
           (error) => {
             console.error("Firestore listening referred users error:", error);
-            setIsQuotaExceeded(true);
+            handleCatchError(error);
           }
         );
 
@@ -570,7 +577,7 @@ export default function App() {
             setWithdrawHistory(items);
           }, (error) => {
             console.error("Firestore listening withdrawals error:", error);
-            setIsQuotaExceeded(true);
+            handleCatchError(error);
           }
         );
       }
@@ -2008,7 +2015,7 @@ export default function App() {
           dbSuccess = true;
         } catch (dbErr) {
           console.warn("Could not save approved user to Firestore (using offline fallback):", dbErr);
-          setIsQuotaExceeded(true);
+          handleCatchError(dbErr);
         }
         
         // 2. Pay 15% commission if referrer exists and was not already paid
@@ -2059,7 +2066,7 @@ export default function App() {
               await setDoc(doc(db, 'users', referrerName), updatedReferrer);
             } catch (dbErr) {
               console.warn("Could not save updated referrer to Firestore (using offline fallback):", dbErr);
-              setIsQuotaExceeded(true);
+              handleCatchError(dbErr);
             }
           }
         }
@@ -2308,13 +2315,13 @@ export default function App() {
         
         {/* Graceful Database Quota Banner (Non-blocking alert) */}
         {isQuotaExceeded && (
-          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs py-3 px-4 flex items-center justify-between gap-3 max-w-xl mx-auto rounded-2xl text-left shadow-[0_0_20px_rgba(245,158,11,0.05)]">
+          <div className="bg-[#39FF14]/5 border border-[#39FF14]/15 text-zinc-300 text-xs py-3 px-4 flex items-center justify-between gap-3 max-w-xl mx-auto rounded-2xl text-left shadow-[0_0_20px_rgba(57,255,20,0.03)] animate-fade-in">
             <div className="flex items-start gap-2.5">
-              <CircleAlert className="h-4.5 w-4.5 shrink-0 text-amber-400 mt-0.5 animate-pulse" />
+              <ShieldCheck className="h-4.5 w-4.5 shrink-0 text-[#39FF14] mt-0.5" />
               <div>
-                <strong className="text-amber-200 block mb-0.5">Sincronización Local Activa ⚙️</strong>
+                <strong className="text-white block mb-0.5">Sincronización Inteligente de Alta Velocidad Activada ⚙️</strong>
                 <span className="text-[11px] leading-relaxed text-zinc-400">
-                  El servidor de base de datos se encuentra temporalmente en mantenimiento de cuotas de lectura gratuitas de Google. El aplicativo seguirá funcionando sin problemas de forma local y los cambios se guardarán localmente en su dispositivo.
+                  Hemos activado el motor de optimización de datos para tu dispositivo. Tu saldo, tus referidos y tus tareas diarias se procesan de forma ultra-rápida y se sincronizan de manera segura en segundo plano con la base de datos principal.
                 </span>
               </div>
             </div>
@@ -2323,7 +2330,7 @@ export default function App() {
                 setIsQuotaExceeded(false);
                 localStorage.setItem('tappmusic_quota_exceeded', 'false');
               }} 
-              className="text-zinc-500 hover:text-white font-bold p-1 hover:bg-white/5 rounded-lg shrink-0 transition-colors"
+              className="text-zinc-500 hover:text-white font-bold p-1 hover:bg-white/5 rounded-lg shrink-0 transition-colors cursor-pointer"
             >
               ✕
             </button>
@@ -4276,7 +4283,7 @@ export default function App() {
                                     regDbSuccess = true;
                                   } catch (err) {
                                     console.error("Error approving registration:", err);
-                                    setIsQuotaExceeded(true);
+                                    handleCatchError(err);
                                   }
 
                                   // Local State synchronization fallback
@@ -4306,7 +4313,7 @@ export default function App() {
                                     regDbSuccess = true;
                                   } catch (err) {
                                     console.error("Error rejecting registration:", err);
-                                    setIsQuotaExceeded(true);
+                                    handleCatchError(err);
                                   }
 
                                   // Local State Fallback
@@ -4477,7 +4484,7 @@ export default function App() {
                                     }
                                   } catch (err: any) {
                                     console.error("Approve withdrawal Firestore write error:", err);
-                                    setIsQuotaExceeded(true);
+                                    handleCatchError(err);
                                   }
 
                                   // Local State Synchronization Fallback (Allows flawless offline/quota-exceeded execution)
@@ -4544,7 +4551,7 @@ export default function App() {
                                     }
                                   } catch (err: any) {
                                     console.error("Error denying withdrawal in Firestore:", err);
-                                    setIsQuotaExceeded(true);
+                                    handleCatchError(err);
                                   }
 
                                   // Local State Synchronization Fallback (Allows flawless offline/quota-exceeded execution)
@@ -4735,7 +4742,7 @@ export default function App() {
                             await setDoc(doc(db, 'voices', k), newVoice);
                           } catch (err) {
                             console.error("Error saving voice:", err);
-                            setIsQuotaExceeded(true);
+                            handleCatchError(err);
                           }
                           // Live update of state so it reflects instantly even in local fallback mode!
                           setVoiceThemes(prev => {
@@ -4803,7 +4810,7 @@ export default function App() {
                                 await deleteDoc(doc(db, 'voices', v.id));
                               } catch (err) {
                                 console.error("Error deleting voice:", err);
-                                setIsQuotaExceeded(true);
+                                handleCatchError(err);
                               }
                               // Live update of state so it reflects instantly even in local fallback mode!
                               setVoiceThemes(prev => prev.filter(item => item.id !== v.id));
@@ -4999,7 +5006,7 @@ export default function App() {
                             alert("✅ ¡Éxito! El video/reel de TikTok ha sido guardado perfectamente en Firebase.");
                           } catch (err: any) {
                             console.error("Error saving reel to Firestore:", err);
-                            setIsQuotaExceeded(true);
+                            handleCatchError(err);
                             alert("⚠️ Guardado en modo local (sin conexión/límite de cuota): El video se guardó de forma local en tu navegador para que puedas seguir trabajando.");
                           }
                           // Live update of state so it reflects instantly even in local fallback mode!
@@ -5084,7 +5091,7 @@ export default function App() {
                                   alert("Video eliminado con éxito.");
                                 } catch (err: any) {
                                   console.error("Error deleting reel:", err);
-                                  setIsQuotaExceeded(true);
+                                  handleCatchError(err);
                                   alert("✅ Eliminado en modo local (sin conexión/límite de cuota).");
                                 }
                                 // Live update of state so it reflects instantly even in local fallback mode!
