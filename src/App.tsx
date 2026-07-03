@@ -42,6 +42,7 @@ export default function App() {
   
   // Track if we have synced the active user profile with Firestore in this page session
   const hasSyncedWithFirestore = useRef(false);
+  const isDatabaseUpdate = useRef(false);
 
   // App URLs & Constants
   const sharedUrl = 'https://ais-pre-efepkfwykzkok6uvpgwtks-582716975968.us-east1.run.app';
@@ -451,6 +452,7 @@ export default function App() {
               if (updatedProfile) {
                 const isInitialSync = !hasSyncedWithFirestore.current;
                 hasSyncedWithFirestore.current = true;
+                isDatabaseUpdate.current = true;
                 setUserProfile(prevProfile => {
                   const todayDateStr = new Date().toLocaleDateString('es-ES');
                   const dbIsOutdated = updatedProfile.lastResetDate !== todayDateStr;
@@ -463,11 +465,10 @@ export default function App() {
                   const blockedChanged = prevProfile.blockedTasksUntilDate !== updatedProfile.blockedTasksUntilDate;
                   const dateChanged = prevProfile.lastResetDate !== (dbIsOutdated ? todayDateStr : updatedProfile.lastResetDate);
                   
-                  const localIsEmpty = !prevProfile.completedTaskIds || prevProfile.completedTaskIds.length === 0;
-                  const earningsChanged = isInitialSync || localIsEmpty ? (prevProfile.earnings !== updatedProfile.earnings) : false;
+                  const earningsChanged = prevProfile.earnings !== updatedProfile.earnings;
                   const prevTasksStr = [...(prevProfile.completedTaskIds || [])].sort().join(',');
                   const updatedTasksStr = [...effectiveDbTasks].sort().join(',');
-                  const tasksChanged = isInitialSync || localIsEmpty ? (prevTasksStr !== updatedTasksStr) : false;
+                  const tasksChanged = prevTasksStr !== updatedTasksStr;
 
                   if (earningsChanged || vipLevelChanged || statusChanged || inviteCountChanged || inviteCommissionsChanged || tasksChanged || blockedChanged || dateChanged) {
                     return {
@@ -477,8 +478,8 @@ export default function App() {
                       blockedTasksUntilDate: updatedProfile.blockedTasksUntilDate,
                       inviteCount: updatedProfile.inviteCount !== undefined ? updatedProfile.inviteCount : prevProfile.inviteCount,
                       inviteCommissionsEarned: updatedProfile.inviteCommissionsEarned !== undefined ? updatedProfile.inviteCommissionsEarned : prevProfile.inviteCommissionsEarned,
-                      earnings: (isInitialSync || localIsEmpty) ? updatedProfile.earnings : prevProfile.earnings,
-                      completedTaskIds: (isInitialSync || localIsEmpty) ? effectiveDbTasks : prevProfile.completedTaskIds,
+                      earnings: updatedProfile.earnings,
+                      completedTaskIds: effectiveDbTasks,
                       lastResetDate: dbIsOutdated ? todayDateStr : (updatedProfile.lastResetDate || todayDateStr),
                       ...(isInitialSync ? updatedProfile : {}),
                       isSyncedFromDb: true
@@ -907,11 +908,15 @@ export default function App() {
       // Synchronize in real-time with Firestore so coins/tasks are never lost on updates or refresh
       // Only write to firestore if we have synced with Firestore at least once in this session.
       // This prevents local stale state on start-up from overwriting updated database values (e.g. status approvals).
-      if (hasSyncedWithFirestore.current && userProfile.isSyncedFromDb && userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip' && userProfile.username.toLowerCase().trim() !== 'visitante_tapp') {
-        const userDocRef = doc(db, 'users', userProfile.username.toLowerCase().trim());
-        setDoc(userDocRef, userProfile).catch(err => {
-          console.warn("Background setDoc failed for userProfile:", err);
-        });
+      if (isDatabaseUpdate.current) {
+        isDatabaseUpdate.current = false;
+      } else {
+        if (hasSyncedWithFirestore.current && userProfile.isSyncedFromDb && userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip' && userProfile.username.toLowerCase().trim() !== 'visitante_tapp') {
+          const userDocRef = doc(db, 'users', userProfile.username.toLowerCase().trim());
+          setDoc(userDocRef, userProfile).catch(err => {
+            console.warn("Background setDoc failed for userProfile:", err);
+          });
+        }
       }
     }
   }, [userProfile]);
@@ -921,12 +926,11 @@ export default function App() {
     if (userProfile && userProfile.isRegistered && userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip' && userProfile.username.toLowerCase().trim() !== 'visitante_tapp') {
       const todayDateStr = new Date().toLocaleDateString('es-ES');
       if (userProfile.lastResetDate !== todayDateStr) {
-        setUserProfile(prev => ({
-          ...prev,
+        saveProfile({
+          ...userProfile,
           completedTaskIds: [],
-          lastResetDate: todayDateStr,
-          isSyncedFromDb: prev.isSyncedFromDb
-        }));
+          lastResetDate: todayDateStr
+        });
       }
     }
   }, [userProfile]);
@@ -961,10 +965,22 @@ export default function App() {
             inviteCount: currentCount + 1
           };
           
+          // Clean any undefined properties to satisfy Firestore setDoc constraints
+          Object.keys(updatedUser).forEach(key => {
+            if ((updatedUser as any)[key] === undefined) {
+              delete (updatedUser as any)[key];
+            }
+          });
+
+          // Save updated referrer directly to Firestore so commission is never lost
+          setDoc(doc(db, 'users', referrerUsername.toLowerCase().trim()), updatedUser).catch(err => {
+            console.error("Firestore update referrer commission error:", err);
+          });
+
           // Live update active session if the referrer is currently logged in!
-          if (userProfile.username && userProfile.username.toLowerCase() === referrerUsername.toLowerCase()) {
+          if (userProfile.username && userProfile.username.toLowerCase().trim() === referrerUsername.toLowerCase().trim()) {
             setTimeout(() => {
-              setUserProfile(updatedUser);
+              saveProfile(updatedUser);
             }, 60);
           }
           return updatedUser;
@@ -1127,8 +1143,7 @@ export default function App() {
             isRegistered: true,
             commissionPaid: true
           };
-          setUserProfile(updatedProfile);
-          localStorage.setItem('tappmusic_profile', JSON.stringify(updatedProfile));
+          saveProfile(updatedProfile);
           setAllUsers(prev => prev.map(u => u.username && u.username.toLowerCase().trim() === targetUser ? updatedProfile : u));
           alert(`🎉 ¡ÉXITO! Tu cuenta ha sido activada/actualizada manualmente a ${newVip} con saldo de ${earningsCoins} de forma instantánea.`);
           setManualCodeInput('');
