@@ -85,7 +85,7 @@ export default function VipTasks({
 
   // All withdrawals of the user (including approved ones) for background validations like 10-day limit
   const myAllWithdrawals = (withdrawHistory || []).filter((w: any) => 
-    w && w.username && w.username.toLowerCase().trim() === userProfile.username.toLowerCase().trim()
+    w && w.username && userProfile && userProfile.username && w.username.toLowerCase().trim() === userProfile.username.toLowerCase().trim()
   );
 
   // Filtered withdrawals to display on the user interface (excludes approved or Aprobado withdrawals as requested)

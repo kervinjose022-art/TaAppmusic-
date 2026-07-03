@@ -452,19 +452,24 @@ export default function App() {
                 const isInitialSync = !hasSyncedWithFirestore.current;
                 hasSyncedWithFirestore.current = true;
                 setUserProfile(prevProfile => {
+                  const todayDateStr = new Date().toLocaleDateString('es-ES');
+                  const dbIsOutdated = updatedProfile.lastResetDate !== todayDateStr;
+                  const effectiveDbTasks = dbIsOutdated ? [] : (updatedProfile.completedTaskIds || []);
+
                   const vipLevelChanged = prevProfile.vipLevel !== updatedProfile.vipLevel;
                   const statusChanged = prevProfile.status !== updatedProfile.status;
                   const inviteCountChanged = prevProfile.inviteCount !== updatedProfile.inviteCount;
                   const inviteCommissionsChanged = prevProfile.inviteCommissionsEarned !== updatedProfile.inviteCommissionsEarned;
                   const blockedChanged = prevProfile.blockedTasksUntilDate !== updatedProfile.blockedTasksUntilDate;
+                  const dateChanged = prevProfile.lastResetDate !== (dbIsOutdated ? todayDateStr : updatedProfile.lastResetDate);
                   
                   const localIsEmpty = !prevProfile.completedTaskIds || prevProfile.completedTaskIds.length === 0;
                   const earningsChanged = isInitialSync || localIsEmpty ? (prevProfile.earnings !== updatedProfile.earnings) : false;
                   const prevTasksStr = [...(prevProfile.completedTaskIds || [])].sort().join(',');
-                  const updatedTasksStr = [...(updatedProfile.completedTaskIds || [])].sort().join(',');
+                  const updatedTasksStr = [...effectiveDbTasks].sort().join(',');
                   const tasksChanged = isInitialSync || localIsEmpty ? (prevTasksStr !== updatedTasksStr) : false;
 
-                  if (earningsChanged || vipLevelChanged || statusChanged || inviteCountChanged || inviteCommissionsChanged || tasksChanged || blockedChanged) {
+                  if (earningsChanged || vipLevelChanged || statusChanged || inviteCountChanged || inviteCommissionsChanged || tasksChanged || blockedChanged || dateChanged) {
                     return {
                       ...prevProfile,
                       status: updatedProfile.status,
@@ -473,7 +478,8 @@ export default function App() {
                       inviteCount: updatedProfile.inviteCount !== undefined ? updatedProfile.inviteCount : prevProfile.inviteCount,
                       inviteCommissionsEarned: updatedProfile.inviteCommissionsEarned !== undefined ? updatedProfile.inviteCommissionsEarned : prevProfile.inviteCommissionsEarned,
                       earnings: (isInitialSync || localIsEmpty) ? updatedProfile.earnings : prevProfile.earnings,
-                      completedTaskIds: (isInitialSync || localIsEmpty) ? (updatedProfile.completedTaskIds || []) : prevProfile.completedTaskIds,
+                      completedTaskIds: (isInitialSync || localIsEmpty) ? effectiveDbTasks : prevProfile.completedTaskIds,
+                      lastResetDate: dbIsOutdated ? todayDateStr : (updatedProfile.lastResetDate || todayDateStr),
                       ...(isInitialSync ? updatedProfile : {}),
                       isSyncedFromDb: true
                     };
@@ -2181,7 +2187,7 @@ export default function App() {
 
     const usdPrice = getLevelPriceInUsd(upgradeVipLevel);
     const bsPrice = getLevelPriceInBs(upgradeVipLevel);
-    const regId = `UPGRADE-${userProfile.username.toLowerCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const regId = `UPGRADE-${(userProfile.username || '').toLowerCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const upgradeReg = {
       id: regId,
@@ -2875,12 +2881,12 @@ export default function App() {
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2 bg-black p-2 rounded-xl border border-white/5">
                         <code className="text-[10px] text-purple-300 break-all select-all flex-1 font-mono leading-tight">
-                          {`TAPPMUSIC::REG::${userProfile.username.toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}`}
+                          {`TAPPMUSIC::REG::${(userProfile.username || '').toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}`}
                         </code>
                         <button
                           type="button"
                           onClick={() => {
-                            const code = `TAPPMUSIC::REG::${userProfile.username.toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}`;
+                            const code = `TAPPMUSIC::REG::${(userProfile.username || '').toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}`;
                             navigator.clipboard.writeText(code);
                             alert("📋 ¡Código de Sincronización copiado! Envíaselo al Admin por WhatsApp.");
                           }}
@@ -2891,7 +2897,7 @@ export default function App() {
                       </div>
 
                       <a
-                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Hola! Me acabo de registrar en Tappmusic.com. Mi Código de Sincronización es:\n\nTAPPMUSIC::REG::${userProfile.username.toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}\n\nPor favor, impórtalo en tu Panel de Activaciones para verificar mi pago y aprobar mi cuenta. ¡Gracias! 🙏`)}`}
+                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Hola! Me acabo de registrar en Tappmusic.com. Mi Código de Sincronización es:\n\nTAPPMUSIC::REG::${(userProfile.username || '').toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}\n\nPor favor, impórtalo en tu Panel de Activaciones para verificar mi pago y aprobar mi cuenta. ¡Gracias! 🙏`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full h-10 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-extrabold uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.2)] text-center font-sans select-none"
@@ -5546,6 +5552,34 @@ export default function App() {
                                 title="Generar código manual de WhatsApp para activar o subir de rango"
                               >
                                 🔑 Código Manual
+                              </button>
+
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm(`¿Quieres REINICIAR las tareas de @${u.username} para hoy? Esto le permitirá hacer sus tareas desde cero hoy.`)) {
+                                    try {
+                                      const todayDateStr = new Date().toLocaleDateString('es-ES');
+                                      const updatedUser = { 
+                                        ...u, 
+                                        completedTaskIds: [], 
+                                        lastResetDate: todayDateStr 
+                                      };
+                                      await ensureAdminSessionSync();
+                                      await setDoc(doc(db, 'users', u.username.toLowerCase().trim()), updatedUser);
+                                      setAllUsers(prev => prev.map(usr => usr.username && u.username && usr.username.toLowerCase() === u.username.toLowerCase() ? updatedUser : usr));
+                                      if (userProfile.username && u.username && userProfile.username.toLowerCase() === u.username.toLowerCase()) {
+                                        saveProfile(updatedUser);
+                                      }
+                                      alert(`✅ ¡Tareas de @${u.username} reiniciadas con éxito!`);
+                                    } catch (err: any) {
+                                      alert("Error al reiniciar tareas: " + err.message);
+                                    }
+                                  }
+                                }}
+                                className="h-7 px-2.5 bg-zinc-900 border border-blue-500/30 hover:border-blue-400 text-blue-300 hover:text-blue-200 font-extrabold text-[9px] uppercase rounded transition-all cursor-pointer flex items-center justify-center whitespace-nowrap"
+                                title="Reiniciar tareas de hoy para este usuario"
+                              >
+                                🔄 Reiniciar Tareas
                               </button>
 
                               {(!u.isRegistered || u.status !== 'active') && (
