@@ -5321,6 +5321,10 @@ export default function App() {
 
                     return filtered.map((u) => {
                       const isOwner = u.username.toLowerCase().trim() === 'admin_tapp' || u.username.toLowerCase().trim() === 'orinoco_admin';
+                      const todayDateStr = new Date().toLocaleDateString('es-ES');
+                      const isCompletedToday = u.lastResetDate === todayDateStr;
+                      const completedCountToday = isCompletedToday ? (u.completedTaskIds?.length || 0) : 0;
+                      const completedListToday = isCompletedToday ? (u.completedTaskIds || []) : [];
                       return (
                         <div 
                           key={u.username}
@@ -5337,7 +5341,7 @@ export default function App() {
                                   💰 {u.earnings ? u.earnings.toLocaleString() : '0'} Monedas
                                 </span>
                                 <span className="text-purple-400 font-mono font-bold text-[10px] bg-purple-950/40 px-2 py-0.5 rounded border border-purple-500/20">
-                                  ✅ {u.completedTaskIds?.length || 0} Tareas Hoy
+                                  ✅ {completedCountToday} Tareas Hoy
                                 </span>
                               </div>
                               {u.invitedBy && (
@@ -5386,7 +5390,7 @@ export default function App() {
                                   <div>Contraseña: <strong className="text-yellow-500 select-all">{u.password || 'N/A'}</strong></div>
                                   <div>VIP Actual: <strong className="text-purple-300 uppercase font-bold">{u.vipLevel}</strong></div>
                                   <div>Saldo Actual: <strong className="text-[#39FF14] font-mono">{u.earnings ? u.earnings.toLocaleString() : 0} Monedas (~${((u.earnings || 0) / 734).toFixed(2)} USD)</strong></div>
-                                  <div>Tareas Completadas: <strong className="text-purple-300">{(u.completedTaskIds && u.completedTaskIds.length > 0) ? `${u.completedTaskIds.length} (${u.completedTaskIds.join(', ')})` : '0 realizadas hoy'}</strong></div>
+                                  <div>Tareas Completadas Hoy: <strong className="text-purple-300">{completedCountToday > 0 ? `${completedCountToday} (${completedListToday.join(', ')})` : '0 realizadas hoy'}</strong>{(!isCompletedToday && u.completedTaskIds && u.completedTaskIds.length > 0) && <span className="text-[10px] text-zinc-500 block">⚠️ Sin ingresar hoy (Último ingreso/tareas el {u.lastResetDate || 'N/A'})</span>}</div>
                                   <div>Comisiones Guardadas: <strong className="text-[#39FF14]">{u.inviteCommissionsEarned || 0} USD</strong></div>
                                   <div>Invitados Guardados: <strong className="text-zinc-300">{u.inviteCount || 0}</strong></div>
                                   <div>Comisiones Reales: <strong className="text-emerald-400">{actualCommissions.toFixed(2)} USD</strong></div>
