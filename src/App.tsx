@@ -19,6 +19,19 @@ import { REELS_DATABASE } from './data';
 // @ts-ignore
 import tappmusicLogo from './assets/images/logo_tappmusic_1781384373669.jpg';
 
+const getEsDateString = (date: Date = new Date()): string => {
+  const d = date.getDate();
+  const m = date.getMonth() + 1; // 0-indexed
+  const y = date.getFullYear();
+  return `${d}/${m}/${y}`;
+};
+
+const getEsDateTimeString = (date: Date = new Date()): string => {
+  const dateStr = getEsDateString(date);
+  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return `${dateStr} ${timeStr}`;
+};
+
 export default function App() {
   const [authUser, setAuthUser] = useState<any>(null);
 
@@ -454,7 +467,7 @@ export default function App() {
                 hasSyncedWithFirestore.current = true;
                 isDatabaseUpdate.current = true;
                 setUserProfile(prevProfile => {
-                  const todayDateStr = new Date().toLocaleDateString('es-ES');
+                  const todayDateStr = getEsDateString();
                   const dbIsOutdated = updatedProfile.lastResetDate !== todayDateStr;
                   const effectiveDbTasks = dbIsOutdated ? [] : (updatedProfile.completedTaskIds || []);
 
@@ -924,7 +937,7 @@ export default function App() {
   // Automatic Daily Task Reset Engine
   useEffect(() => {
     if (userProfile && userProfile.isRegistered && userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip' && userProfile.username.toLowerCase().trim() !== 'visitante_tapp') {
-      const todayDateStr = new Date().toLocaleDateString('es-ES');
+      const todayDateStr = getEsDateString();
       if (userProfile.lastResetDate !== todayDateStr) {
         saveProfile({
           ...userProfile,
@@ -1982,7 +1995,7 @@ export default function App() {
     }
   };
 
-  const handleApproveUser = async (regUsername: string, regAmountUsd: number, regVipLevel?: string) => {
+  const handleApproveUser = async (regUsername: string, regAmountUsd: number, regVipLevel?: string, showBypassCode: boolean = false) => {
     const targetName = regUsername.toLowerCase().trim();
     let dbSuccess = false;
     
@@ -2034,7 +2047,7 @@ export default function App() {
           inviteCommissionsEarned: 0,
           inviteCount: 0,
           invitedBy: matchedReg && matchedReg.invitedBy ? matchedReg.invitedBy : '',
-          createdAt: matchedReg && matchedReg.date ? matchedReg.date : new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          createdAt: matchedReg && matchedReg.date ? matchedReg.date : getEsDateTimeString()
         };
       }
       
@@ -2047,7 +2060,7 @@ export default function App() {
         // Detect if they had already completed tasks today and are upgrading/changing their VIP level
         const hasDoneTasksToday = userData.completedTaskIds && userData.completedTaskIds.length > 0;
         const isUpgrade = userData.vipLevel !== targetVip;
-        const todayDateStr = new Date().toLocaleDateString('es-ES');
+        const todayDateStr = getEsDateString();
 
         const activatedTarget: UserProfile = { 
           ...userData, 
@@ -2080,9 +2093,11 @@ export default function App() {
           localStorage.setItem('tappmusic_profile', JSON.stringify(activatedTarget));
         }
 
-        // Generate manual bypass code for the admin to copy
-        const code = `TAPPMUSIC::UPGRADE::${targetName}::${targetVip}::${activatedTarget.earnings || 0}`;
-        setGeneratedBypassCode(code);
+        // Generate manual bypass code for the admin to copy only if requested
+        if (showBypassCode) {
+          const code = `TAPPMUSIC::UPGRADE::${targetName}::${targetVip}::${activatedTarget.earnings || 0}`;
+          setGeneratedBypassCode(code);
+        }
 
         // Attempt Firestore write
         try {
@@ -5336,7 +5351,7 @@ export default function App() {
 
                     return filtered.map((u) => {
                       const isOwner = u.username.toLowerCase().trim() === 'admin_tapp' || u.username.toLowerCase().trim() === 'orinoco_admin';
-                      const todayDateStr = new Date().toLocaleDateString('es-ES');
+                      const todayDateStr = getEsDateString();
                       const isCompletedToday = u.lastResetDate === todayDateStr;
                       const completedCountToday = isCompletedToday ? (u.completedTaskIds?.length || 0) : 0;
                       const completedListToday = isCompletedToday ? (u.completedTaskIds || []) : [];
@@ -5398,6 +5413,14 @@ export default function App() {
                               return total + 1.50;
                             }, 0);
 
+                            const userApprovedWithdrawals = withdrawHistory.filter(w => {
+                              const wUser = w.username ? w.username.toLowerCase().trim() : '';
+                              return wUser === cleanUsrName && (w.status === 'Aprobado' || w.status === 'aprobado');
+                            });
+                            const approvedCount = userApprovedWithdrawals.length;
+                            const totalCoinsWithdrawn = userApprovedWithdrawals.reduce((sum, w) => sum + (Number(w.amountCoins) || 0), 0);
+                            const totalUsdtWithdrawn = userApprovedWithdrawals.reduce((sum, w) => sum + (Number(w.amountUsdt) || 0), 0);
+
                             return (
                               <>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-zinc-400 bg-zinc-950/40 p-2.5 rounded-lg border border-white/5">
@@ -5410,6 +5433,11 @@ export default function App() {
                                   <div>Invitados Guardados: <strong className="text-zinc-300">{u.inviteCount || 0}</strong></div>
                                   <div>Comisiones Reales: <strong className="text-emerald-400">{actualCommissions.toFixed(2)} USD</strong></div>
                                   <div>Invitados Reales: <strong className="text-emerald-400">{actualCount} activos (con depósito)</strong></div>
+                                  
+                                  <div className="sm:col-span-2 border-t border-white/5 pt-1.5 mt-0.5 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[#39FF14]/90">
+                                    <div>Retiros Aprobados: <strong className="text-white font-bold">{approvedCount} {approvedCount === 1 ? 'retiro aprobado' : 'retiros aprobados'}</strong></div>
+                                    <div>Monedas Retiradas: <strong className="text-white font-mono font-bold">{totalCoinsWithdrawn.toLocaleString()} Monedas (~${totalUsdtWithdrawn.toFixed(2)} USDT)</strong></div>
+                                  </div>
                                   {u.walletAddress && (
                                     <div className="sm:col-span-2 border-t border-white/5 pt-1.5 mt-0.5 text-zinc-400">
                                       Billetera o Pago de Retiro: <strong className="text-[#39FF14] select-all font-mono break-all">{u.walletAddress}</strong>

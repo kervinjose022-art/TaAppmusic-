@@ -10,6 +10,19 @@ import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import WithdrawalCalendar from './WithdrawalCalendar';
 
+const getEsDateString = (date: Date = new Date()): string => {
+  const d = date.getDate();
+  const m = date.getMonth() + 1; // 0-indexed
+  const y = date.getFullYear();
+  return `${d}/${m}/${y}`;
+};
+
+const getEsDateTimeString = (date: Date = new Date()): string => {
+  const dateStr = getEsDateString(date);
+  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return `${dateStr} ${timeStr}`;
+};
+
 const WITHDRAW_OPTIONS = [
   { coins: 3670, usdt: 5 },
   { coins: 7340, usdt: 10 },
@@ -314,7 +327,7 @@ export default function VipTasks({
         netUsdt: netUsdt,
         address: finalAddress,
         network: withdrawalNetwork === 'BEP20' ? 'BEP20' : 'Pago Móvil',
-        date: new Date().toLocaleDateString('es-ES') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        date: getEsDateTimeString(),
         status: 'Pendiente', // starts as pending approval
         txid: randomTxid,
         deducted: true // Marks that coins have been deducted on submission
@@ -637,7 +650,7 @@ export default function VipTasks({
       return;
     }
 
-    const todayStr = new Date().toLocaleDateString('es-ES');
+    const todayStr = getEsDateString();
     if (userProfile.blockedTasksUntilDate === todayStr) {
       alert(`⚠️ Has ascendido de VIP hoy y ya habías completado tus tareas de hoy. Tus nuevas tareas del nivel ${userProfile.vipLevel} estarán disponibles mañana.`);
       return;
@@ -875,7 +888,7 @@ export default function VipTasks({
               : 'text-gray-500 hover:text-white'
           }`}
         >
-          Disponibles ({userProfile.blockedTasksUntilDate === new Date().toLocaleDateString('es-ES') ? 0 : tasks.filter(t => t.vipRequired === userProfile.vipLevel && !(userProfile.completedTaskIds || []).includes(t.id)).length})
+          Disponibles ({userProfile.blockedTasksUntilDate === getEsDateString() ? 0 : tasks.filter(t => t.vipRequired === userProfile.vipLevel && !(userProfile.completedTaskIds || []).includes(t.id)).length})
         </button>
 
         <button
@@ -891,7 +904,7 @@ export default function VipTasks({
       </div>
 
       {/* Tasks Render lists */}
-      {userProfile.blockedTasksUntilDate === new Date().toLocaleDateString('es-ES') && activeTab === 'disponibles' ? (
+      {userProfile.blockedTasksUntilDate === getEsDateString() && activeTab === 'disponibles' ? (
         <div className="py-10 px-4 text-center rounded-2xl border border-yellow-500/20 bg-yellow-950/10 font-sans text-xs">
           <div className="mx-auto w-10 h-10 rounded-full bg-yellow-500/15 flex items-center justify-center mb-3">
             <Lock className="h-5 w-5 text-yellow-500" />
