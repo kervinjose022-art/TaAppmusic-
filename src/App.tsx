@@ -2827,7 +2827,7 @@ export default function App() {
                         }
                       } catch (err) {
                         console.error(err);
-                        alert("❌ Error de conexión al verificar el servidor. Por favor inténtalo de nuevo en unos momentos o pídele un Código de Activación al Administrador.");
+                        alert("❌ Error de conexión al verificar el servidor. Por favor inténtalo de nuevo en unos momentos o ponte en contacto con el soporte.");
                       } finally {
                         if (btn) btn.innerText = '🔄 RE-VERIFICAR MI ACTIVACIÓN';
                       }
@@ -2876,65 +2876,6 @@ export default function App() {
                     >
                       Cerrar Sesión / Ir al inicio
                     </button>
-                  </div>
-                </div>
-
-                {/* Manual Activation Code Input */}
-                <div className="md:col-span-2 max-w-xl mx-auto w-full p-5 rounded-2xl border border-purple-500/30 bg-zinc-950 text-left space-y-3.5 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
-                  <h4 className="text-xs uppercase tracking-wider font-extrabold text-white flex items-center gap-1.5 font-mono">
-                    🔑 ¿TIENES UN CÓDIGO DE ACTIVACIÓN MANUAL?
-                  </h4>
-                  <p className="text-zinc-400 text-[11px] leading-relaxed">
-                    Si el administrador te envió un código de activación manual por WhatsApp debido a mantenimiento de servidores (límite de Firestore), pégalo aquí para activar tu cuenta al instante sin esperar la base de datos:
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Pegar código (TAPPMUSIC::UPGRADE::...)"
-                      value={manualCodeInput}
-                      onChange={(e) => setManualCodeInput(e.target.value)}
-                      className="flex-1 text-xs font-mono bg-black border border-white/10 rounded-xl px-3 py-2 text-white placeholder-zinc-700 focus:outline-none focus:border-[#39FF14]"
-                    />
-                    <button
-                      onClick={() => handleApplyManualCode(manualCodeInput)}
-                      className="px-4 py-2 bg-[#39FF14] text-black font-extrabold text-xs uppercase rounded-xl hover:bg-[#34e512] transition-all cursor-pointer shadow-[0_0_10px_rgba(57,255,20,0.2)] font-sans"
-                    >
-                      Aplicar
-                    </button>
-                  </div>
-                  
-                  {/* Copy-pasteable Registration Sync Code for the Admin */}
-                  <div className="pt-2 border-t border-white/5 space-y-2">
-                    <span className="text-[10px] text-zinc-500 font-bold block uppercase font-mono">
-                      Tu Código de Sincronización para enviar al Admin / Patrocinador:
-                    </span>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2 bg-black p-2 rounded-xl border border-white/5">
-                        <code className="text-[10px] text-purple-300 break-all select-all flex-1 font-mono leading-tight">
-                          {`TAPPMUSIC::REG::${(userProfile.username || '').toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}`}
-                        </code>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const code = `TAPPMUSIC::REG::${(userProfile.username || '').toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}`;
-                            navigator.clipboard.writeText(code);
-                            alert("📋 ¡Código de Sincronización copiado! Envíaselo al Admin por WhatsApp.");
-                          }}
-                          className="p-1.5 bg-zinc-900 hover:bg-zinc-800 rounded border border-white/10 text-[10px] text-zinc-300 font-bold uppercase transition-all shrink-0 font-sans cursor-pointer"
-                        >
-                          Copiar
-                        </button>
-                      </div>
-
-                      <a
-                        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`Hola! Me acabo de registrar en Tappmusic.com. Mi Código de Sincronización es:\n\nTAPPMUSIC::REG::${(userProfile.username || '').toLowerCase().trim()}::${userProfile.vipLevel}::${userProfile.email}::${userProfile.referenceNo || 'REF-OFFLINE'}::${userProfile.invitedBy || 'sin_patrocinador'}\n\nPor favor, impórtalo en tu Panel de Activaciones para verificar mi pago y aprobar mi cuenta. ¡Gracias! 🙏`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full h-10 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-extrabold uppercase rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.2)] text-center font-sans select-none"
-                      >
-                        <span>🟢 Enviar Código por WhatsApp</span>
-                      </a>
-                    </div>
                   </div>
                 </div>
 
@@ -3159,40 +3100,14 @@ export default function App() {
             </div>
 
             {/* Support instructions container */}
-            <div className="rounded-2xl border border-white/5 bg-zinc-950/30 p-5 text-left max-w-5xl mx-auto space-y-4">
+            <div className="rounded-2xl border border-white/5 bg-zinc-950/30 p-5 text-left max-w-5xl mx-auto">
               <div className="flex items-start gap-3.5">
                 <CircleAlert className="h-5 w-5 text-purple-500 shrink-0 mt-0.5 animate-pulse" />
                 <div className="space-y-1">
-                  <h3 className="text-xs font-black tracking-wider text-white uppercase">Información general del servidor</h3>
+                  <h3 className="text-xs font-black tracking-wider text-white uppercase">Información de la Cuenta</h3>
                   <p className="text-xs text-gray-500 leading-relaxed font-mono">
-                    Tappmusic.com ha sincronizado su base de datos con enlaces CDN de fe, familia y mentalidad de abundancia. El botón de "Hacer Tareas" calcula y liquida pagos directamente en tiempo real en la billetera local de tu navegador. Sube de VIP haciendo click en tu medalla del menú de arriba en cualquier momento para poner a prueba nuestro sistema.
+                    Tappmusic.com sincroniza tu cuenta automáticamente en tiempo real con nuestra base de datos. Las ganancias de tus tareas VIP se liquidan de inmediato en tu billetera local.
                   </p>
-                </div>
-              </div>
-
-              {/* Manual Upgrade Code Bypass Field */}
-              <div className="pt-3 border-t border-white/5 space-y-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase font-mono tracking-wider text-[#39FF14] font-black">⚙️ Bypass de Servidor / Actualización Manual de Rango</span>
-                  <span className="bg-zinc-800 text-[8.5px] px-1.5 py-0.5 rounded text-zinc-400 font-mono">Emergencia</span>
-                </div>
-                <p className="text-zinc-400 text-[11px] leading-relaxed">
-                  Si Diana, Brian o algún otro miembro tiene problemas para que se le refleje su membresía (VIP Oro, Plata, etc.) por límites de base de datos de Firestore, ingresa aquí el código de actualización generado por el Admin para forzar la activación/cambio de rango local de inmediato:
-                </p>
-                <div className="flex gap-2 max-w-md">
-                  <input
-                    type="text"
-                    placeholder="Pegar código de actualización TAPPMUSIC::UPGRADE::..."
-                    value={manualCodeInput}
-                    onChange={(e) => setManualCodeInput(e.target.value)}
-                    className="flex-1 text-xs font-mono bg-black border border-white/10 rounded-xl px-3 py-2 text-[#39FF14] placeholder-zinc-700 focus:outline-none focus:border-[#39FF14]"
-                  />
-                  <button
-                    onClick={() => handleApplyManualCode(manualCodeInput)}
-                    className="px-4 py-2 bg-[#39FF14] text-black font-extrabold text-xs uppercase rounded-xl hover:bg-[#34e512] transition-all cursor-pointer shrink-0 shadow-[0_0_10px_rgba(57,255,20,0.2)] font-sans"
-                  >
-                    Activar
-                  </button>
                 </div>
               </div>
             </div>
