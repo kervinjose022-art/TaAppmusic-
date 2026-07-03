@@ -50,6 +50,30 @@ interface VipTasksProps {
   inviteCommissionsEarned?: number;
 }
 
+const safeLocalStorage = {
+  getItem(key: string): string | null {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  },
+  setItem(key: string, value: string): void {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn("Storage write blocked:", e);
+    }
+  },
+  removeItem(key: string): void {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn("Storage remove blocked:", e);
+    }
+  }
+};
+
 export default function VipTasks({ 
   userProfile, 
   setUserProfile, 
@@ -346,7 +370,7 @@ export default function VipTasks({
           const proceedWithLocalDeduction = () => {
             const updatedHistory = [newWithdrawal, ...withdrawHistory];
             setWithdrawHistory(updatedHistory);
-            localStorage.setItem('tappmusic_withdrawals', JSON.stringify(updatedHistory));
+            safeLocalStorage.setItem('tappmusic_withdrawals', JSON.stringify(updatedHistory));
 
             // Deduct from profile and update wallet address
             setUserProfile(prev => ({
@@ -806,7 +830,7 @@ export default function VipTasks({
 
     // Save locally
     setUserProfile(updatedProfile);
-    localStorage.setItem('tappmusic_profile', JSON.stringify(updatedProfile));
+    safeLocalStorage.setItem('tappmusic_profile', JSON.stringify(updatedProfile));
 
     // Save directly to Firestore for durable cloud persistence!
     if (updatedProfile.username && updatedProfile.username.toLowerCase().trim() !== 'usuario_vip' && updatedProfile.username.toLowerCase().trim() !== 'visitante_tapp') {

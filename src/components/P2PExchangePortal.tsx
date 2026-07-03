@@ -42,6 +42,30 @@ interface P2PTransaction {
   createdAt: string;
 }
 
+const safeLocalStorage = {
+  getItem(key: string): string | null {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  },
+  setItem(key: string, value: string): void {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn("Storage write blocked:", e);
+    }
+  },
+  removeItem(key: string): void {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn("Storage remove blocked:", e);
+    }
+  }
+};
+
 export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: () => void; isStandalone?: boolean }) {
   // Master P2P Rates (simulation)
   const [usdtPriceInBs, setUsdtPriceInBs] = useState<number>(801.99);
@@ -50,20 +74,20 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
   
   // Custom states for active liquid balances - persistent
   const [bovedaUsdt, setBovedaUsdt] = useState<number>(() => {
-    const saved = localStorage.getItem('tapp_p2p_boveda_usdt');
+    const saved = safeLocalStorage.getItem('tapp_p2p_boveda_usdt');
     return saved ? parseFloat(saved) : 12450.00;
   });
   const [fondoBs, setFondoBs] = useState<number>(() => {
-    const saved = localStorage.getItem('tapp_p2p_fondo_bs');
+    const saved = safeLocalStorage.getItem('tapp_p2p_fondo_bs');
     return saved ? parseFloat(saved) : 480520.00;
   });
 
   useEffect(() => {
-    localStorage.setItem('tapp_p2p_boveda_usdt', bovedaUsdt.toString());
+    safeLocalStorage.setItem('tapp_p2p_boveda_usdt', bovedaUsdt.toString());
   }, [bovedaUsdt]);
 
   useEffect(() => {
-    localStorage.setItem('tapp_p2p_fondo_bs', fondoBs.toString());
+    safeLocalStorage.setItem('tapp_p2p_fondo_bs', fondoBs.toString());
   }, [fondoBs]);
 
   // Direct Casa de Cambio swap states (replacing BPay card deposit)
@@ -87,59 +111,59 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
 
   const [isProcessingDeposit, setIsProcessingDeposit] = useState<boolean>(false);
   const [adminCommissionTotal, setAdminCommissionTotal] = useState<number>(() => {
-    const saved = localStorage.getItem('tapp_p2p_commissions');
+    const saved = safeLocalStorage.getItem('tapp_p2p_commissions');
     return saved ? parseFloat(saved) : 0;
   });
 
   // Admin configuration state for receiving Pago Móvil transfers
   const [adminPagoMovilBank, setAdminPagoMovilBank] = useState<string>(() => {
-    return localStorage.getItem('tapp_p2p_admin_pm_bank') || "Banco Mercantil (0105)";
+    return safeLocalStorage.getItem('tapp_p2p_admin_pm_bank') || "Banco Mercantil (0105)";
   });
   const [adminPagoMovilPhone, setAdminPagoMovilPhone] = useState<string>(() => {
-    return localStorage.getItem('tapp_p2p_admin_pm_phone') || "0412-5551234";
+    return safeLocalStorage.getItem('tapp_p2p_admin_pm_phone') || "0412-5551234";
   });
   const [adminPagoMovilId, setAdminPagoMovilId] = useState<string>(() => {
-    return localStorage.getItem('tapp_p2p_admin_pm_id') || "V-19.852.147";
+    return safeLocalStorage.getItem('tapp_p2p_admin_pm_id') || "V-19.852.147";
   });
   const [adminPagoMovilHolder, setAdminPagoMovilHolder] = useState<string>(() => {
-    return localStorage.getItem('tapp_p2p_admin_pm_holder') || "Inversiones KervinP2P";
+    return safeLocalStorage.getItem('tapp_p2p_admin_pm_holder') || "Inversiones KervinP2P";
   });
   const [isEditingPmConfig, setIsEditingPmConfig] = useState<boolean>(false);
 
   const [adminPayoutAddress, setAdminPayoutAddress] = useState<string>(() => {
-    return localStorage.getItem('tapp_p2p_admin_payout_address') || "TUh7b8P2vDkWqXp3Y9B9S7sTtrc20eXp20";
+    return safeLocalStorage.getItem('tapp_p2p_admin_payout_address') || "TUh7b8P2vDkWqXp3Y9B9S7sTtrc20eXp20";
   });
   const [payoutNetwork, setPayoutNetwork] = useState<string>(() => {
-    return localStorage.getItem('tapp_p2p_admin_payout_network') || "USDT TRC20";
+    return safeLocalStorage.getItem('tapp_p2p_admin_payout_network') || "USDT TRC20";
   });
   const [isEditingPayout, setIsEditingPayout] = useState<boolean>(false);
 
   useEffect(() => {
-    localStorage.setItem('tapp_p2p_admin_pm_bank', adminPagoMovilBank);
+    safeLocalStorage.setItem('tapp_p2p_admin_pm_bank', adminPagoMovilBank);
   }, [adminPagoMovilBank]);
 
   useEffect(() => {
-    localStorage.setItem('tapp_p2p_admin_pm_phone', adminPagoMovilPhone);
+    safeLocalStorage.setItem('tapp_p2p_admin_pm_phone', adminPagoMovilPhone);
   }, [adminPagoMovilPhone]);
 
   useEffect(() => {
-    localStorage.setItem('tapp_p2p_admin_pm_id', adminPagoMovilId);
+    safeLocalStorage.setItem('tapp_p2p_admin_pm_id', adminPagoMovilId);
   }, [adminPagoMovilId]);
 
   useEffect(() => {
-    localStorage.setItem('tapp_p2p_admin_pm_holder', adminPagoMovilHolder);
+    safeLocalStorage.setItem('tapp_p2p_admin_pm_holder', adminPagoMovilHolder);
   }, [adminPagoMovilHolder]);
 
   useEffect(() => {
-    localStorage.setItem('tapp_p2p_admin_payout_address', adminPayoutAddress);
+    safeLocalStorage.setItem('tapp_p2p_admin_payout_address', adminPayoutAddress);
   }, [adminPayoutAddress]);
 
   useEffect(() => {
-    localStorage.setItem('tapp_p2p_admin_payout_network', payoutNetwork);
+    safeLocalStorage.setItem('tapp_p2p_admin_payout_network', payoutNetwork);
   }, [payoutNetwork]);
 
   useEffect(() => {
-    localStorage.setItem('tapp_p2p_commissions', adminCommissionTotal.toString());
+    safeLocalStorage.setItem('tapp_p2p_commissions', adminCommissionTotal.toString());
   }, [adminCommissionTotal]);
 
   // Custom interactive state for calculator
@@ -155,7 +179,7 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
 
   // Simulated state for live P2P Offers
   const [offers, setOffers] = useState<P2POffer[]>(() => {
-    const saved = localStorage.getItem('tapp_p2p_offers');
+    const saved = safeLocalStorage.getItem('tapp_p2p_offers');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
@@ -225,7 +249,7 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
 
   // Active P2P Transactions/Trades
   const [transactions, setTransactions] = useState<P2PTransaction[]>(() => {
-    const saved = localStorage.getItem('tapp_p2p_transactions');
+    const saved = safeLocalStorage.getItem('tapp_p2p_transactions');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
@@ -265,7 +289,7 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
 
   // USDT Withdraw requests and form state
   const [withdrawRequests, setWithdrawRequests] = useState<any[]>(() => {
-    const saved = localStorage.getItem('tapp_p2p_withdraw_requests');
+    const saved = safeLocalStorage.getItem('tapp_p2p_withdraw_requests');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
@@ -292,7 +316,7 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
   });
 
   useEffect(() => {
-    localStorage.setItem('tapp_p2p_withdraw_requests', JSON.stringify(withdrawRequests));
+    safeLocalStorage.setItem('tapp_p2p_withdraw_requests', JSON.stringify(withdrawRequests));
   }, [withdrawRequests]);
 
   const [withdrawAddress, setWithdrawAddress] = useState<string>('');
@@ -306,11 +330,11 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
   const [copiedTextId, setCopiedTextId] = useState<string | null>(null);
 
   useEffect(() => {
-    localStorage.setItem('tapp_p2p_offers', JSON.stringify(offers));
+    safeLocalStorage.setItem('tapp_p2p_offers', JSON.stringify(offers));
   }, [offers]);
 
   useEffect(() => {
-    localStorage.setItem('tapp_p2p_transactions', JSON.stringify(transactions));
+    safeLocalStorage.setItem('tapp_p2p_transactions', JSON.stringify(transactions));
   }, [transactions]);
 
   // Recalculate calculator results
@@ -482,7 +506,7 @@ export default function P2PExchangePortal({ onClose, isStandalone }: { onClose: 
     // Get current registered username or fallback
     let currentUsername = 'usuario_invitado';
     try {
-      const savedProf = localStorage.getItem('tappmusic_profile');
+      const savedProf = safeLocalStorage.getItem('tappmusic_profile');
       if (savedProf) {
         const parsed = JSON.parse(savedProf);
         if (parsed && parsed.username) currentUsername = parsed.username;

@@ -32,6 +32,30 @@ const getEsDateTimeString = (date: Date = new Date()): string => {
   return `${dateStr} ${timeStr}`;
 };
 
+const safeLocalStorage = {
+  getItem(key: string): string | null {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  },
+  setItem(key: string, value: string): void {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn("Storage write blocked:", e);
+    }
+  },
+  removeItem(key: string): void {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn("Storage remove blocked:", e);
+    }
+  }
+};
+
 export default function App() {
   const [authUser, setAuthUser] = useState<any>(null);
 
@@ -62,7 +86,7 @@ export default function App() {
 
   // User profile state persistent in React state (initially unregistered or registered)
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
-    const saved = localStorage.getItem('tappmusic_profile');
+    const saved = safeLocalStorage.getItem('tappmusic_profile');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -86,7 +110,7 @@ export default function App() {
 
   // Master users list for login & referral commission routing
   const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
-    const saved = localStorage.getItem('tappmusic_users');
+    const saved = safeLocalStorage.getItem('tappmusic_users');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -113,7 +137,7 @@ export default function App() {
 
   // State for real-time withdraw calendar configuration
   const [withdrawConfig, setWithdrawConfig] = useState<any>(() => {
-    const saved = localStorage.getItem('tappmusic_withdraw_config');
+    const saved = safeLocalStorage.getItem('tappmusic_withdraw_config');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -132,7 +156,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem('tappmusic_withdraw_config', JSON.stringify(withdrawConfig));
+    safeLocalStorage.setItem('tappmusic_withdraw_config', JSON.stringify(withdrawConfig));
   }, [withdrawConfig]);
 
   // Fail-safe State to handle Firestore daily free quota limit exceeded elegantly
@@ -147,7 +171,7 @@ export default function App() {
 
   // Zoom level state for responsive scale (acercar y alejar)
   const [zoomScale, setZoomScale] = useState<number>(() => {
-    const saved = localStorage.getItem('tappmusic_zoom');
+    const saved = safeLocalStorage.getItem('tappmusic_zoom');
     if (saved) {
       const val = parseFloat(saved);
       if (!isNaN(val) && val >= 0.70 && val <= 1.40) {
@@ -160,7 +184,7 @@ export default function App() {
   const [showApkGuide, setShowApkGuide] = useState<boolean>(false);
 
   useEffect(() => {
-    localStorage.setItem('tappmusic_zoom', zoomScale.toString());
+    safeLocalStorage.setItem('tappmusic_zoom', zoomScale.toString());
   }, [zoomScale]);
 
   useEffect(() => {
@@ -174,7 +198,7 @@ export default function App() {
 
   // Persist master users pool & Listen to Firestore in Real-Time
   useEffect(() => {
-    localStorage.setItem('tappmusic_users', JSON.stringify(allUsers));
+    safeLocalStorage.setItem('tappmusic_users', JSON.stringify(allUsers));
   }, [allUsers]);
 
   // Real-Time Syncing Loop with Firestore Databases
@@ -186,7 +210,7 @@ export default function App() {
     // Background seeder function designed to run unconditionally and make sure collections exist
     const checkAndSeed = async () => {
       if (isQuotaExceeded) return;
-      if (localStorage.getItem('tappmusic_seeded_v5') === 'true') {
+      if (safeLocalStorage.getItem('tappmusic_seeded_v5') === 'true') {
         console.log("Firestore has already been seeded in this browser, skipping checkAndSeed to protect quota.");
         return;
       }
@@ -299,7 +323,7 @@ export default function App() {
             await setDoc(doc(db, 'reels', reel.id), reel);
           }
         }
-        localStorage.setItem('tappmusic_seeded_v5', 'true');
+        safeLocalStorage.setItem('tappmusic_seeded_v5', 'true');
       } catch (err) {
         console.warn("Background database seed warning:", err);
       }
@@ -455,7 +479,7 @@ export default function App() {
         });
         
         // Synchronize logged-in user profile with live values from Firestore
-        const currentLocal = localStorage.getItem('tappmusic_profile');
+        const currentLocal = safeLocalStorage.getItem('tappmusic_profile');
         if (currentLocal) {
           try {
             const parsed = JSON.parse(currentLocal) as UserProfile;
@@ -671,7 +695,7 @@ export default function App() {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [isAdminVerified, setIsAdminVerified] = useState(() => {
     // If they already have administrator profile loaded, auto-verify
-    const cur = localStorage.getItem('tappmusic_profile');
+    const cur = safeLocalStorage.getItem('tappmusic_profile');
     if (cur) {
       try {
         const u = JSON.parse(cur);
@@ -697,7 +721,7 @@ export default function App() {
     if (isQuotaExceeded) return;
     let active = true;
     if (isAdminVerified && authUser) {
-      const savedProfile = localStorage.getItem('tappmusic_profile');
+      const savedProfile = safeLocalStorage.getItem('tappmusic_profile');
       let enteredPass = '7340';
       let currentAdminUsername = 'admin_tapp';
       if (savedProfile) {
@@ -777,7 +801,7 @@ export default function App() {
     }
 
     // We still write even if currentAuthUser is null, so that password fallback verification works instantly!
-    const savedProfile = localStorage.getItem('tappmusic_profile');
+    const savedProfile = safeLocalStorage.getItem('tappmusic_profile');
     let enteredPass = forceCode || '7340';
     let currentAdminUsername = 'admin_tapp';
     if (savedProfile) {
@@ -805,9 +829,9 @@ export default function App() {
     }
 
     if (forceCode) {
-      localStorage.setItem('admin_override_password', forceCode);
+      safeLocalStorage.setItem('admin_override_password', forceCode);
     } else {
-      const storedOverride = localStorage.getItem('admin_override_password');
+      const storedOverride = safeLocalStorage.getItem('admin_override_password');
       if (storedOverride) {
         enteredPass = storedOverride;
       }
@@ -903,7 +927,7 @@ export default function App() {
 
   // Automated persistence whenever userProfile updates
   useEffect(() => {
-    localStorage.setItem('tappmusic_profile', JSON.stringify(userProfile));
+    safeLocalStorage.setItem('tappmusic_profile', JSON.stringify(userProfile));
     
     // Also sync the changed userProfile back into the master users pool
     if (userProfile && userProfile.isRegistered) {
@@ -953,7 +977,7 @@ export default function App() {
     hasSyncedWithFirestore.current = true;
     const profileWithSync = { ...newProfile, isSyncedFromDb: true };
     setUserProfile(profileWithSync);
-    localStorage.setItem('tappmusic_profile', JSON.stringify(profileWithSync));
+    safeLocalStorage.setItem('tappmusic_profile', JSON.stringify(profileWithSync));
     if (profileWithSync.username && profileWithSync.username.toLowerCase().trim() !== 'usuario_vip' && profileWithSync.username.toLowerCase().trim() !== 'visitante_tapp') {
       setDoc(doc(db, 'users', profileWithSync.username.toLowerCase().trim()), profileWithSync).catch(err => {
         // Background sync fail silent
@@ -1024,7 +1048,7 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [activeAdminTab, setActiveAdminTab] = useState<'activaciones' | 'retiros' | 'voces' | 'usuarios' | 'videos' | 'recuperaciones'>('activaciones');
   const [recoveryRequests, setRecoveryRequests] = useState<RecoveryRequest[]>(() => {
-    const saved = localStorage.getItem('tappmusic_recovery_requests');
+    const saved = safeLocalStorage.getItem('tappmusic_recovery_requests');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -1035,7 +1059,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem('tappmusic_recovery_requests', JSON.stringify(recoveryRequests));
+    safeLocalStorage.setItem('tappmusic_recovery_requests', JSON.stringify(recoveryRequests));
   }, [recoveryRequests]);
 
   // Manual sync/bypass States and Handler
@@ -1255,7 +1279,7 @@ export default function App() {
 
   // Voice database state (initialized with default voices for instant local fallback)
   const [voiceThemes, setVoiceThemes] = useState<any[]>(() => {
-    const saved = localStorage.getItem('tappmusic_voices');
+    const saved = safeLocalStorage.getItem('tappmusic_voices');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -1345,7 +1369,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem('tappmusic_voices', JSON.stringify(voiceThemes));
+    safeLocalStorage.setItem('tappmusic_voices', JSON.stringify(voiceThemes));
   }, [voiceThemes]);
 
   // Voice editing / creation admin form states
@@ -1361,7 +1385,7 @@ export default function App() {
 
   // Reels state representing dynamic videos from Firestore
   const [reels, setReels] = useState<Reel[]>(() => {
-    const saved = localStorage.getItem('tappmusic_reels');
+    const saved = safeLocalStorage.getItem('tappmusic_reels');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -1372,7 +1396,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem('tappmusic_reels', JSON.stringify(reels));
+    safeLocalStorage.setItem('tappmusic_reels', JSON.stringify(reels));
   }, [reels]);
   const [isEditingReel, setIsEditingReel] = useState<boolean>(false);
   const [editingReelId, setEditingReelId] = useState<string>('');
@@ -1386,7 +1410,7 @@ export default function App() {
 
   // Registrations Pool to sync approvals
   const [registrations, setRegistrations] = useState<any[]>(() => {
-    const saved = localStorage.getItem('tappmusic_registrations');
+    const saved = safeLocalStorage.getItem('tappmusic_registrations');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -1399,7 +1423,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem('tappmusic_registrations', JSON.stringify(registrations));
+    safeLocalStorage.setItem('tappmusic_registrations', JSON.stringify(registrations));
   }, [registrations]);
 
   // PNG Logo conversion for Android app icon (WebIntoApp compliance)
@@ -1461,7 +1485,7 @@ export default function App() {
 
   // Shared withdraw history state to prevent sibling desyncs
   const [withdrawHistory, setWithdrawHistory] = useState<any[]>(() => {
-    const saved = localStorage.getItem('tappmusic_withdrawals');
+    const saved = safeLocalStorage.getItem('tappmusic_withdrawals');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -1474,7 +1498,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem('tappmusic_withdrawals', JSON.stringify(withdrawHistory));
+    safeLocalStorage.setItem('tappmusic_withdrawals', JSON.stringify(withdrawHistory));
   }, [withdrawHistory]);
 
   const getLevelPriceInUsd = (lvl: VipLevel | string): number => {
@@ -2090,7 +2114,7 @@ export default function App() {
         // If currently logged in user is being approved, update session state
         if (userProfile.username && userProfile.username.toLowerCase().trim() === targetName) {
           setUserProfile(activatedTarget);
-          localStorage.setItem('tappmusic_profile', JSON.stringify(activatedTarget));
+          safeLocalStorage.setItem('tappmusic_profile', JSON.stringify(activatedTarget));
         }
 
         // Generate manual bypass code for the admin to copy only if requested
@@ -2151,7 +2175,7 @@ export default function App() {
             
             if (userProfile.username && userProfile.username.toLowerCase().trim() === referrerName) {
               setUserProfile(updatedReferrer);
-              localStorage.setItem('tappmusic_profile', JSON.stringify(updatedReferrer));
+              safeLocalStorage.setItem('tappmusic_profile', JSON.stringify(updatedReferrer));
             }
 
             try {
@@ -2272,7 +2296,7 @@ export default function App() {
       isRegistered: false
     };
     saveProfile(updated);
-    localStorage.removeItem('tappmusic_profile');
+    safeLocalStorage.removeItem('tappmusic_profile');
   };
 
   const robustCopyToClipboard = (text: string): boolean => {
@@ -2420,8 +2444,9 @@ export default function App() {
             <button 
               onClick={() => {
                 setIsQuotaExceeded(false);
-                localStorage.setItem('tappmusic_quota_exceeded', 'false');
+                safeLocalStorage.setItem('tappmusic_quota_exceeded', 'false');
               }} 
+
               className="text-zinc-500 hover:text-white font-bold p-1 hover:bg-white/5 rounded-lg shrink-0 transition-colors cursor-pointer"
             >
               ✕
@@ -3856,7 +3881,7 @@ export default function App() {
                           migratedV3: true
                         };
                         setUserProfile(activeMigrated);
-                        localStorage.setItem('tappmusic_profile', JSON.stringify(activeMigrated));
+                        safeLocalStorage.setItem('tappmusic_profile', JSON.stringify(activeMigrated));
                       }
 
                       alert(`🎉 ¡Éxito! Se han configurado 367 monedas de saldo y se ha reiniciado el progreso de tareas para ${count} usuarios en Firestore.`);
@@ -4081,30 +4106,7 @@ export default function App() {
                   </p>
                 </div>
 
-                {/* Emergency manual import for Admin */}
-                <div className="bg-zinc-950 border border-purple-500/25 p-4 rounded-xl space-y-2.5 text-left font-sans">
-                  <h4 className="text-xs uppercase font-mono tracking-widest text-[#39FF14] font-black flex items-center gap-1.5">
-                    📥 IMPORTAR REGISTRO MANUAL DE WHATSAPP (EMERGENCIA CUOTA)
-                  </h4>
-                  <p className="text-zinc-400 text-[10px] leading-relaxed">
-                    Si un cliente nuevo no te aparece en este panel por problemas de límite de base de datos de Firestore, pídele su "Código de Sincronización" (que le sale en su pantalla de espera), pégalo aquí abajo e impórtalo de inmediato de forma manual:
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Pegar código de sincronización TAPPMUSIC::REG::..."
-                      value={manualCodeInput}
-                      onChange={(e) => setManualCodeInput(e.target.value)}
-                      className="flex-1 text-xs font-mono bg-black border border-white/10 rounded-xl px-3 py-2 text-[#39FF14] placeholder-zinc-700 focus:outline-none focus:border-[#39FF14]"
-                    />
-                    <button
-                      onClick={() => handleApplyManualCode(manualCodeInput)}
-                      className="px-4 py-2 bg-[#39FF14] text-black font-extrabold text-xs uppercase rounded-xl hover:bg-[#34e512] transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-[0_0_10px_rgba(57,255,20,0.2)] font-sans"
-                    >
-                      Importar Cliente
-                    </button>
-                  </div>
-                </div>
+
 
                 {/* SEARCH & FILTERS */}
                 <div className="space-y-2">
@@ -4340,7 +4342,7 @@ export default function App() {
 
                                     if (reg.username === userProfile.username) {
                                       setUserProfile(resetUser);
-                                      localStorage.setItem('tappmusic_profile', JSON.stringify(resetUser));
+                                      safeLocalStorage.setItem('tappmusic_profile', JSON.stringify(resetUser));
                                     }
                                   }
 
@@ -4517,7 +4519,7 @@ export default function App() {
                                         
                                         if (userProfile.username && userProfile.username.toLowerCase().trim() === cleanOwner) {
                                           setUserProfile(updatedUser);
-                                          localStorage.setItem('tappmusic_profile', JSON.stringify(updatedUser));
+                                          safeLocalStorage.setItem('tappmusic_profile', JSON.stringify(updatedUser));
                                         }
                                       }
                                     }
@@ -4580,7 +4582,7 @@ export default function App() {
                                       
                                       if (userProfile.username && ownerName && userProfile.username.toLowerCase() === ownerName.toLowerCase()) {
                                         setUserProfile(updatedUser);
-                                        localStorage.setItem('tappmusic_profile', JSON.stringify(updatedUser));
+                                        safeLocalStorage.setItem('tappmusic_profile', JSON.stringify(updatedUser));
                                       }
                                     }
                                   }
@@ -5505,16 +5507,7 @@ export default function App() {
                           <div className="flex justify-between items-center bg-zinc-950/40 p-2.5 rounded-lg border border-white/5 gap-2 flex-wrap">
                             <span className="text-[10px] text-zinc-500">Acciones rápidas para este usuario:</span>
                             <div className="flex gap-2 flex-wrap">
-                              <button
-                                onClick={() => {
-                                  const code = `TAPPMUSIC::UPGRADE::${u.username.toLowerCase().trim()}::${u.vipLevel || 'VIP PLATA 10$'}::${u.earnings || 0}`;
-                                  setGeneratedBypassCode(code);
-                                }}
-                                className="h-7 px-2.5 bg-purple-900 text-purple-200 border border-purple-500/30 hover:border-purple-400 font-extrabold text-[9px] uppercase rounded hover:text-white transition-all cursor-pointer flex items-center justify-center whitespace-nowrap"
-                                title="Generar código manual de WhatsApp para activar o subir de rango"
-                              >
-                                🔑 Código Manual
-                              </button>
+
 
                               <button
                                 onClick={async () => {
