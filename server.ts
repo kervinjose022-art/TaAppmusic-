@@ -116,13 +116,15 @@ async function startServer() {
             data.users[key] = u;
             changed = true;
           } else {
-            // Merge rule: Prefer status === 'active' over status === 'pending'
-            // and prefer higher earnings/completed tasks
+            // Merge rule: Prefer newer updatedAt. Fallback to status === 'active' over 'pending' or higher earnings
             const meritsUpdate = 
-              (u.status === "active" && existing.status !== "active") ||
-              (u.earnings > (existing.earnings || 0)) ||
-              ((u.completedTaskIds?.length || 0) > (existing.completedTaskIds?.length || 0)) ||
-              (u.vipLevel && u.vipLevel !== existing.vipLevel && u.vipLevel.includes("VIP") && !existing.vipLevel.includes("CORONA"));
+              (u.updatedAt !== undefined && existing.updatedAt !== undefined)
+                ? (u.updatedAt > existing.updatedAt)
+                : (u.updatedAt !== undefined && !existing.updatedAt) ||
+                  (u.status === "active" && existing.status !== "active") ||
+                  (u.earnings > (existing.earnings || 0)) ||
+                  ((u.completedTaskIds?.length || 0) > (existing.completedTaskIds?.length || 0)) ||
+                  (u.vipLevel && u.vipLevel !== existing.vipLevel && u.vipLevel.includes("VIP") && !existing.vipLevel.includes("CORONA"));
             
             if (meritsUpdate) {
               data.users[key] = { ...existing, ...u };
@@ -255,7 +257,7 @@ async function startServer() {
 
   // Direct administrative approval (Instant verification even when quota is exceeded!)
   app.post("/api/backup/approve", (req, res) => {
-    const { id, username, vipLevel } = req.body;
+    const { id, username, vipLevel, user } = req.body;
     if (!username) {
       return res.status(400).json({ error: "Username is required" });
     }
@@ -263,7 +265,16 @@ async function startServer() {
     let changed = false;
 
     const uKey = username.toLowerCase().trim();
-    if (data.users[uKey]) {
+    if (user) {
+      // Direct full object synchronization from client
+      data.users[uKey] = {
+        ...data.users[uKey], // preserve existing fields (like password) just in case
+        ...user,
+        status: "active",
+        vipLevel: vipLevel || user.vipLevel || (data.users[uKey] ? data.users[uKey].vipLevel : 'VIP PLATA 10$')
+      };
+      changed = true;
+    } else if (data.users[uKey]) {
       data.users[uKey].status = "active";
       if (vipLevel) {
         data.users[uKey].vipLevel = vipLevel;
@@ -274,6 +285,17 @@ async function startServer() {
     if (id && data.registrations[id]) {
       data.registrations[id].status = "approved";
       changed = true;
+    }
+
+    // Also approve any pending registration for this username on the backup server
+    if (username) {
+      Object.keys(data.registrations).forEach(regId => {
+        const reg = data.registrations[regId];
+        if (reg && reg.username && reg.username.toLowerCase().trim() === username.toLowerCase().trim()) {
+          data.registrations[regId].status = "approved";
+          changed = true;
+        }
+      });
     }
 
     if (changed) {

@@ -377,7 +377,8 @@ export default function VipTasks({
               ...prev,
               earnings: newEarnings,
               inviteCommissionsEarned: newInviteCommissionsEarned,
-              walletAddress: finalAddress
+              walletAddress: finalAddress,
+              updatedAt: Date.now()
             }));
 
             setIsSubmittingWithdrawal(false);
@@ -396,7 +397,8 @@ export default function VipTasks({
             setDoc(doc(db, 'users', cleanName), { 
               walletAddress: finalAddress,
               earnings: newEarnings,
-              inviteCommissionsEarned: newInviteCommissionsEarned
+              inviteCommissionsEarned: newInviteCommissionsEarned,
+              updatedAt: Date.now()
             }, { merge: true })
               .then(() => {
                 proceedWithLocalDeduction();
@@ -825,7 +827,8 @@ export default function VipTasks({
     const updatedProfile = {
       ...userProfile,
       completedTaskIds: updatedIds,
-      earnings: updatedEarnings
+      earnings: updatedEarnings,
+      updatedAt: Date.now()
     };
 
     // Save locally

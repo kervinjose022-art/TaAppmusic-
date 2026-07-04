@@ -215,8 +215,8 @@ export default function App() {
         return;
       }
       try {
-        const usersSnap = await getDocs(collection(db, 'users'));
-        if (usersSnap.empty) {
+        const adminSnap = await getDoc(doc(db, 'users', 'admin_tapp')); // safe single doc check
+        if (!adminSnap.exists()) {
           const adminSeed: UserProfile = {
             username: 'admin_tapp',
             email: 'admin@tappmusic.com',
@@ -976,9 +976,23 @@ export default function App() {
   // Save profile to local storage helper & live Firestore database
   const saveProfile = (newProfile: UserProfile) => {
     hasSyncedWithFirestore.current = true;
-    const profileWithSync = { ...newProfile, isSyncedFromDb: true };
+    const profileWithSync = { ...newProfile, isSyncedFromDb: true, updatedAt: Date.now() };
     setUserProfile(profileWithSync);
     safeLocalStorage.setItem('tappmusic_profile', JSON.stringify(profileWithSync));
+    
+    // Also keep the global allUsers array synchronized with our local active profile instantly!
+    if (profileWithSync.username) {
+      const cleanName = profileWithSync.username.toLowerCase().trim();
+      setAllUsers(prev => {
+        const index = prev.findIndex(u => u.username && u.username.toLowerCase().trim() === cleanName);
+        if (index !== -1) {
+          return prev.map((u, idx) => idx === index ? profileWithSync : u);
+        } else {
+          return [...prev, profileWithSync];
+        }
+      });
+    }
+
     if (profileWithSync.username && profileWithSync.username.toLowerCase().trim() !== 'usuario_vip' && profileWithSync.username.toLowerCase().trim() !== 'visitante_tapp') {
       setDoc(doc(db, 'users', profileWithSync.username.toLowerCase().trim()), profileWithSync).catch(err => {
         // Background sync fail silent
@@ -1132,29 +1146,79 @@ export default function App() {
 
         // PERSIST DIRECTLY TO FIRESTORE SO USERS RECEIVE THEIR UPGRADE INSTANTLY
         const userDocRef = doc(db, 'users', targetUser);
-        getDoc(userDocRef).then((snap) => {
-          if (snap.exists()) {
-            const existingData = snap.data();
-            updateDoc(userDocRef, {
-              status: 'active',
-              vipLevel: newVip,
-              earnings: earningsCoins || existingData.earnings || 0,
-              isRegistered: true
-            }).catch(e => console.error("Firestore update user error:", e));
-          } else {
-            setDoc(userDocRef, {
-              username: targetUser,
-              email: `${targetUser}@tappmusic.com`,
-              password: '12345',
-              vipLevel: newVip,
-              earnings: earningsCoins || getLevelPriceInUsd(newVip),
-              completedTaskIds: [],
-              isRegistered: true,
-              status: 'active',
-              createdAt: new Date().toLocaleDateString('es-ES')
-            }).catch(e => console.error("Firestore create user error:", e));
-          }
-        }).catch(e => console.error("Firestore lookup user error:", e));
+        
+        // Fetch from backup server first to ensure we don't overwrite their existing account password if it was registered there
+        fetch(`/api/backup/check-activation/${targetUser}`)
+          .then(async (bRes) => {
+            let backupUser: UserProfile | null = null;
+            if (bRes.ok) {
+              const bData = await bRes.json();
+              if (bData && bData.user) {
+                backupUser = bData.user as UserProfile;
+              }
+            }
+            
+            getDoc(userDocRef).then((snap) => {
+              if (snap.exists()) {
+                const existingData = snap.data();
+                updateDoc(userDocRef, {
+                  status: 'active',
+                  vipLevel: newVip,
+                  earnings: earningsCoins || existingData.earnings || 0,
+                  isRegistered: true
+                }).catch(e => console.error("Firestore update user error:", e));
+              } else {
+                if (backupUser) {
+                  setDoc(userDocRef, {
+                    ...backupUser,
+                    status: 'active',
+                    vipLevel: newVip,
+                    earnings: earningsCoins || backupUser.earnings || 0,
+                    isRegistered: true,
+                    updatedAt: Date.now()
+                  }).catch(e => console.error("Firestore create user from backup error:", e));
+                } else {
+                  setDoc(userDocRef, {
+                    username: targetUser,
+                    email: `${targetUser}@tappmusic.com`,
+                    password: '12345',
+                    vipLevel: newVip,
+                    earnings: earningsCoins || getLevelPriceInUsd(newVip),
+                    completedTaskIds: [],
+                    isRegistered: true,
+                    status: 'active',
+                    createdAt: new Date().toLocaleDateString('es-ES')
+                  }).catch(e => console.error("Firestore create user error:", e));
+                }
+              }
+            }).catch(e => console.error("Firestore lookup user error:", e));
+          })
+          .catch(() => {
+            // Fallback if backup check fails
+            getDoc(userDocRef).then((snap) => {
+              if (snap.exists()) {
+                const existingData = snap.data();
+                updateDoc(userDocRef, {
+                  status: 'active',
+                  vipLevel: newVip,
+                  earnings: earningsCoins || existingData.earnings || 0,
+                  isRegistered: true
+                }).catch(e => console.error("Firestore update user error:", e));
+              } else {
+                setDoc(userDocRef, {
+                  username: targetUser,
+                  email: `${targetUser}@tappmusic.com`,
+                  password: '12345',
+                  vipLevel: newVip,
+                  earnings: earningsCoins || getLevelPriceInUsd(newVip),
+                  completedTaskIds: [],
+                  isRegistered: true,
+                  status: 'active',
+                  createdAt: new Date().toLocaleDateString('es-ES')
+                }).catch(e => console.error("Firestore create user error:", e));
+              }
+            }).catch(e => console.error("Firestore lookup user error:", e));
+          });
 
         // Also update registration document in Firestore if any exists
         getDocs(collection(db, 'registrations')).then((snap) => {
@@ -1554,10 +1618,13 @@ export default function App() {
                   if (idx !== -1) {
                     const current = merged[idx];
                     const preferServer = 
-                      (item.status === "active" && current.status !== "active") ||
-                      ((item.earnings || 0) > (current.earnings || 0)) ||
-                      ((item.completedTaskIds?.length || 0) > (current.completedTaskIds?.length || 0)) ||
-                      (item.vipLevel !== current.vipLevel && item.vipLevel?.includes("VIP") && !current.vipLevel?.includes("CORONA"));
+                      (item.updatedAt !== undefined && current.updatedAt !== undefined)
+                        ? (item.updatedAt > current.updatedAt)
+                        : (item.updatedAt !== undefined && !current.updatedAt) ||
+                          (item.status === "active" && current.status !== "active") ||
+                          ((item.earnings || 0) > (current.earnings || 0)) ||
+                          ((item.completedTaskIds?.length || 0) > (current.completedTaskIds?.length || 0)) ||
+                          (item.vipLevel !== current.vipLevel && item.vipLevel?.includes("VIP") && !current.vipLevel?.includes("CORONA"));
                     
                     merged[idx] = preferServer ? { ...current, ...item } : { ...item, ...current };
                   } else {
@@ -1700,6 +1767,10 @@ export default function App() {
       const reader = new FileReader();
       reader.onload = (event) => {
         const img = new Image();
+        img.onerror = () => {
+          // Robust fallback for unsupported/large/HEIC formats on iOS/Safari: read raw base64 directly
+          setPreviewBlob(reader.result as string || '');
+        };
         img.onload = () => {
           const canvas = document.createElement('canvas');
           const MAX_WIDTH = 400;
@@ -2193,15 +2264,30 @@ export default function App() {
       if (localUser) {
         userData = { ...localUser };
       } else {
-        // Fallback: Non-blocking attempt to read from Firestore
+        // Fallback: Try fetching from backup server first, which handles quota limits and matches registrations perfectly
         try {
-          await ensureAdminSessionSync();
-          const userSnap = await getDoc(doc(db, 'users', targetName));
-          if (userSnap.exists()) {
-            userData = userSnap.data() as UserProfile;
+          const bRes = await fetch(`/api/backup/check-activation/${targetName}`);
+          if (bRes.ok) {
+            const bData = await bRes.json();
+            if (bData && bData.user) {
+              userData = bData.user as UserProfile;
+            }
           }
-        } catch (dbErr) {
-          console.warn("Could not read user profile from Firestore:", dbErr);
+        } catch (bErr) {
+          console.warn("Could not read user profile from backup server:", bErr);
+        }
+
+        // If not found in backup, try non-blocking attempt to read from Firestore
+        if (!userData) {
+          try {
+            await ensureAdminSessionSync();
+            const userSnap = await getDoc(doc(db, 'users', targetName));
+            if (userSnap.exists()) {
+              userData = userSnap.data() as UserProfile;
+            }
+          } catch (dbErr) {
+            console.warn("Could not read user profile from Firestore:", dbErr);
+          }
         }
       }
       
@@ -2253,6 +2339,7 @@ export default function App() {
           status: 'active' as const,
           vipLevel: targetVip,
           commissionPaid: true,
+          updatedAt: Date.now(),
           ...(hasDoneTasksToday && isUpgrade ? { blockedTasksUntilDate: todayDateStr } : {})
         };
         
@@ -2300,7 +2387,7 @@ export default function App() {
         fetch("/api/backup/approve", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: targetName, vipLevel: targetVip })
+          body: JSON.stringify({ username: targetName, vipLevel: targetVip, user: activatedTarget })
         }).catch(err => {
           console.warn("Backup approve endpoint error:", err);
         });
@@ -5669,7 +5756,7 @@ export default function App() {
                                     if (el) {
                                       const newCoins = parseFloat(el.value);
                                       if (!isNaN(newCoins)) {
-                                        const updatedUser = { ...u, earnings: newCoins };
+                                        const updatedUser = { ...u, earnings: newCoins, updatedAt: Date.now() };
                                         // Clean any undefined properties to satisfy Firestore setDoc constraints
                                         Object.keys(updatedUser).forEach(key => {
                                           if ((updatedUser as any)[key] === undefined) {

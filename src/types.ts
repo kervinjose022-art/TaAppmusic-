@@ -86,6 +86,7 @@ export interface UserProfile {
   commissionsMergedV4?: boolean;
   blockedTasksUntilDate?: string;
   isSyncedFromDb?: boolean;
+  updatedAt?: number;
 }
 
 export interface RecoveryRequest {
