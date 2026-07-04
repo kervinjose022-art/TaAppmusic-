@@ -539,39 +539,40 @@ export default function App() {
 
     if (!isOfflineUser) {
       if (isAdmin) {
-        // Admin needs real-time feed of all registrations, withdrawals, recovery requests, and users
-        unsubRegistrations = onSnapshot(collection(db, 'registrations'), (snapshot) => {
+        // Admin needs real-time feed of only PENDING registrations, withdrawals, and recovery requests
+        unsubRegistrations = onSnapshot(query(collection(db, 'registrations'), where('status', '==', 'pending')), (snapshot) => {
           const items: any[] = [];
           snapshot.forEach((docSnap) => {
             items.push({ ...docSnap.data(), id: docSnap.id });
           });
-          setRegistrations(items);
+          setRegistrations(prev => {
+            const nonPending = prev.filter(r => r.status !== 'pending');
+            // Deduplicate incoming pending registrations
+            const filteredNonPending = nonPending.filter(r => !items.some(item => item.id === r.id));
+            return [...items, ...filteredNonPending];
+          });
         }, (error) => {
           console.error("Firestore listening registrations error:", error);
           handleCatchError(error);
         });
 
-        unsubWithdrawals = onSnapshot(collection(db, 'withdrawals'), (snapshot) => {
+        unsubWithdrawals = onSnapshot(query(collection(db, 'withdrawals'), where('status', '==', 'pending')), (snapshot) => {
           const items: any[] = [];
           snapshot.forEach((docSnap) => {
             items.push({ ...docSnap.data(), id: docSnap.id });
           });
-          setWithdrawHistory(items);
+          setWithdrawHistory(prev => {
+            const nonPending = prev.filter(w => w.status !== 'pending');
+            const filteredNonPending = nonPending.filter(w => !items.some(item => item.id === w.id));
+            return [...items, ...filteredNonPending];
+          });
         }, (error) => {
           console.error("Firestore listening withdrawals error:", error);
           handleCatchError(error);
         });
 
-        unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-          const items: UserProfile[] = [];
-          snapshot.forEach((docSnap) => {
-            items.push(docSnap.data() as UserProfile);
-          });
-          syncUsers(items);
-        }, (error) => {
-          console.error("Firestore listening users error:", error);
-          handleCatchError(error);
-        });
+        // Highly optimized: Bypassed real-time subscriber for entire users collection to save quota
+        unsubUsers = () => {};
 
         unsubRecoveryRequests = onSnapshot(collection(db, 'recovery_requests'), (snapshot) => {
           const items: RecoveryRequest[] = [];
@@ -1501,6 +1502,139 @@ export default function App() {
     safeLocalStorage.setItem('tappmusic_withdrawals', JSON.stringify(withdrawHistory));
   }, [withdrawHistory]);
 
+  // Keep Refs of states to always have the latest values inside our high-performance background sync ticker
+  const allUsersRef = useRef(allUsers);
+  const registrationsRef = useRef(registrations);
+  const withdrawHistoryRef = useRef(withdrawHistory);
+  const recoveryRequestsRef = useRef(recoveryRequests);
+
+  useEffect(() => {
+    allUsersRef.current = allUsers;
+  }, [allUsers]);
+
+  useEffect(() => {
+    registrationsRef.current = registrations;
+  }, [registrations]);
+
+  useEffect(() => {
+    withdrawHistoryRef.current = withdrawHistory;
+  }, [withdrawHistory]);
+
+  useEffect(() => {
+    recoveryRequestsRef.current = recoveryRequests;
+  }, [recoveryRequests]);
+
+  // Server-side Hybrid Sync (Bypasses Firestore limits elegantly and syncs everyone automatically)
+  useEffect(() => {
+    let syncTimer: any;
+    
+    const runServerSync = async () => {
+      try {
+        const response = await fetch("/api/backup/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            users: allUsersRef.current,
+            registrations: registrationsRef.current,
+            withdrawals: withdrawHistoryRef.current,
+            recovery_requests: recoveryRequestsRef.current || []
+          })
+        });
+        
+        if (response.ok) {
+          const resData = await response.json();
+          if (resData.status === "success") {
+            // Update react states with latest server values
+            if (Array.isArray(resData.users) && resData.users.length > 0) {
+              setAllUsers(prev => {
+                const merged = [...prev];
+                resData.users.forEach((item: UserProfile) => {
+                  if (!item || !item.username) return;
+                  const idx = merged.findIndex(u => u.username && item.username && u.username.toLowerCase().trim() === item.username.toLowerCase().trim());
+                  if (idx !== -1) {
+                    const current = merged[idx];
+                    const preferServer = 
+                      (item.status === "active" && current.status !== "active") ||
+                      ((item.earnings || 0) > (current.earnings || 0)) ||
+                      ((item.completedTaskIds?.length || 0) > (current.completedTaskIds?.length || 0)) ||
+                      (item.vipLevel !== current.vipLevel && item.vipLevel?.includes("VIP") && !current.vipLevel?.includes("CORONA"));
+                    
+                    merged[idx] = preferServer ? { ...current, ...item } : { ...item, ...current };
+                  } else {
+                    merged.push(item);
+                  }
+                });
+                return merged;
+              });
+            }
+            
+            if (Array.isArray(resData.registrations)) {
+              setRegistrations(prev => {
+                const merged = [...prev];
+                resData.registrations.forEach((item: any) => {
+                  if (!item || !item.id) return;
+                  const idx = merged.findIndex(r => r.id === item.id);
+                  if (idx !== -1) {
+                    const current = merged[idx];
+                    const preferServer = (item.status === "approved" && current.status !== "approved") || (item.status === "rejected" && current.status !== "rejected");
+                    merged[idx] = preferServer ? { ...current, ...item } : { ...item, ...current };
+                  } else {
+                    merged.push(item);
+                  }
+                });
+                return merged;
+              });
+            }
+            
+            if (Array.isArray(resData.withdrawals)) {
+              setWithdrawHistory(prev => {
+                const merged = [...prev];
+                resData.withdrawals.forEach((item: any) => {
+                  if (!item || !item.id) return;
+                  const idx = merged.findIndex(w => w.id === item.id);
+                  if (idx !== -1) {
+                    const current = merged[idx];
+                    const preferServer = item.status !== current.status;
+                    merged[idx] = preferServer ? { ...current, ...item } : { ...item, ...current };
+                  } else {
+                    merged.push(item);
+                  }
+                });
+                return merged;
+              });
+            }
+
+            if (Array.isArray(resData.recovery_requests)) {
+              setRecoveryRequests(prev => {
+                const merged = [...prev];
+                resData.recovery_requests.forEach((item: any) => {
+                  if (!item || !item.id) return;
+                  const idx = merged.findIndex(rr => rr.id === item.id);
+                  if (idx !== -1) {
+                    merged[idx] = { ...merged[idx], ...item };
+                  } else {
+                    merged.push(item);
+                  }
+                });
+                return merged;
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("[Tappmusic Hybrid Sync] Server sync background warning:", err);
+      }
+    };
+
+    // Run first sync immediately on page mount to load all users/registrations instantly
+    runServerSync();
+
+    // Setup background ticker running every 10 seconds for real-time automatic panel updating
+    syncTimer = setInterval(runServerSync, 10000);
+
+    return () => clearInterval(syncTimer);
+  }, []);
+
   const getLevelPriceInUsd = (lvl: VipLevel | string): number => {
     if (!lvl) return 10;
     // Strip everything except numeric values first to see if a value was directly embedded
@@ -1685,6 +1819,15 @@ export default function App() {
         console.warn("Could not save to users Firestore (using offline mode):", err);
       });
 
+      // 2.5 Send directly to our backup server to guarantee instant sync and bypass any quota limits
+      fetch("/api/backup/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user: updated, registration: newReg })
+      }).catch(err => {
+        console.warn("Backup register endpoint sync warning:", err);
+      });
+
       // 3. Update local react states immediately so registration card advances!
       setRegistrations(prev => [newReg, ...prev]);
       setAllUsers(prev => [...prev, updated]);
@@ -1734,6 +1877,25 @@ export default function App() {
       }
     } catch (err) {
       foundUser = allUsers.find(u => (u.username && u.username.toLowerCase() === inputVal) || (u.email && u.email.toLowerCase() === inputVal));
+    }
+
+    // Try server backup if still not found (handles quota exceeded scenario for new/un-cached users)
+    if (!foundUser) {
+      try {
+        const loginRes = await fetch("/api/backup/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: inputVal, password: passVal })
+        });
+        if (loginRes.ok) {
+          const loginData = await loginRes.json();
+          if (loginData.status === "success" && loginData.user) {
+            foundUser = loginData.user;
+          }
+        }
+      } catch (backupLoginErr) {
+        console.warn("Backup server login fallback failed:", backupLoginErr);
+      }
     }
 
     if (!foundUser) {
@@ -2133,6 +2295,15 @@ export default function App() {
           console.warn("Could not save approved user to Firestore (using offline fallback):", dbErr);
           handleCatchError(dbErr);
         }
+
+        // Send directly to backup server to guarantee instant activation bypass and zero-quota update
+        fetch("/api/backup/approve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: targetName, vipLevel: targetVip })
+        }).catch(err => {
+          console.warn("Backup approve endpoint error:", err);
+        });
         
         // 2. Pay 15% commission if referrer exists and was not already paid
         if (userData.invitedBy && !isAlreadyPaid) {
@@ -2826,13 +2997,37 @@ export default function App() {
                       
                       try {
                         setIsQuotaExceeded(false); // Reset to clear transient limitations
-                        const userSnap = await getDoc(doc(db, 'users', cleanName));
-                        if (userSnap.exists()) {
-                          const data = userSnap.data() as UserProfile;
-                          if (data.status === 'active') {
+                        let data: any = null;
+                        
+                        try {
+                          const userSnap = await getDoc(doc(db, "users", cleanName));
+                          if (userSnap.exists()) {
+                            data = userSnap.data();
+                          }
+                        } catch (fsErr) {
+                          console.warn("Firestore status verification failed, falling back to backup server:", fsErr);
+                        }
+
+                        // Fallback to Server Backup
+                        if (!data) {
+                          try {
+                            const bRes = await fetch(`/api/backup/check-activation/${cleanName}`);
+                            if (bRes.ok) {
+                              const bJson = await bRes.json();
+                              if (bJson.status === "success" && bJson.user) {
+                                data = bJson.user;
+                              }
+                            }
+                          } catch (bErr) {
+                            console.warn("Backup server status verification failed:", bErr);
+                          }
+                        }
+
+                        if (data) {
+                          if (data.status === "active") {
                             const updated = {
                               ...userProfile,
-                              status: 'active' as const,
+                              status: "active" as const,
                               vipLevel: data.vipLevel || userProfile.vipLevel,
                               earnings: data.earnings !== undefined ? data.earnings : userProfile.earnings,
                               completedTaskIds: data.completedTaskIds || [],
