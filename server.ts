@@ -305,6 +305,64 @@ async function startServer() {
     res.json({ status: "success", user: data.users[uKey] });
   });
 
+  // Direct rejection/removal of registration to keep backups in sync
+  app.post("/api/backup/reject", (req, res) => {
+    const { id, username } = req.body;
+    const data = readBackup();
+    let changed = false;
+
+    if (id && data.registrations[id]) {
+      data.registrations[id].status = "rejected";
+      changed = true;
+    }
+
+    if (username) {
+      Object.keys(data.registrations).forEach(regId => {
+        const reg = data.registrations[regId];
+        if (reg && reg.username && reg.username.toLowerCase().trim() === username.toLowerCase().trim()) {
+          data.registrations[regId].status = "rejected";
+          changed = true;
+        }
+      });
+    }
+
+    if (changed) {
+      writeBackup(data);
+    }
+
+    res.json({ status: "success" });
+  });
+
+  // Delete user and their registrations from backup database
+  app.post("/api/backup/delete-user", (req, res) => {
+    const { username } = req.body;
+    if (!username) {
+      return res.status(400).json({ error: "Username is required" });
+    }
+    const data = readBackup();
+    let changed = false;
+
+    const uKey = username.toLowerCase().trim();
+    if (data.users[uKey]) {
+      delete data.users[uKey];
+      changed = true;
+    }
+
+    Object.keys(data.registrations).forEach(regId => {
+      const reg = data.registrations[regId];
+      if (reg && reg.username && reg.username.toLowerCase().trim() === uKey) {
+        delete data.registrations[regId];
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      writeBackup(data);
+    }
+
+    res.json({ status: "success" });
+  });
+
   // Serve static PNG logo explicitly with correct headers
   app.get("/assets/logo.png", (req, res) => {
     const p = path.join(process.cwd(), "assets", "logo.png");

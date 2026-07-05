@@ -2451,27 +2451,11 @@ export default function App() {
     return dbSuccess;
   };
 
-  // Self-healing check for approved registrations with missing/inactive user accounts in the master database
+  // Self-healing check for approved registrations with missing/inactive user accounts in the master database (Disabled to prevent silent quota resets)
   useEffect(() => {
-    let active = true;
-    const healApprovedUsers = async () => {
-      if (registrations.length === 0 || allUsers.length === 0) return;
-      const approvedRegs = registrations.filter(r => r.status === 'approved' && r.username);
-      for (const reg of approvedRegs) {
-        if (!active) break;
-        const targetLower = reg.username.toLowerCase().trim();
-        const existing = allUsers.find(u => u.username && u.username.toLowerCase().trim() === targetLower);
-        if (!existing || existing.status !== 'active') {
-          console.log(`Auto-healing and activating profile for approved user: @${reg.username}`);
-          await handleApproveUser(reg.username, reg.amountUsd || 10, reg.vipLevel);
-        }
-      }
-    };
-    healApprovedUsers();
-    return () => {
-      active = false;
-    };
-  }, [registrations, allUsers]);
+    // Disabled: Auto-healing was resetting user passwords to 12345 and wiping out their coins when database lists were loading or quota was exceeded.
+    return;
+  }, []);
 
   const handleUpgradeVip = (lvl: VipLevel) => {
     // Admin/propietario can instantly upgrade for easy tests
@@ -4607,6 +4591,17 @@ export default function App() {
                                     handleCatchError(err);
                                   }
 
+                                  // Send directly to backup server to guarantee rejection is saved and old requests do not pop up again!
+                                  try {
+                                    await fetch("/api/backup/reject", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ id: reg.id, username: reg.username })
+                                    });
+                                  } catch (backupErr) {
+                                    console.warn("Could not save rejection to backup server:", backupErr);
+                                  }
+
                                   // Local State Fallback
                                   setRegistrations(prev => prev.filter(r => r.id !== reg.id));
                                   
@@ -5848,6 +5843,17 @@ export default function App() {
                                           
                                           // 1. Delete user from 'users'
                                           await deleteDoc(doc(db, 'users', targetUsernameClean));
+                                          
+                                          // Delete from backup server to prevent them from ever syncing back!
+                                          try {
+                                            await fetch("/api/backup/delete-user", {
+                                              method: "POST",
+                                              headers: { "Content-Type": "application/json" },
+                                              body: JSON.stringify({ username: targetUsernameClean })
+                                            });
+                                          } catch (backupErr) {
+                                            console.warn("Could not delete user from backup server:", backupErr);
+                                          }
                                           
                                           // 2. Clear out any registrations matching this user to prevent auto-healing recreate loops
                                           const matchedRegs = registrations.filter(r => r.username && r.username.toLowerCase().trim() === targetUsernameClean);
