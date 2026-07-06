@@ -2334,10 +2334,16 @@ export default function App() {
         const isUpgrade = userData.vipLevel !== targetVip;
         const todayDateStr = getEsDateString();
 
+        const isPromotion = userData.vipLevel !== targetVip || userData.status !== 'active';
+        const promotionDate = isPromotion 
+          ? getEsDateTimeString() 
+          : (userData.vipPromotionDate || userData.createdAt || getEsDateTimeString());
+
         const activatedTarget: UserProfile = { 
           ...userData, 
           status: 'active' as const,
           vipLevel: targetVip,
+          vipPromotionDate: promotionDate,
           commissionPaid: true,
           updatedAt: Date.now(),
           ...(hasDoneTasksToday && isUpgrade ? { blockedTasksUntilDate: todayDateStr } : {})
@@ -5567,6 +5573,9 @@ export default function App() {
                                 <span className="text-purple-400 font-mono font-bold text-[10px] bg-purple-950/40 px-2 py-0.5 rounded border border-purple-500/20">
                                   ✅ {completedCountToday} Tareas Hoy
                                 </span>
+                                <span className="text-purple-300 font-mono font-bold text-[10px] bg-purple-950/60 px-2 py-0.5 rounded border border-purple-500/30">
+                                  🚀 Ascenso: {u.vipPromotionDate || (u.status === 'active' ? (registrations.find(r => r.username && r.username.toLowerCase().trim() === u.username.toLowerCase().trim() && r.status === 'approved')?.date || u.createdAt || '11/06/2026') : 'Pendiente')}
+                                </span>
                               </div>
                               {u.invitedBy && (
                                 <span className="text-[10px] text-zinc-500 font-normal block mt-1">
@@ -5622,6 +5631,7 @@ export default function App() {
                                   <div>Contraseña: <strong className="text-yellow-500 select-all">{u.password || 'N/A'}</strong></div>
                                   <div>VIP Actual: <strong className="text-purple-300 uppercase font-bold">{u.vipLevel}</strong></div>
                                   <div>Saldo Actual: <strong className="text-[#39FF14] font-mono">{u.earnings ? u.earnings.toLocaleString() : 0} Monedas (~${((u.earnings || 0) / 734).toFixed(2)} USD)</strong></div>
+                                  <div>Fecha de Ascenso: <strong className="text-purple-400 font-bold">{u.vipPromotionDate || (u.status === 'active' ? (registrations.find(r => r.username && r.username.toLowerCase().trim() === u.username.toLowerCase().trim() && r.status === 'approved')?.date || u.createdAt || '11/06/2026') : 'Pendiente')}</strong></div>
                                   <div>Tareas Completadas Hoy: <strong className="text-purple-300">{completedCountToday > 0 ? `${completedCountToday} (${completedListToday.join(', ')})` : '0 realizadas hoy'}</strong>{(!isCompletedToday && u.completedTaskIds && u.completedTaskIds.length > 0) && <span className="text-[10px] text-zinc-500 block">⚠️ Sin ingresar hoy (Último ingreso/tareas el {u.lastResetDate || 'N/A'})</span>}</div>
                                   <div>Comisiones Guardadas: <strong className="text-[#39FF14]">{u.inviteCommissionsEarned || 0} USD</strong></div>
                                   <div>Invitados Guardados: <strong className="text-zinc-300">{u.inviteCount || 0}</strong></div>

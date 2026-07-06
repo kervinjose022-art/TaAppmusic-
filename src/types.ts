@@ -87,6 +87,7 @@ export interface UserProfile {
   blockedTasksUntilDate?: string;
   isSyncedFromDb?: boolean;
   updatedAt?: number;
+  vipPromotionDate?: string;
 }
 
 export interface RecoveryRequest {
