@@ -1939,12 +1939,22 @@ export default function App() {
     let foundUser: UserProfile | undefined;
     
     try {
-      const userSnap = await getDoc(doc(db, 'users', inputVal));
-      if (userSnap.exists()) {
-        foundUser = userSnap.data() as UserProfile;
-      } else {
-        // Fallback to checking by email or in allUsers state
-        foundUser = allUsers.find(u => (u.username && u.username.toLowerCase() === inputVal) || (u.email && u.email.toLowerCase() === inputVal));
+      if (inputVal.includes('@')) {
+        const q = query(collection(db, 'users'), where('email', '==', inputVal));
+        const qSnap = await getDocs(q);
+        if (!qSnap.empty) {
+          foundUser = qSnap.docs[0].data() as UserProfile;
+        }
+      }
+      
+      if (!foundUser) {
+        const userSnap = await getDoc(doc(db, 'users', inputVal));
+        if (userSnap.exists()) {
+          foundUser = userSnap.data() as UserProfile;
+        } else {
+          // Fallback to checking by email or in allUsers state
+          foundUser = allUsers.find(u => (u.username && u.username.toLowerCase() === inputVal) || (u.email && u.email.toLowerCase() === inputVal));
+        }
       }
     } catch (err) {
       foundUser = allUsers.find(u => (u.username && u.username.toLowerCase() === inputVal) || (u.email && u.email.toLowerCase() === inputVal));

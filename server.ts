@@ -206,7 +206,14 @@ async function startServer() {
     }
     const data = readBackup();
     const key = username.toLowerCase().trim();
-    const user = data.users[key];
+    let user = data.users[key];
+    if (!user) {
+      // Find by email in backup users
+      const found = Object.values(data.users).find((u: any) => u.email && u.email.toLowerCase().trim() === key);
+      if (found) {
+        user = found;
+      }
+    }
     if (!user) {
       return res.status(404).json({ error: "Usuario o Correo electrónico no encontrado." });
     }
