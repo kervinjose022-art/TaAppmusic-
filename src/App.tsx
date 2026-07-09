@@ -521,19 +521,46 @@ export default function App() {
                 isDatabaseUpdate.current = true;
                 setUserProfile(prevProfile => {
                   const todayDateStr = getEsDateString();
+                  
+                  const localIsToday = prevProfile.lastResetDate === todayDateStr;
                   const dbIsOutdated = updatedProfile.lastResetDate !== todayDateStr;
-                  const effectiveDbTasks = dbIsOutdated ? [] : (updatedProfile.completedTaskIds || []);
+                  
+                  let effectiveDbTasks = updatedProfile.completedTaskIds || [];
+                  if (dbIsOutdated) {
+                    if (localIsToday) {
+                      effectiveDbTasks = prevProfile.completedTaskIds || [];
+                    } else {
+                      effectiveDbTasks = [];
+                    }
+                  }
+
+                  const isInitialSync = !hasSyncedWithFirestore.current;
+                  const preferDb = isInitialSync || (updatedProfile.updatedAt && prevProfile.updatedAt && updatedProfile.updatedAt > prevProfile.updatedAt);
+
+                  const effectiveEarnings = preferDb
+                    ? (updatedProfile.earnings !== undefined ? updatedProfile.earnings : prevProfile.earnings)
+                    : Math.max(prevProfile.earnings || 0, updatedProfile.earnings || 0);
+
+                  const effectiveTasks = preferDb
+                    ? effectiveDbTasks
+                    : (localIsToday && prevProfile.completedTaskIds && prevProfile.completedTaskIds.length > effectiveDbTasks.length 
+                        ? prevProfile.completedTaskIds 
+                        : effectiveDbTasks);
+
+                  const effectiveResetDate = preferDb
+                    ? (dbIsOutdated ? (localIsToday ? todayDateStr : (updatedProfile.lastResetDate || todayDateStr)) : (updatedProfile.lastResetDate || todayDateStr))
+                    : (localIsToday ? todayDateStr : (updatedProfile.lastResetDate || todayDateStr));
 
                   const vipLevelChanged = prevProfile.vipLevel !== updatedProfile.vipLevel;
                   const statusChanged = prevProfile.status !== updatedProfile.status;
                   const inviteCountChanged = prevProfile.inviteCount !== updatedProfile.inviteCount;
                   const inviteCommissionsChanged = prevProfile.inviteCommissionsEarned !== updatedProfile.inviteCommissionsEarned;
                   const blockedChanged = prevProfile.blockedTasksUntilDate !== updatedProfile.blockedTasksUntilDate;
-                  const dateChanged = prevProfile.lastResetDate !== (dbIsOutdated ? todayDateStr : updatedProfile.lastResetDate);
+                  const dateChanged = prevProfile.lastResetDate !== effectiveResetDate;
                   
-                  const earningsChanged = prevProfile.earnings !== updatedProfile.earnings;
+                  const earningsChanged = prevProfile.earnings !== effectiveEarnings;
                   const prevTasksStr = [...(prevProfile.completedTaskIds || [])].sort().join(',');
-                  const updatedTasksStr = [...effectiveDbTasks].sort().join(',');
+                  const updatedTasksStr = [...effectiveTasks].sort().join(',');
                   const tasksChanged = prevTasksStr !== updatedTasksStr;
 
                   if (earningsChanged || vipLevelChanged || statusChanged || inviteCountChanged || inviteCommissionsChanged || tasksChanged || blockedChanged || dateChanged) {
@@ -544,9 +571,9 @@ export default function App() {
                       blockedTasksUntilDate: updatedProfile.blockedTasksUntilDate,
                       inviteCount: updatedProfile.inviteCount !== undefined ? updatedProfile.inviteCount : prevProfile.inviteCount,
                       inviteCommissionsEarned: updatedProfile.inviteCommissionsEarned !== undefined ? updatedProfile.inviteCommissionsEarned : prevProfile.inviteCommissionsEarned,
-                      earnings: updatedProfile.earnings,
-                      completedTaskIds: effectiveDbTasks,
-                      lastResetDate: dbIsOutdated ? todayDateStr : (updatedProfile.lastResetDate || todayDateStr),
+                      earnings: effectiveEarnings,
+                      completedTaskIds: effectiveTasks,
+                      lastResetDate: effectiveResetDate,
                       ...(isInitialSync ? updatedProfile : {}),
                       isSyncedFromDb: true
                     };
