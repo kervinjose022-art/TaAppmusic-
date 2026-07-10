@@ -595,33 +595,24 @@ export default function App() {
 
     if (!isOfflineUser) {
       if (isAdmin) {
-        // Admin needs real-time feed of only PENDING registrations, withdrawals, and recovery requests
-        unsubRegistrations = onSnapshot(query(collection(db, 'registrations'), where('status', '==', 'pending')), (snapshot) => {
+        // Admin needs real-time feed of registrations, withdrawals, and recovery requests
+        unsubRegistrations = onSnapshot(collection(db, 'registrations'), (snapshot) => {
           const items: any[] = [];
           snapshot.forEach((docSnap) => {
             items.push({ ...docSnap.data(), id: docSnap.id });
           });
-          setRegistrations(prev => {
-            const nonPending = prev.filter(r => r.status !== 'pending');
-            // Deduplicate incoming pending registrations
-            const filteredNonPending = nonPending.filter(r => !items.some(item => item.id === r.id));
-            return [...items, ...filteredNonPending];
-          });
+          setRegistrations(items);
         }, (error) => {
           console.error("Firestore listening registrations error:", error);
           handleCatchError(error);
         });
 
-        unsubWithdrawals = onSnapshot(query(collection(db, 'withdrawals'), where('status', 'in', ['Pendiente', 'pendiente', 'pending'])), (snapshot) => {
+        unsubWithdrawals = onSnapshot(collection(db, 'withdrawals'), (snapshot) => {
           const items: any[] = [];
           snapshot.forEach((docSnap) => {
             items.push({ ...docSnap.data(), id: docSnap.id });
           });
-          setWithdrawHistory(prev => {
-            const nonPending = prev.filter(w => w.status !== 'Pendiente' && w.status !== 'pendiente' && w.status !== 'pending');
-            const filteredNonPending = nonPending.filter(w => !items.some(item => item.id === w.id));
-            return [...items, ...filteredNonPending];
-          });
+          setWithdrawHistory(items);
         }, (error) => {
           console.error("Firestore listening withdrawals error:", error);
           handleCatchError(error);
@@ -5695,7 +5686,8 @@ export default function App() {
 
                             const userApprovedWithdrawals = withdrawHistory.filter(w => {
                               const wUser = w.username ? w.username.toLowerCase().trim() : '';
-                              return wUser === cleanUsrName && (w.status === 'Aprobado' || w.status === 'aprobado');
+                              const wStatus = (w.status || '').toLowerCase().trim();
+                              return wUser === cleanUsrName && (wStatus === 'aprobado' || wStatus === 'approved');
                             });
                             const approvedCount = userApprovedWithdrawals.length;
                             const totalCoinsWithdrawn = userApprovedWithdrawals.reduce((sum, w) => sum + (Number(w.amountCoins) || 0), 0);
