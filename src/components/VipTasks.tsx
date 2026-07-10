@@ -46,6 +46,7 @@ interface VipTasksProps {
     allowedDays: number[];
     allowedDates: string[];
     allowedMonthDays?: number[];
+    paused?: boolean;
   };
   inviteCommissionsEarned?: number;
 }
@@ -81,7 +82,7 @@ export default function VipTasks({
   setWithdrawHistory,
   voiceThemes = [],
   reels = [],
-  withdrawConfig = { enabled: true, allowedDays: [1, 5], allowedDates: [], allowedMonthDays: [10, 20, 30] },
+  withdrawConfig = { enabled: true, allowedDays: [1, 5], allowedDates: [], allowedMonthDays: [10, 20, 30], paused: false },
   inviteCommissionsEarned = 0
 }: VipTasksProps) {
   const totalCoinsAvailable = userProfile.earnings || 0;
@@ -285,27 +286,33 @@ export default function VipTasks({
     }
 
     // Validate custom calendar date constraints unless bypass is checked
-    if (withdrawConfig && withdrawConfig.enabled && !bypass10Days) {
-      const today = new Date();
-      const todayDayOfWeek = today.getDay(); // 0-6
-      const todayDayOfMonth = today.getDate(); // 1-31
-      const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-      
-      const allowedMonthDays = withdrawConfig.allowedMonthDays !== undefined ? withdrawConfig.allowedMonthDays : [10, 20, 30];
-
-      const isDayAllowed = withdrawConfig.allowedDays.includes(todayDayOfWeek);
-      const isDateAllowed = withdrawConfig.allowedDates.includes(todayDateStr);
-      const isMonthDayAllowed = allowedMonthDays.includes(todayDayOfMonth);
-      
-      if (!isDayAllowed && !isDateAllowed && !isMonthDayAllowed) {
-        setWithdrawalError('La solicitud de retiro ha sido bloqueada porque hoy no es un día de retiro habilitado en el calendario virtual. Revisa las fechas en verde.');
+    if (withdrawConfig && !bypass10Days) {
+      if (withdrawConfig.paused) {
+        setWithdrawalError('La solicitud de retiro ha sido bloqueada. El sistema de retiros se encuentra temporalmente CERRADO o PAUSADO por el administrador.');
         return;
       }
+      if (withdrawConfig.enabled) {
+        const today = new Date();
+        const todayDayOfWeek = today.getDay(); // 0-6
+        const todayDayOfMonth = today.getDate(); // 1-31
+        const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        
+        const allowedMonthDays = withdrawConfig.allowedMonthDays !== undefined ? withdrawConfig.allowedMonthDays : [10, 20, 30];
 
-      // Check "A partir de las 9:00 AM" rule
-      if (today.getHours() < 9) {
-        setWithdrawalError('La solicitud de retiro ha sido bloqueada. Los retiros solo están permitidos en los días correspondientes a partir de las 9:00 AM (Hora del servidor).');
-        return;
+        const isDayAllowed = withdrawConfig.allowedDays.includes(todayDayOfWeek);
+        const isDateAllowed = withdrawConfig.allowedDates.includes(todayDateStr);
+        const isMonthDayAllowed = allowedMonthDays.includes(todayDayOfMonth);
+        
+        if (!isDayAllowed && !isDateAllowed && !isMonthDayAllowed) {
+          setWithdrawalError('La solicitud de retiro ha sido bloqueada porque hoy no es un día de retiro habilitado en el calendario virtual. Revisa las fechas en verde.');
+          return;
+        }
+
+        // Check "A partir de las 9:00 AM" rule
+        if (today.getHours() < 9) {
+          setWithdrawalError('La solicitud de retiro ha sido bloqueada. Los retiros solo están permitidos en los días correspondientes a partir de las 9:00 AM (Hora del servidor).');
+          return;
+        }
       }
     }
 
@@ -1386,6 +1393,27 @@ export default function VipTasks({
                     className="mt-4 w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-xs font-mono font-bold text-[#39FF14] hover:text-white rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     Cerrar Ventana de Retiros
+                  </button>
+                </div>
+              ) : withdrawConfig?.paused ? (
+                <div className="py-8 p-4 rounded-3xl border border-red-500/20 bg-red-950/10 text-center space-y-4">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse">
+                    <Lock className="h-6 w-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-black text-white uppercase tracking-wider font-sans">SOLICITUDES DE RETIRO CERRADAS</h4>
+                    <p className="text-xs text-zinc-400 font-mono leading-relaxed max-w-sm mx-auto">
+                      El administrador de la plataforma ha cerrado las solicitudes de retiro por el día de hoy. Por favor, vuelve a intentar en el próximo día de retiro habilitado en el calendario de arriba. ¡Gracias por tu comprensión, inversionista!
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsWithdrawOpen(false);
+                    }}
+                    className="mt-4 w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-xs font-mono font-bold text-red-400 hover:text-white rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    Entendido, Cerrar Ventana
                   </button>
                 </div>
               ) : (

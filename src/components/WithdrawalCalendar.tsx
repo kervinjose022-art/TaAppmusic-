@@ -8,6 +8,7 @@ interface WithdrawConfig {
   allowedMonthDays?: number[]; // Days of the month (1-31), e.g. [10, 20, 30]
   apkDownloadUrl?: string;
   depositAddress?: string;
+  paused?: boolean;
 }
 
 interface WithdrawalCalendarProps {
@@ -156,7 +157,7 @@ export default function WithdrawalCalendar({
                             config.allowedDays.includes(todayDayOfWeek) || 
                             config.allowedDates.includes(todayDateStr) ||
                             allowedMonthDays.includes(todayDayOfMonth));
-  const isWithdrawOpenToday = !config.enabled || (isDayAllowedToday && today.getHours() >= 9);
+  const isWithdrawOpenToday = !config.paused && (!config.enabled || (isDayAllowedToday && today.getHours() >= 9));
 
   return (
     <div id="virtual_withdrawal_calendar" className="p-5 rounded-3xl bg-zinc-950/90 border border-white/5 backdrop-blur-xl space-y-5 shadow-2xl relative overflow-hidden">
@@ -179,7 +180,12 @@ export default function WithdrawalCalendar({
 
         {/* Dynamic status pill */}
         <div className="flex items-center gap-1.5 font-mono text-[9px] px-2.5 py-1 rounded-full border bg-black font-bold uppercase transition-all">
-          {isWithdrawOpenToday ? (
+          {config.paused ? (
+            <>
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-red-400">Pausado/Cerrado 🚫</span>
+            </>
+          ) : isWithdrawOpenToday ? (
             <>
               <span className="h-1.5 w-1.5 rounded-full bg-[#39FF14] animate-ping" />
               <span className="text-[#39FF14]">Abierto Hoy ✅</span>
@@ -287,14 +293,20 @@ export default function WithdrawalCalendar({
       <div className="bg-black/50 border border-white/5 rounded-2xl p-3.5 space-y-2 text-left font-mono text-[9px]">
         <div className="flex items-center justify-between text-zinc-500 border-b border-white/5 pb-1.5 mb-1.5 uppercase font-bold text-[10px]">
           <span>📊 Reglas del Servidor Activas</span>
-          {config.enabled ? (
+          {config.paused ? (
+            <span className="text-red-500 font-black animate-pulse">RETIROS PAUSADOS 🚫</span>
+          ) : config.enabled ? (
             <span className="text-[#39FF14] font-black">Restricción Activa</span>
           ) : (
             <span className="text-yellow-500 font-black">Modo Libre Sin Filtros</span>
           )}
         </div>
 
-        {config.enabled ? (
+        {config.paused ? (
+          <div className="text-red-450 font-bold p-2 bg-red-950/15 border border-red-500/25 rounded-xl text-[10px] uppercase font-mono leading-relaxed">
+            ⚠️ ATENCIÓN: El administrador ha PAUSADO/CERRADO temporalmente todos los retiros de la plataforma. Ningún inversionista podrá someter solicitudes hasta que se reactive.
+          </div>
+        ) : config.enabled ? (
           <>
             <div>
               • <strong className="text-zinc-300">Días del mes recurrentes:</strong>{' '}
@@ -344,6 +356,27 @@ export default function WithdrawalCalendar({
           <div className="flex items-center gap-1.5">
             <Settings className="h-4 w-4 text-purple-400" />
             <h5 className="text-[10px] font-black font-mono tracking-wider text-purple-300 uppercase">Configuración de Administrador</h5>
+          </div>
+
+          {/* PAUSE WITHDRAWALS SWITCH */}
+          <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-red-950/20 border border-red-500/20 shadow-md">
+            <input
+              type="checkbox"
+              id="admin_pause_withdrawals"
+              checked={config.paused || false}
+              onChange={() => {
+                if (onUpdateConfig) {
+                  onUpdateConfig({
+                    ...config,
+                    paused: !config.paused
+                  });
+                }
+              }}
+              className="accent-red-500 h-4 w-4 rounded border-red-900 bg-zinc-900 cursor-pointer"
+            />
+            <label htmlFor="admin_pause_withdrawals" className="text-[11px] font-mono text-zinc-300 select-none cursor-pointer flex-1 leading-normal">
+              🚫 <strong className="text-red-400">CERRAR/PAUSAR RETIROS TOTALMENTE HOY</strong> (Bloqueará las solicitudes de retiro a todos los usuarios de inmediato)
+            </label>
           </div>
 
           {/* Master constraint Toggle checkbox */}

@@ -5010,6 +5010,119 @@ export default function App() {
             {/* TAB CONTENT: WITHDRAWALS */}
             {activeAdminTab === 'retiros' && (
               <div className="space-y-4 max-h-[550px] overflow-y-auto pr-1">
+                {/* PANEL DE ACCIONES MASIVAS SUPERIOR (Mobile friendly & extremely visible) */}
+                {withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').length > 0 && (
+                  <div className="bg-zinc-950/80 border border-[#39FF14]/30 rounded-2xl p-4 space-y-3 shadow-lg shadow-[#39FF14]/5 text-left relative overflow-hidden">
+                    <div className="absolute -right-6 -top-6 w-16 h-16 bg-[#39FF14]/10 rounded-full blur-xl" />
+                    <div>
+                      <h4 className="text-xs font-black tracking-widest text-[#39FF14] uppercase font-mono">⚡ ACCIONES RÁPIDAS (RETIROS PENDIENTES)</h4>
+                      <p className="text-[10px] text-zinc-400 font-sans leading-normal">
+                        Tienes <strong className="text-white">{withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').length} retiros pendientes</strong>. Realiza una acción masiva en un solo click:
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (window.confirm("⚠️ ¿Estás seguro de que quieres APROBAR TODOS los retiros pendientes actualmente? Esto los marcará como Aprobados, generará sus TxID de blockchain, y actualizará la base de datos de inmediato.")) {
+                            const pendingWds = withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente');
+                            let updatedCount = 0;
+                            
+                            const updatedWds = withdrawHistory.map(w => {
+                              if (w.status === 'pendiente' || w.status === 'Pendiente') {
+                                updatedCount++;
+                                return {
+                                  ...w,
+                                  status: 'Aprobado',
+                                  txid: '0x' + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+                                  deducted: true
+                                };
+                              }
+                              return w;
+                            });
+                            
+                            setWithdrawHistory(updatedWds);
+                            safeLocalStorage.setItem('tappmusic_withdrawals', JSON.stringify(updatedWds));
+                            
+                            try {
+                              await fetch("/api/backup/sync", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  users: allUsers,
+                                  registrations: registrations,
+                                  withdrawals: updatedWds,
+                                  recovery_requests: recoveryRequests || []
+                                })
+                              });
+                            } catch (e) {
+                              console.warn("Backup sync failed during mass approval:", e);
+                            }
+                            
+                            for (const wd of pendingWds) {
+                              try {
+                                const generatedTx = '0x' + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
+                                await updateDoc(doc(db, 'withdrawals', wd.id), {
+                                  status: 'Aprobado',
+                                  txid: generatedTx,
+                                  deducted: true
+                                });
+                              } catch (err) {
+                                console.warn(`Could not update withdrawal ${wd.id} in Firestore:`, err);
+                              }
+                            }
+                            
+                            alert(`✅ ¡Éxito hermanito! Se han aprobado ${updatedCount} solicitudes de retiro pendientes con éxito.`);
+                          }
+                        }}
+                        className="py-3 px-3 rounded-xl bg-[#39FF14]/15 border border-[#39FF14]/40 text-[#39FF14] hover:bg-[#39FF14] hover:text-black active:scale-95 transition-all text-[11px] font-sans font-black uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(57,255,20,0.1)]"
+                      >
+                        🧹 Aprobar Todos
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (window.confirm("⚠️ ¿Estás seguro de que quieres ELIMINAR/BORRAR por completo todas las solicitudes de retiro pendientes de la pantalla? Esto las quitará definitivamente de la base de datos.")) {
+                            const pendingWds = withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente');
+                            
+                            const updatedWds = withdrawHistory.filter(w => w.status !== 'pendiente' && w.status !== 'Pendiente');
+                            setWithdrawHistory(updatedWds);
+                            safeLocalStorage.setItem('tappmusic_withdrawals', JSON.stringify(updatedWds));
+                            
+                            try {
+                              await fetch("/api/backup/sync", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  users: allUsers,
+                                  registrations: registrations,
+                                  withdrawals: updatedWds,
+                                  recovery_requests: recoveryRequests || []
+                                })
+                              });
+                            } catch (e) {
+                              console.warn("Backup sync failed during mass removal:", e);
+                            }
+                            
+                            for (const wd of pendingWds) {
+                              try {
+                                await deleteDoc(doc(db, 'withdrawals', wd.id));
+                              } catch (err) {
+                                console.warn(`Could not delete withdrawal ${wd.id} from Firestore:`, err);
+                              }
+                            }
+                            
+                            alert(`✅ ¡Éxito hermanito! Se han borrado ${pendingWds.length} solicitudes de retiro pendientes con éxito.`);
+                          }
+                        }}
+                        className="py-3 px-3 rounded-xl bg-red-650/15 border border-red-500/40 text-red-400 hover:bg-red-600 hover:text-white active:scale-95 transition-all text-[11px] font-sans font-black uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        🗑️ Eliminar Pendientes
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="bg-indigo-950/20 rounded-xl p-3 border border-indigo-500/15 flex items-center gap-3 text-xs text-indigo-300">
                   <div className="h-5 w-5 bg-indigo-500/10 rounded-full flex items-center justify-center font-bold shrink-0">i</div>
                   <p className="leading-normal font-sans">
