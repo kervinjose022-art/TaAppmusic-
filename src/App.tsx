@@ -520,44 +520,47 @@ export default function App() {
       console.warn("Firebase Anonymous Auth warning:", err);
     });
 
-    // 2. Setup real-time listener for voices collection
-    const unsubVoices = onSnapshot(collection(db, 'voices'), (snapshot) => {
-      const items: any[] = [];
-      snapshot.forEach((docSnap) => {
-        items.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      if (items.length > 0) {
-        setVoiceThemes(prev => {
-          const merged = [...prev];
-          items.forEach(item => {
-            const index = merged.findIndex(v => v.id === item.id);
-            if (index !== -1) {
-              merged[index] = item;
-            } else {
-              merged.push(item);
-            }
-          });
-          return merged;
+    // 2. Fetch voices and reels once on mount to save hundreds of daily read operations
+    const fetchStaticDataOnce = async () => {
+      try {
+        const voicesSnap = await getDocs(collection(db, 'voices'));
+        const items: any[] = [];
+        voicesSnap.forEach((docSnap) => {
+          items.push({ id: docSnap.id, ...docSnap.data() });
         });
+        if (items.length > 0) {
+          setVoiceThemes(prev => {
+            const merged = [...prev];
+            items.forEach(item => {
+              const index = merged.findIndex(v => v.id === item.id);
+              if (index !== -1) {
+                merged[index] = item;
+              } else {
+                merged.push(item);
+              }
+            });
+            return merged;
+          });
+        }
+      } catch (error) {
+        console.warn("Could not fetch voices once:", error);
       }
-    }, (error) => {
-      console.error("Firestore listening voices error:", error);
-      handleCatchError(error);
-    });
 
-    // 3. Setup real-time listener for reels collection
-    const unsubReels = onSnapshot(collection(db, 'reels'), (snapshot) => {
-      const items: Reel[] = [];
-      snapshot.forEach((docSnap) => {
-        items.push({ id: docSnap.id, ...docSnap.data() } as Reel);
-      });
-      if (items.length > 0) {
-        setReels(items);
+      try {
+        const reelsSnap = await getDocs(collection(db, 'reels'));
+        const items: Reel[] = [];
+        reelsSnap.forEach((docSnap) => {
+          items.push({ id: docSnap.id, ...docSnap.data() } as Reel);
+        });
+        if (items.length > 0) {
+          setReels(items);
+        }
+      } catch (error) {
+        console.warn("Could not fetch reels once:", error);
       }
-    }, (error) => {
-      console.error("Firestore listening reels error:", error);
-      handleCatchError(error);
-    });
+    };
+
+    fetchStaticDataOnce();
 
     // 4. Setup real-time listener for withdrawals calendar configuration
     const unsubWithdrawalConfig = onSnapshot(doc(db, 'config', 'withdrawals'), (docSnap) => {
@@ -612,8 +615,6 @@ export default function App() {
     });
 
     return () => {
-      unsubVoices();
-      unsubReels();
       unsubWithdrawalConfig();
     };
   }, [isQuotaExceeded]);
@@ -748,44 +749,49 @@ export default function App() {
 
     if (!isOfflineUser) {
       if (isAdmin) {
-        // Admin needs real-time feed of registrations, withdrawals, and recovery requests
-        unsubRegistrations = onSnapshot(collection(db, 'registrations'), (snapshot) => {
-          const items: any[] = [];
-          snapshot.forEach((docSnap) => {
-            items.push({ ...docSnap.data(), id: docSnap.id });
-          });
-          setRegistrations(items);
-        }, (error) => {
-          console.error("Firestore listening registrations error:", error);
-          handleCatchError(error);
-        });
+        // Highly optimized: Fetch admin collections ONCE on login/mount to save thousands of reads,
+        // then rely on our automatic zero-quota background hybrid server sync.
+        const fetchAdminDataOnce = async () => {
+          try {
+            const regsSnap = await getDocs(collection(db, 'registrations'));
+            const items: any[] = [];
+            regsSnap.forEach((docSnap) => {
+              items.push({ ...docSnap.data(), id: docSnap.id });
+            });
+            setRegistrations(items);
+          } catch (error) {
+            console.error("Firestore loading registrations error:", error);
+            handleCatchError(error);
+          }
 
-        unsubWithdrawals = onSnapshot(collection(db, 'withdrawals'), (snapshot) => {
-          const items: any[] = [];
-          snapshot.forEach((docSnap) => {
-            items.push({ ...docSnap.data(), id: docSnap.id });
-          });
-          setWithdrawHistory(items);
-        }, (error) => {
-          console.error("Firestore listening withdrawals error:", error);
-          handleCatchError(error);
-        });
+          try {
+            const wdsSnap = await getDocs(collection(db, 'withdrawals'));
+            const items: any[] = [];
+            wdsSnap.forEach((docSnap) => {
+              items.push({ ...docSnap.data(), id: docSnap.id });
+            });
+            setWithdrawHistory(items);
+          } catch (error) {
+            console.error("Firestore loading withdrawals error:", error);
+            handleCatchError(error);
+          }
 
-        // Highly optimized: Bypassed real-time subscriber for entire users collection to save quota
-        unsubUsers = () => {};
+          try {
+            const recSnap = await getDocs(collection(db, 'recovery_requests'));
+            const items: RecoveryRequest[] = [];
+            recSnap.forEach((docSnap) => {
+              items.push({ id: docSnap.id, ...docSnap.data() } as RecoveryRequest);
+            });
+            setRecoveryRequests(items);
+          } catch (error) {
+            console.error("Firestore loading recovery_requests error:", error);
+            handleCatchError(error);
+          }
+        };
 
-        unsubRecoveryRequests = onSnapshot(collection(db, 'recovery_requests'), (snapshot) => {
-          const items: RecoveryRequest[] = [];
-          snapshot.forEach((docSnap) => {
-            items.push({ id: docSnap.id, ...docSnap.data() } as RecoveryRequest);
-          });
-          setRecoveryRequests(items);
-        }, (error) => {
-          console.error("Firestore listening recovery_requests error:", error);
-          handleCatchError(error);
-        });
+        fetchAdminDataOnce();
       } else {
-        // Regular users only listen to their own user profile document, their referred users, and their own withdrawals
+        // Regular users only listen to their own user profile document in real-time (highly optimized, 1 read)
         unsubOwnUser = onSnapshot(doc(db, 'users', usernameClean), (docSnap) => {
           if (docSnap.exists()) {
             syncUsers([docSnap.data() as UserProfile]);
@@ -795,36 +801,34 @@ export default function App() {
           handleCatchError(error);
         });
 
-        // Query active referrals of this user
-        unsubReferredUsers = onSnapshot(
-          query(collection(db, 'users'), where('invitedBy', 'in', [usernameClean, '@' + usernameClean])),
-          (snapshot) => {
-            const items: UserProfile[] = [];
-            snapshot.forEach((docSnap) => {
-              items.push(docSnap.data() as UserProfile);
+        // Other sub-collections (referrals, withdrawals) are fetched once via getDocs on mount to save reads
+        const fetchUserDataOnce = async () => {
+          try {
+            const refSnap = await getDocs(query(collection(db, 'users'), where('invitedBy', 'in', [usernameClean, '@' + usernameClean])));
+            const refItems: UserProfile[] = [];
+            refSnap.forEach((docSnap) => {
+              refItems.push(docSnap.data() as UserProfile);
             });
-            syncUsers(items);
-          },
-          (error) => {
-            console.error("Firestore listening referred users error:", error);
+            syncUsers(refItems);
+          } catch (error) {
+            console.error("Firestore loading referred users error:", error);
             handleCatchError(error);
           }
-        );
 
-        // Query withdrawals belonging only to this user
-        unsubWithdrawals = onSnapshot(
-          query(collection(db, 'withdrawals'), where('username', '==', usernameClean)),
-          (snapshot) => {
-            const items: any[] = [];
-            snapshot.forEach((docSnap) => {
-              items.push({ ...docSnap.data(), id: docSnap.id });
+          try {
+            const wdSnap = await getDocs(query(collection(db, 'withdrawals'), where('username', '==', usernameClean)));
+            const wdItems: any[] = [];
+            wdSnap.forEach((docSnap) => {
+              wdItems.push({ ...docSnap.data(), id: docSnap.id });
             });
-            setWithdrawHistory(items);
-          }, (error) => {
-            console.error("Firestore listening withdrawals error:", error);
+            setWithdrawHistory(wdItems);
+          } catch (error) {
+            console.error("Firestore loading withdrawals error:", error);
             handleCatchError(error);
           }
-        );
+        };
+
+        fetchUserDataOnce();
       }
     }
 
@@ -4382,6 +4386,50 @@ export default function App() {
                 className="px-3 py-1.5 rounded-lg border border-red-500/35 text-red-400 hover:bg-red-500 hover:text-white transition-all font-sans font-bold text-[10px] uppercase shrink-0"
               >
                 🧹 Limpiar Base De Datos
+              </button>
+
+              {/* Manual Refresh / Sync with Firestore Button (extremely resource-friendly) */}
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    // Fetch all registered data once from Firestore
+                    const regsSnap = await getDocs(collection(db, 'registrations'));
+                    const regsItems: any[] = [];
+                    regsSnap.forEach((docSnap) => {
+                      regsItems.push({ ...docSnap.data(), id: docSnap.id });
+                    });
+                    setRegistrations(regsItems);
+
+                    const wdsSnap = await getDocs(collection(db, 'withdrawals'));
+                    const wdsItems: any[] = [];
+                    wdsSnap.forEach((docSnap) => {
+                      wdsItems.push({ ...docSnap.data(), id: docSnap.id });
+                    });
+                    setWithdrawHistory(wdsItems);
+
+                    const recSnap = await getDocs(collection(db, 'recovery_requests'));
+                    const recItems: RecoveryRequest[] = [];
+                    recSnap.forEach((docSnap) => {
+                      recItems.push({ id: docSnap.id, ...docSnap.data() } as RecoveryRequest);
+                    });
+                    setRecoveryRequests(recItems);
+
+                    const usersSnap = await getDocs(collection(db, 'users'));
+                    const usersItems: UserProfile[] = [];
+                    usersSnap.forEach((docSnap) => {
+                      usersItems.push(docSnap.data() as UserProfile);
+                    });
+                    setAllUsers(usersItems);
+
+                    alert("✅ ¡Sincronización manual con Firestore completada con éxito! Datos de registros, cobros, usuarios y soporte actualizados.");
+                  } catch (err: any) {
+                    alert("Error en la sincronización manual: " + err.message);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-lg border border-[#39FF14]/35 text-[#39FF14] hover:bg-[#39FF14] hover:text-black transition-all font-sans font-bold text-[10px] uppercase shrink-0"
+              >
+                🔄 Sincronizar Firestore
               </button>
 
               {/* Adjust coins of yesterday to 367 for the 4 registered users */}

@@ -381,6 +381,22 @@ export default function VipTasks({
               updatedAt: Date.now()
             }));
 
+            // Immediate Express backup server sync to guarantee instant withdrawal visualization in admin dashboard
+            fetch('/api/backup/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                withdrawals: [newWithdrawal],
+                users: [{
+                  ...userProfile,
+                  earnings: newEarnings,
+                  inviteCommissionsEarned: newInviteCommissionsEarned,
+                  walletAddress: finalAddress,
+                  updatedAt: Date.now()
+                }]
+              })
+            }).catch(err => console.warn("Backup sync on submit withdrawal warning:", err));
+
             setIsSubmittingWithdrawal(false);
             setWithdrawalSuccess(true);
             setWithdrawalAmount('4000'); // reset placeholder
