@@ -88,6 +88,7 @@ export interface UserProfile {
   isSyncedFromDb?: boolean;
   updatedAt?: number;
   vipPromotionDate?: string;
+  tasksCompletedDates?: { [date: string]: string[] };
 }
 
 export interface RecoveryRequest {

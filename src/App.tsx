@@ -32,6 +32,159 @@ const getEsDateTimeString = (date: Date = new Date()): string => {
   return `${dateStr} ${timeStr}`;
 };
 
+const parseCustomDate = (dateStr: string): Date | null => {
+  if (!dateStr) return null;
+  const mainPart = dateStr.split(' ')[0];
+  const parts = mainPart.split('/');
+  if (parts.length === 3) {
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // 0-indexed
+    const year = parseInt(parts[2], 10);
+    if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+      return new Date(year, month, day);
+    }
+  }
+  return null;
+};
+
+const getDatesBetween = (startDateStr: string): string[] => {
+  const start = parseCustomDate(startDateStr);
+  if (!start) return [];
+  
+  const dates: string[] = [];
+  const current = new Date(start);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let safeguard = 0;
+  while (current <= today && safeguard < 365) {
+    dates.push(getEsDateString(current));
+    current.setDate(current.getDate() + 1);
+    safeguard++;
+  }
+  return dates;
+};
+
+const getDailyRewardCoinsForVip = (vipLevel: string): number => {
+  const s = (vipLevel || '').toUpperCase();
+  if (s.includes('PLATA')) return 400;
+  if (s.includes('ORO')) return 800;
+  if (s.includes('RUBÍ') || s.includes('RUBI')) return 1600;
+  if (s.includes('DIAMANTE')) return 4000;
+  if (s.includes('PLATINO')) return 12800;
+  if (s.includes('CORONA')) return 40000;
+  return 400;
+};
+
+interface LedgerItem {
+  date: string;
+  type: 'registro' | 'ascenso' | 'tareas' | 'retiro';
+  description: string;
+  change: number;
+  balanceAfter: number;
+  timestamp: number;
+}
+
+const constructUserLedger = (user: UserProfile, withdrawals: any[]): LedgerItem[] => {
+  const items: LedgerItem[] = [];
+
+  const regDateStr = user.createdAt || '11/06/2026';
+  const regDate = parseCustomDate(regDateStr) || new Date(2026, 5, 11);
+
+  items.push({
+    date: regDateStr,
+    type: 'registro',
+    description: 'Registro de cuenta e ingreso inicial',
+    change: 0,
+    balanceAfter: 0,
+    timestamp: regDate.getTime()
+  });
+
+  const uClean = (user.username || '').toLowerCase().trim();
+  const userWds = withdrawals.filter(w => {
+    const wUser = (w.username || '').toLowerCase().trim();
+    const wStatus = (w.status || '').toLowerCase().trim();
+    return wUser === uClean && (wStatus === 'aprobado' || wStatus === 'approved');
+  });
+
+  userWds.forEach((w, idx) => {
+    const wDateStr = w.date || '';
+    const wDate = parseCustomDate(wDateStr) || new Date();
+    const coins = Number(w.amountCoins) || 0;
+    const usdt = Number(w.amountUsdt) || 0;
+    items.push({
+      date: wDateStr || getEsDateTimeString(wDate),
+      type: 'retiro',
+      description: `Retiro aprobado (~$${usdt.toFixed(2)} USDT) - TxID: ${w.txid ? w.txid.substring(0, 8) : 'N/A'}`,
+      change: -coins,
+      balanceAfter: 0,
+      timestamp: wDate.getTime() + (idx * 1000) // unique sorting offset
+    });
+  });
+
+  const promoDateStr = user.vipPromotionDate || '';
+  if (promoDateStr && promoDateStr !== 'Pendiente') {
+    const promoDate = parseCustomDate(promoDateStr) || new Date();
+    const lvl = user.vipLevel || 'VIP PLATA 10$';
+    const s = lvl.toUpperCase();
+    let price = 10;
+    if (s.includes('ORO')) price = 20;
+    else if (s.includes('RUBÍ') || s.includes('RUBI')) price = 40;
+    else if (s.includes('DIAMANTE')) price = 120;
+    else if (s.includes('PLATINO')) price = 420;
+    else if (s.includes('CORONA')) price = 1000;
+    const levelCostCoins = price * 800;
+
+    items.push({
+      date: promoDateStr,
+      type: 'ascenso',
+      description: `Ascenso a rango ${lvl} (Costo de activación: -$${price} USD)`,
+      change: -levelCostCoins,
+      balanceAfter: 0,
+      timestamp: promoDate.getTime() + 500 // slight offset after registration if same day
+    });
+  }
+
+  const completedDates = user.tasksCompletedDates || {};
+  Object.keys(completedDates).forEach((dateStr, idx) => {
+    const taskIds = completedDates[dateStr] || [];
+    if (taskIds.length > 0) {
+      const taskDate = parseCustomDate(dateStr) || new Date();
+      const vipReward = getDailyRewardCoinsForVip(user.vipLevel);
+      const payout = (vipReward / 5) * taskIds.length; // standard 5 tasks basis or proportional count
+      items.push({
+        date: dateStr,
+        type: 'tareas',
+        description: `Completó ${taskIds.length} tareas diarias (${lvlCode(user.vipLevel)})`,
+        change: payout,
+        balanceAfter: 0,
+        timestamp: taskDate.getTime() + (idx * 10)
+      });
+    }
+  });
+
+  items.sort((a, b) => a.timestamp - b.timestamp);
+
+  let curr = user.earnings || 0;
+  for (let i = items.length - 1; i >= 0; i--) {
+    items[i].balanceAfter = Number(curr.toFixed(2));
+    curr -= items[i].change;
+  }
+
+  return items;
+};
+
+const lvlCode = (vip: string): string => {
+  const s = (vip || '').toUpperCase();
+  if (s.includes('PLATA')) return 'Plata';
+  if (s.includes('ORO')) return 'Oro';
+  if (s.includes('RUBÍ') || s.includes('RUBI')) return 'Rubí';
+  if (s.includes('DIAMANTE')) return 'Diamante';
+  if (s.includes('PLATINO')) return 'Platino';
+  if (s.includes('CORONA')) return 'Corona Imperial';
+  return 'VIP';
+};
+
 const safeLocalStorage = {
   getItem(key: string): string | null {
     try {
@@ -1017,10 +1170,16 @@ export default function App() {
     if (userProfile && userProfile.isRegistered && userProfile.username && userProfile.username.toLowerCase().trim() !== 'usuario_vip' && userProfile.username.toLowerCase().trim() !== 'visitante_tapp') {
       const todayDateStr = getEsDateString();
       if (userProfile.lastResetDate !== todayDateStr) {
+        const oldResetDate = userProfile.lastResetDate || todayDateStr;
+        const updatedDatesLog = {
+          ...(userProfile.tasksCompletedDates || {}),
+          [oldResetDate]: userProfile.completedTaskIds || []
+        };
         saveProfile({
           ...userProfile,
           completedTaskIds: [],
-          lastResetDate: todayDateStr
+          lastResetDate: todayDateStr,
+          tasksCompletedDates: updatedDatesLog
         });
       }
     }
@@ -1050,6 +1209,59 @@ export default function App() {
       setDoc(doc(db, 'users', profileWithSync.username.toLowerCase().trim()), profileWithSync).catch(err => {
         // Background sync fail silent
       });
+    }
+  };
+
+  const handleToggleDayTasks = async (user: UserProfile, targetDateStr: string, isMarkingCompleted: boolean) => {
+    try {
+      await ensureAdminSessionSync();
+      
+      const dailyReward = getDailyRewardCoinsForVip(user.vipLevel);
+      const updatedEarnings = isMarkingCompleted 
+        ? Number((user.earnings + dailyReward).toFixed(2))
+        : Number(Math.max(0, user.earnings - dailyReward).toFixed(2));
+        
+      const todayStr = getEsDateString();
+      
+      let taskIdsForVip: string[] = ['task_p1', 'task_p2', 'task_p3', 'task_p4', 'task_p5']; // fallback
+      const completedDates = user.tasksCompletedDates || {};
+      const updatedCompletedDates = { ...completedDates };
+      
+      if (isMarkingCompleted) {
+        updatedCompletedDates[targetDateStr] = taskIdsForVip;
+      } else {
+        delete updatedCompletedDates[targetDateStr];
+      }
+
+      const isTargetToday = targetDateStr === todayStr;
+
+      const updatedUser: UserProfile = {
+        ...user,
+        earnings: updatedEarnings,
+        tasksCompletedDates: updatedCompletedDates,
+        completedTaskIds: isTargetToday 
+          ? (isMarkingCompleted ? taskIdsForVip : []) 
+          : (user.completedTaskIds || []),
+        updatedAt: Date.now()
+      };
+
+      Object.keys(updatedUser).forEach(key => {
+        if ((updatedUser as any)[key] === undefined) {
+          delete (updatedUser as any)[key];
+        }
+      });
+
+      await setDoc(doc(db, 'users', user.username.toLowerCase().trim()), updatedUser);
+      
+      setAllUsers(prev => prev.map(usr => usr.username.toLowerCase().trim() === user.username.toLowerCase().trim() ? updatedUser : usr));
+      
+      if (userProfile.username && user.username && userProfile.username.toLowerCase().trim() === user.username.toLowerCase().trim()) {
+        saveProfile(updatedUser);
+      }
+
+      alert(`¡Día ${targetDateStr} marcado como ${isMarkingCompleted ? 'COMPLETADO' : 'VACÍO'} con éxito! El saldo de @${user.username} se actualizó a ${updatedEarnings} monedas.`);
+    } catch (err: any) {
+      alert("Error al actualizar tareas diarias: " + err.message);
     }
   };
 
@@ -1394,6 +1606,8 @@ export default function App() {
   const [adminRegSearch, setAdminRegSearch] = useState('');
   const [adminUserFilter, setAdminUserFilter] = useState<'todos' | 'activos' | 'pendientes'>('todos');
   const [adminZoomImage, setAdminZoomImage] = useState<string | null>(null);
+  const [expandedUserBitacora, setExpandedUserBitacora] = useState<string | null>(null);
+  const [expandedUserCalendar, setExpandedUserCalendar] = useState<string | null>(null);
 
   // Voice database state (initialized with default voices for instant local fallback)
   const [voiceThemes, setVoiceThemes] = useState<any[]>(() => {
@@ -5734,6 +5948,237 @@ export default function App() {
                                     </div>
                                   ) : null}
                                   <div className="sm:col-span-2 text-zinc-500 border-t border-white/5 pt-1.5 mt-0.5">📅 Fecha de Ingreso: <strong className="text-zinc-300 font-mono">{u.createdAt || registrations.find(r => r.username && r.username.toLowerCase().trim() === u.username.toLowerCase().trim())?.date || '11/06/2026'}</strong></div>
+                                </div>
+
+                                {/* === BOTÓN Y PANEL DE BITÁCORA DE CONTROL TOTAL === */}
+                                <div className="space-y-2 border border-purple-500/10 p-3 rounded-2xl bg-purple-950/5">
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <span className="text-[10px] text-zinc-400 font-extrabold uppercase tracking-wide flex items-center gap-1">
+                                      📊 Sistema de Auditoría y Control Total:
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setExpandedUserBitacora(expandedUserBitacora === cleanUsrName ? null : cleanUsrName)}
+                                      className="px-3 py-1 bg-purple-950 hover:bg-purple-900 border border-purple-500/30 text-purple-300 hover:text-white rounded-lg text-[10px] font-black uppercase transition-all flex items-center gap-1 active:scale-95 cursor-pointer"
+                                    >
+                                      {expandedUserBitacora === cleanUsrName ? '❌ Cerrar Bitácora' : '📂 Abrir Bitácora de Auditoría'}
+                                    </button>
+                                  </div>
+
+                                  {expandedUserBitacora === cleanUsrName && (
+                                    <div className="mt-3 space-y-4 border-t border-purple-500/15 pt-3 text-[11px] text-zinc-300 font-sans">
+                                      
+                                      {/* 1. EDITAR FECHAS REALES */}
+                                      <div className="bg-black/60 p-3 rounded-xl border border-white/5 space-y-2">
+                                        <span className="text-[9.5px] text-purple-400 font-extrabold uppercase tracking-widest block">📅 FECHAS REALES DEL SISTEMA (EDITABLES)</span>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                          <div>
+                                            <label className="text-[9px] text-zinc-500 uppercase block mb-1">Fecha Real de Registro:</label>
+                                            <input
+                                              type="text"
+                                              defaultValue={u.createdAt || registrations.find(r => r.username && r.username.toLowerCase().trim() === cleanUsrName)?.date || '11/06/2026'}
+                                              id={`reg-date-edit-${cleanUsrName}`}
+                                              className="w-full text-xs font-mono bg-zinc-950 border border-white/10 rounded-md px-2 py-1 text-white focus:outline-none focus:border-purple-500"
+                                              placeholder="Ej: 19/06/2026"
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="text-[9px] text-zinc-500 uppercase block mb-1">Fecha Real de Ascenso VIP:</label>
+                                            <input
+                                              type="text"
+                                              defaultValue={u.vipPromotionDate || (u.status === 'active' ? (registrations.find(r => r.username && r.username.toLowerCase().trim() === cleanUsrName && r.status === 'approved')?.date || u.createdAt || '11/06/2026') : 'Pendiente')}
+                                              id={`vip-date-edit-${cleanUsrName}`}
+                                              className="w-full text-xs font-mono bg-zinc-950 border border-white/10 rounded-md px-2 py-1 text-white focus:outline-none focus:border-purple-500"
+                                              placeholder="Ej: 30/06/2026"
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="flex justify-end pt-1">
+                                          <button
+                                            type="button"
+                                            onClick={async () => {
+                                              const regInput = document.getElementById(`reg-date-edit-${cleanUsrName}`) as HTMLInputElement;
+                                              const vipInput = document.getElementById(`vip-date-edit-${cleanUsrName}`) as HTMLInputElement;
+                                              if (regInput && vipInput) {
+                                                const newRegDate = regInput.value.trim();
+                                                const newVipDate = vipInput.value.trim();
+                                                try {
+                                                  await ensureAdminSessionSync();
+                                                  const userRef = doc(db, 'users', cleanUsrName);
+                                                  await updateDoc(userRef, {
+                                                    createdAt: newRegDate,
+                                                    vipPromotionDate: newVipDate,
+                                                    updatedAt: Date.now()
+                                                  });
+                                                  
+                                                  const updatedUser = {
+                                                    ...u,
+                                                    createdAt: newRegDate,
+                                                    vipPromotionDate: newVipDate,
+                                                    updatedAt: Date.now()
+                                                  };
+                                                  
+                                                  setAllUsers(prev => prev.map(usr => usr.username.toLowerCase().trim() === cleanUsrName ? updatedUser : usr));
+                                                  if (userProfile.username && userProfile.username.toLowerCase().trim() === cleanUsrName) {
+                                                    saveProfile(updatedUser);
+                                                  }
+                                                  alert(`✅ ¡Fechas de @${u.username} actualizadas con éxito!`);
+                                                } catch (err: any) {
+                                                  alert("Error guardando fechas: " + err.message);
+                                                }
+                                              }
+                                            }}
+                                            className="px-2.5 py-1 bg-[#39FF14] hover:bg-emerald-500 text-black rounded text-[9.5px] font-black uppercase transition-all cursor-pointer active:scale-95"
+                                          >
+                                            💾 Guardar Fechas Editadas
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                      {/* 2. DÍAS SIN TAREAS Y CALENDARIO */}
+                                      <div className="bg-black/60 p-3 rounded-xl border border-white/5 space-y-3">
+                                        <div className="flex items-center justify-between flex-wrap gap-2">
+                                          <span className="text-[9.5px] text-purple-400 font-extrabold uppercase tracking-widest block">🗓️ HISTORIAL DE TAREAS DIARIAS</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => setExpandedUserCalendar(expandedUserCalendar === cleanUsrName ? null : cleanUsrName)}
+                                            className="px-2 py-0.5 bg-zinc-900 border border-white/10 hover:border-purple-500/50 text-zinc-300 text-[9px] uppercase font-bold rounded cursor-pointer"
+                                          >
+                                            {expandedUserCalendar === cleanUsrName ? '🔼 Ocultar Calendario' : '🔽 Ver Calendario Día por Día'}
+                                          </button>
+                                        </div>
+                                        
+                                        {(() => {
+                                          const regDateStr = u.createdAt || registrations.find(r => r.username && r.username.toLowerCase().trim() === cleanUsrName)?.date || '11/06/2026';
+                                          const datesList = getDatesBetween(regDateStr);
+                                          const todayDateStr = getEsDateString();
+                                          const completedDates = u.tasksCompletedDates || {};
+                                          const completedToday = (u.completedTaskIds || []).length > 0;
+
+                                          const missedDates = datesList.filter(d => {
+                                            const isToday = d === todayDateStr;
+                                            const didTasks = isToday ? completedToday : (completedDates[d] && completedDates[d].length > 0);
+                                            return !didTasks;
+                                          });
+
+                                          return (
+                                            <div className="space-y-2 text-[11px]">
+                                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-zinc-950/60 p-2.5 rounded-lg border border-white/5">
+                                                <div>📆 Registro en Sistema: <strong className="text-zinc-300 font-mono">{regDateStr}</strong></div>
+                                                <div>⏳ Días Transcurridos: <strong className="text-zinc-300 font-mono">{datesList.length} días</strong></div>
+                                                <div className="sm:col-span-2 border-t border-white/5 pt-1 mt-1 text-red-400">
+                                                  ⚠️ Días sin hacer Tareas ({missedDates.length}):{' '}
+                                                  <strong className="text-white bg-red-950/60 border border-red-500/20 px-1.5 py-0.5 rounded font-mono text-[10px] break-all inline-block mt-1 sm:mt-0">
+                                                    {missedDates.length > 0 ? missedDates.join(', ') : 'Ninguno (¡Completamente al día! 🎉)'}
+                                                  </strong>
+                                                </div>
+                                              </div>
+
+                                              {expandedUserCalendar === cleanUsrName && (
+                                                <div className="mt-2 border-t border-white/5 pt-2 space-y-1.5 max-h-[250px] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-purple-900 scrollbar-track-transparent">
+                                                  <div className="text-[9px] text-zinc-500 uppercase tracking-widest pb-1 sticky top-0 bg-[#0d0d0d] z-10 flex justify-between">
+                                                    <span>Día de Registro hasta hoy (Más Recientes Primero):</span>
+                                                    <span className="text-purple-400 text-[8px]">Rango: {u.vipLevel}</span>
+                                                  </div>
+                                                  {[...datesList].reverse().map(d => {
+                                                    const isToday = d === todayDateStr;
+                                                    const taskCount = isToday ? (u.completedTaskIds?.length || 0) : (completedDates[d]?.length || 0);
+                                                    const isCompleted = taskCount > 0;
+                                                    const dailyCoins = getDailyRewardCoinsForVip(u.vipLevel);
+
+                                                    return (
+                                                      <div key={d} className="flex items-center justify-between bg-zinc-950/80 p-1.5 rounded border border-white/5 text-[10px] gap-2">
+                                                        <div className="flex items-center gap-2">
+                                                          <span className="font-mono text-zinc-400 font-semibold">{d}</span>
+                                                          {isToday && <span className="bg-[#39FF14]/10 text-[#39FF14] text-[8px] px-1 rounded uppercase font-black">Hoy</span>}
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                          {isCompleted ? (
+                                                            <span className="text-emerald-400 font-bold bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/10">🟢 Completado ({taskCount} misiones | +{dailyCoins} coins)</span>
+                                                          ) : (
+                                                            <span className="text-red-400 font-bold bg-red-950/40 px-1.5 py-0.5 rounded border border-red-500/10">🔴 Sin Tareas (0/0)</span>
+                                                          )}
+                                                          <button
+                                                            type="button"
+                                                            onClick={async () => {
+                                                              if (window.confirm(`¿Quieres cambiar el estado del día ${d} para @${u.username}?\n\n- Acción: Marcar como ${isCompleted ? 'VACÍO (Deducirá las monedas)' : 'COMPLETADO (Añadirá las monedas)'}\n- Rango VIP: ${u.vipLevel}\n- Valor Diario: ${dailyCoins} Monedas (~$${(dailyCoins/800).toFixed(2)} USDT)`)) {
+                                                                await handleToggleDayTasks(u, d, !isCompleted);
+                                                              }
+                                                            }}
+                                                            className={`px-2 py-0.5 text-[9px] uppercase font-black rounded border cursor-pointer transition-all active:scale-95 ${
+                                                              isCompleted
+                                                                ? 'bg-zinc-900 border-white/10 hover:bg-red-950/40 hover:border-red-500 hover:text-red-300 text-zinc-400'
+                                                                : 'bg-[#39FF14] hover:bg-emerald-500 border-transparent text-black'
+                                                            }`}
+                                                          >
+                                                            {isCompleted ? 'Quitar Tareas' : 'Completar Día'}
+                                                          </button>
+                                                        </div>
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        })()}
+                                      </div>
+
+                                      {/* 3. LIBRO DE CAJA Y BALANCE FLUIDO (LEDGER) */}
+                                      <div className="bg-black/60 p-3 rounded-xl border border-white/5 space-y-2">
+                                        <span className="text-[9.5px] text-purple-400 font-extrabold uppercase tracking-widest block">📊 LIBRO CONTABLE DE FLUJO DE MONEDAS (CONTROL TOTAL)</span>
+                                        <div className="max-h-[300px] overflow-y-auto pr-1 text-[10px] space-y-1 scrollbar-thin scrollbar-thumb-purple-900 scrollbar-track-transparent">
+                                          {(() => {
+                                            const ledger = constructUserLedger(u, withdrawHistory);
+                                            if (ledger.length === 0) {
+                                              return <div className="text-zinc-500 italic py-2">No se han registrado eventos contables en la bitácora aún.</div>;
+                                            }
+
+                                            return (
+                                              <table className="w-full text-left border-collapse font-mono">
+                                                <thead>
+                                                  <tr className="border-b border-white/10 text-zinc-500 text-[8.5px] uppercase">
+                                                    <th className="py-1">Fecha</th>
+                                                    <th className="py-1">Evento</th>
+                                                    <th className="py-1 text-right">Variación</th>
+                                                    <th className="py-1 text-right">Saldo Final</th>
+                                                  </tr>
+                                                </thead>
+                                                <tbody>
+                                                  {ledger.map((item, idx) => {
+                                                    const isPositive = item.change > 0;
+                                                    const isNegative = item.change < 0;
+                                                    let typeIcon = '📝';
+                                                    if (item.type === 'ascenso') typeIcon = '🚀';
+                                                    if (item.type === 'tareas') typeIcon = '✅';
+                                                    if (item.type === 'retiro') typeIcon = '💰';
+
+                                                    return (
+                                                      <tr key={idx} className="border-b border-white/5 hover:bg-zinc-950/80">
+                                                        <td className="py-1.5 text-zinc-400 font-sans">{item.date}</td>
+                                                        <td className="py-1.5 text-zinc-200">
+                                                          <span className="mr-1">{typeIcon}</span>
+                                                          <span className="font-sans text-[10px] text-zinc-300">{item.description}</span>
+                                                        </td>
+                                                        <td className={`py-1.5 text-right font-bold ${isPositive ? 'text-emerald-400' : isNegative ? 'text-red-400 font-sans' : 'text-zinc-500'}`}>
+                                                          {isPositive ? `+${item.change.toLocaleString()}` : isNegative ? `${item.change.toLocaleString()}` : '0'}
+                                                        </td>
+                                                        <td className="py-1.5 text-right text-white font-bold">
+                                                          {item.balanceAfter.toLocaleString()} Monedas
+                                                          <span className="text-zinc-500 text-[9px] block font-sans font-normal">~${(item.balanceAfter/800).toFixed(2)} USD</span>
+                                                        </td>
+                                                      </tr>
+                                                    );
+                                                  })}
+                                                </tbody>
+                                              </table>
+                                            );
+                                          })()}
+                                        </div>
+                                      </div>
+
+                                    </div>
+                                  )}
                                 </div>
 
                                 {actualCount > 0 ? (

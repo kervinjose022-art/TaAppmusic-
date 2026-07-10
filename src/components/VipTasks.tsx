@@ -823,11 +823,18 @@ export default function VipTasks({
     
     const updatedIds = [...completedIds, activeTask.id];
     const updatedEarnings = Number((userProfile.earnings + payout).toFixed(2));
+    
+    const todayStr = getEsDateString();
+    const updatedDatesLog = {
+      ...(userProfile.tasksCompletedDates || {}),
+      [todayStr]: updatedIds
+    };
 
     const updatedProfile = {
       ...userProfile,
       completedTaskIds: updatedIds,
       earnings: updatedEarnings,
+      tasksCompletedDates: updatedDatesLog,
       updatedAt: Date.now()
     };
 
