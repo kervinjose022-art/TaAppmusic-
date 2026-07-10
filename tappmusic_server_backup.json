@@ -871,11 +871,12 @@
       "email": "blancabrandon04@gmail.com",
       "status": "active",
       "username": "brandongo",
-      "vipLevel": "VIP PLATA 10$",
+      "vipLevel": "VIP ORO 20$",
       "earnings": 367,
       "invitedBy": "brian",
       "migratedV3": true,
-      "commissionPaid": true
+      "commissionPaid": true,
+      "updatedAt": 1783725067352
     },
     "yonn": {
       "email": "yonnestorl@gmail.com",
@@ -970,11 +971,14 @@
       "completedTaskIds": [],
       "isRegistered": true,
       "status": "active",
-      "lastResetDate": "6/7/2026",
+      "lastResetDate": "10/7/2026",
       "migratedV3": true,
       "isSyncedFromDb": true,
       "commissionsMergedV4": true,
-      "updatedAt": 1783347835400
+      "updatedAt": 1783657673277,
+      "tasksCompletedDates": {
+        "9/7/2026": []
+      }
     },
     "jose fernandez": {
       "email": "josealberfer19@gmail.com",
@@ -1094,6 +1098,35 @@
       "isRegistered": true,
       "username": "margiovi",
       "password": "Ek-mTX2425"
+    },
+    "bentiezj77": {
+      "username": "bentiezj77",
+      "email": "bentiezj77@icloud.com",
+      "password": "Abigail@2006",
+      "vipLevel": "VIP CORONA IMPERIAL 1000$",
+      "earnings": 1545,
+      "completedTaskIds": [
+        "task_1",
+        "task_2"
+      ],
+      "isRegistered": true,
+      "status": "active",
+      "inviteCount": 0,
+      "inviteCommissionsEarned": 0
+    },
+    "david": {
+      "username": "david",
+      "email": "briandblancag@gmail.com",
+      "password": "12345",
+      "vipLevel": "VIP ORO 20$",
+      "earnings": 0,
+      "completedTaskIds": [],
+      "isRegistered": true,
+      "status": "active",
+      "invitedBy": "brian",
+      "createdAt": "1/7/2026 09:11 p.m.",
+      "updatedAt": 1783725067352,
+      "commissionPaid": true
     }
   },
   "registrations": {

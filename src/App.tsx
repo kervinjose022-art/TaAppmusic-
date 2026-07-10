@@ -1842,6 +1842,7 @@ export default function App() {
   const registrationsRef = useRef(registrations);
   const withdrawHistoryRef = useRef(withdrawHistory);
   const recoveryRequestsRef = useRef(recoveryRequests);
+  const userProfileRef = useRef(userProfile);
 
   useEffect(() => {
     allUsersRef.current = allUsers;
@@ -1858,6 +1859,10 @@ export default function App() {
   useEffect(() => {
     recoveryRequestsRef.current = recoveryRequests;
   }, [recoveryRequests]);
+
+  useEffect(() => {
+    userProfileRef.current = userProfile;
+  }, [userProfile]);
 
   // Server-side Hybrid Sync (Bypasses Firestore limits elegantly and syncs everyone automatically)
   useEffect(() => {
@@ -1886,6 +1891,7 @@ export default function App() {
                 resData.users.forEach((item: UserProfile) => {
                   if (!item || !item.username) return;
                   const idx = merged.findIndex(u => u.username && item.username && u.username.toLowerCase().trim() === item.username.toLowerCase().trim());
+                  let finalUser: UserProfile;
                   if (idx !== -1) {
                     const current = merged[idx];
                     const preferServer = 
@@ -1897,9 +1903,26 @@ export default function App() {
                           ((item.completedTaskIds?.length || 0) > (current.completedTaskIds?.length || 0)) ||
                           (item.vipLevel !== current.vipLevel && item.vipLevel?.includes("VIP") && !current.vipLevel?.includes("CORONA"));
                     
-                    merged[idx] = preferServer ? { ...current, ...item } : { ...item, ...current };
+                    finalUser = preferServer ? { ...current, ...item } : { ...item, ...current };
+                    merged[idx] = finalUser;
                   } else {
+                    finalUser = item;
                     merged.push(item);
+                  }
+
+                  // IMPORTANT FIX: Synchronize the currently logged-in user profile in real-time
+                  const curLoggedName = userProfileRef.current.username ? userProfileRef.current.username.toLowerCase().trim() : '';
+                  if (finalUser.username && finalUser.username.toLowerCase().trim() === curLoggedName) {
+                    const finalLogged = { ...userProfileRef.current, ...finalUser };
+                    if (
+                      finalLogged.vipLevel !== userProfileRef.current.vipLevel || 
+                      finalLogged.status !== userProfileRef.current.status || 
+                      finalLogged.earnings !== userProfileRef.current.earnings ||
+                      (finalLogged.completedTaskIds?.length || 0) !== (userProfileRef.current.completedTaskIds?.length || 0)
+                    ) {
+                      setUserProfile(finalLogged);
+                      safeLocalStorage.setItem('tappmusic_profile', JSON.stringify(finalLogged));
+                    }
                   }
                 });
                 return merged;
@@ -5009,7 +5032,111 @@ export default function App() {
                 />
 
                 <div className="border-t border-white/5 pt-4">
-                  <h4 className="text-xs font-black tracking-widest text-[#39FF14] uppercase font-mono mb-3">📋 Listado de Solicitudes Pendientes</h4>
+                  <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                    <h4 className="text-xs font-black tracking-widest text-[#39FF14] uppercase font-mono">📋 Listado de Solicitudes Pendientes</h4>
+                    {withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').length > 0 && (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (window.confirm("⚠️ ¿Estás seguro de que quieres APROBAR TODOS los retiros pendientes actualmente? Esto los marcará como Aprobados, generará sus TxID de blockchain, y actualizará la base de datos de inmediato.")) {
+                              const pendingWds = withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente');
+                              let updatedCount = 0;
+                              
+                              const updatedWds = withdrawHistory.map(w => {
+                                if (w.status === 'pendiente' || w.status === 'Pendiente') {
+                                  updatedCount++;
+                                  return {
+                                    ...w,
+                                    status: 'Aprobado',
+                                    txid: '0x' + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+                                    deducted: true
+                                  };
+                                }
+                                return w;
+                              });
+                              
+                              setWithdrawHistory(updatedWds);
+                              safeLocalStorage.setItem('tappmusic_withdrawals', JSON.stringify(updatedWds));
+                              
+                              try {
+                                await fetch("/api/backup/sync", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    users: allUsers,
+                                    registrations: registrations,
+                                    withdrawals: updatedWds,
+                                    recovery_requests: recoveryRequests || []
+                                  })
+                                });
+                              } catch (e) {
+                                console.warn("Backup sync failed during mass approval:", e);
+                              }
+                              
+                              for (const wd of pendingWds) {
+                                try {
+                                  const generatedTx = '0x' + Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
+                                  await updateDoc(doc(db, 'withdrawals', wd.id), {
+                                    status: 'Aprobado',
+                                    txid: generatedTx,
+                                    deducted: true
+                                  });
+                                } catch (err) {
+                                  console.warn(`Could not update withdrawal ${wd.id} in Firestore:`, err);
+                                }
+                              }
+                              
+                              alert(`✅ ¡Éxito hermanito! Se han aprobado ${updatedCount} solicitudes de retiro pendientes con éxito.`);
+                            }
+                          }}
+                          className="px-2.5 py-1 rounded bg-[#39FF14]/15 border border-[#39FF14]/35 text-[#39FF14] hover:bg-[#39FF14] hover:text-black transition-all text-[10px] font-sans font-black uppercase tracking-wider cursor-pointer flex items-center justify-center"
+                        >
+                          🧹 Aprobar Todos
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (window.confirm("⚠️ ¿Estás seguro de que quieres ELIMINAR/BORRAR por completo todas las solicitudes de retiro pendientes de la pantalla? Esto las quitará definitivamente.")) {
+                              const pendingWds = withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente');
+                              
+                              const updatedWds = withdrawHistory.filter(w => w.status !== 'pendiente' && w.status !== 'Pendiente');
+                              setWithdrawHistory(updatedWds);
+                              safeLocalStorage.setItem('tappmusic_withdrawals', JSON.stringify(updatedWds));
+                              
+                              try {
+                                await fetch("/api/backup/sync", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    users: allUsers,
+                                    registrations: registrations,
+                                    withdrawals: updatedWds,
+                                    recovery_requests: recoveryRequests || []
+                                  })
+                                });
+                              } catch (e) {
+                                console.warn("Backup sync failed during mass removal:", e);
+                              }
+                              
+                              for (const wd of pendingWds) {
+                                try {
+                                  await deleteDoc(doc(db, 'withdrawals', wd.id));
+                                } catch (err) {
+                                  console.warn(`Could not delete withdrawal ${wd.id} from Firestore:`, err);
+                                }
+                              }
+                              
+                              alert(`✅ ¡Éxito hermanito! Se han borrado ${pendingWds.length} solicitudes de retiro pendientes con éxito.`);
+                            }
+                          }}
+                          className="px-2.5 py-1 rounded bg-red-600/15 border border-red-500/35 text-red-400 hover:bg-red-600 hover:text-white transition-all text-[10px] font-sans font-black uppercase tracking-wider cursor-pointer flex items-center justify-center"
+                        >
+                          🗑️ Eliminar Pendientes
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   {withdrawHistory.filter(w => w.status === 'pendiente' || w.status === 'Pendiente').length === 0 ? (
                     <p className="text-center py-6 text-xs font-mono text-zinc-500 bg-zinc-950/20 border border-white/5 rounded-2xl">No hay solicitudes de retiro pendientes actualmente.</p>
                   ) : (
