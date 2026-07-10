@@ -612,13 +612,13 @@ export default function App() {
           handleCatchError(error);
         });
 
-        unsubWithdrawals = onSnapshot(query(collection(db, 'withdrawals'), where('status', '==', 'pending')), (snapshot) => {
+        unsubWithdrawals = onSnapshot(query(collection(db, 'withdrawals'), where('status', 'in', ['Pendiente', 'pendiente', 'pending'])), (snapshot) => {
           const items: any[] = [];
           snapshot.forEach((docSnap) => {
             items.push({ ...docSnap.data(), id: docSnap.id });
           });
           setWithdrawHistory(prev => {
-            const nonPending = prev.filter(w => w.status !== 'pending');
+            const nonPending = prev.filter(w => w.status !== 'Pendiente' && w.status !== 'pendiente' && w.status !== 'pending');
             const filteredNonPending = nonPending.filter(w => !items.some(item => item.id === w.id));
             return [...items, ...filteredNonPending];
           });
