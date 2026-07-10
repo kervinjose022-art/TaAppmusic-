@@ -161,12 +161,12 @@ export const VIP_TICKETS: VipFeature[] = [
 ];
 
 export const TASKS_DATABASE: UserTask[] = [
-  // === VIP PLATA 10$ (5 Tareas de $2.45 USD c/u - Total: $12.25 USD Diario / $367.00 USD Mensual) ===
+  // === VIP PLATA 10$ (5 Tareas de 80.00 monedas c/u - Total: 400 monedas / $0.50 USD Diario) ===
   {
     id: 'task_p1',
     title: 'Visualizar: Salmo 91 - Amparo y Protección',
     description: 'Escucha la oración de protección más poderosa de la Biblia: El que habita al abrigo del Altísimo morará bajo la sombra del Omnipotente.',
-    rewardValue: 73.40,
+    rewardValue: 80.00,
     isCompleted: false,
     vipRequired: 'VIP PLATA 10$',
     category: 'Video de Fe'
@@ -174,8 +174,8 @@ export const TASKS_DATABASE: UserTask[] = [
   {
     id: 'task_p2',
     title: 'Compartir: Salmo 23 - El Señor es mi Pastor',
-    description: 'Sintoniza y comparte la declaración de abundancia eterna: Jehová es mi pastor, nada me faltará. Sembrando paz hoy.',
-    rewardValue: 73.40,
+    description: 'Sintoniza and comparte la declaración de abundancia eterna: Jehová es mi pastor, nada me faltará. Sembrando paz hoy.',
+    rewardValue: 80.00,
     isCompleted: false,
     vipRequired: 'VIP PLATA 10$',
     category: 'Compartir'
@@ -184,7 +184,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_p3',
     title: 'Verificar: La Familia Edificada sobre Roca',
     description: 'Visualiza la prédica corta sobre la paciencia en el hogar y recibe tus regalías.',
-    rewardValue: 73.40,
+    rewardValue: 80.00,
     isCompleted: false,
     vipRequired: 'VIP PLATA 10$',
     category: 'Familia'
@@ -193,7 +193,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_p4',
     title: 'Calificar: Testimonio de Superación Real',
     description: 'Dale 5 estrellas al material informativo de superación espiritual y fe.',
-    rewardValue: 73.40,
+    rewardValue: 80.00,
     isCompleted: false,
     vipRequired: 'VIP PLATA 10$',
     category: 'Mentalidad'
@@ -202,18 +202,18 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_p5',
     title: 'Comentario: Agradecimiento al Altísimo',
     description: 'Escribe una frase de gratitud y un Amén sincero para cerrar tu jornada activa.',
-    rewardValue: 73.40,
+    rewardValue: 80.00,
     isCompleted: false,
     vipRequired: 'VIP PLATA 10$',
     category: 'Mentalidad'
   },
 
-  // === VIP ORO 20$ (7 Tareas de $3.50 USD c/u - Total: $24.50 USD Diario / $735.00 USD Mensual) ===
+  // === VIP ORO 20$ (7 Tareas - Total: 800 monedas / $1.00 USD Diario) ===
   {
     id: 'task_o1',
     title: 'Visualizar: Filipenses 4:13 - Fortaleza Celestial',
     description: 'Declara con fe inquebrantable: Todo lo puedo en Cristo que me fortalece. Tu fuerza proviene de Dios Padre.',
-    rewardValue: 104.85,
+    rewardValue: 114.28,
     isCompleted: false,
     vipRequired: 'VIP ORO 20$',
     category: 'Video de Fe'
@@ -222,7 +222,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_o2',
     title: 'Compartir: Mensaje ORO de Esperanza Activa',
     description: 'Difunde la oración oficial por el empleo y el éxito en tus redes de mensajería.',
-    rewardValue: 104.85,
+    rewardValue: 114.28,
     isCompleted: false,
     vipRequired: 'VIP ORO 20$',
     category: 'Compartir'
@@ -231,7 +231,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_o3',
     title: 'Verificar: Altar de Dios en el Hogar Unido',
     description: 'Mira la guía audiovisual sobre cómo mantener la armonía ante las dificultades.',
-    rewardValue: 104.85,
+    rewardValue: 114.28,
     isCompleted: false,
     vipRequired: 'VIP ORO 20$',
     category: 'Familia'
@@ -240,7 +240,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_o4',
     title: 'Calificar: Disciplina y Esfuerzo sin Límites',
     description: 'Evalúa con 5 estrellas la reflexión de fe sobre vencer pereza y lograr abundancia.',
-    rewardValue: 104.85,
+    rewardValue: 114.28,
     isCompleted: false,
     vipRequired: 'VIP ORO 20$',
     category: 'Mentalidad'
@@ -249,7 +249,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_o5',
     title: 'Comentario: Testimonio de un Padre Exitoso',
     description: 'Comenta con palabras de aliento sobre el video de los valores eternos de la familia.',
-    rewardValue: 104.85,
+    rewardValue: 114.28,
     isCompleted: false,
     vipRequired: 'VIP ORO 20$',
     category: 'Mentalidad'
@@ -258,7 +258,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_o6',
     title: 'Visualizar: Romanos 8:28 - Victoria con Dios',
     description: 'Escucha el versículo del propósito divino: Y sabemos que a los que aman a Dios, todas las cosas les ayudan a bien.',
-    rewardValue: 104.85,
+    rewardValue: 114.28,
     isCompleted: false,
     vipRequired: 'VIP ORO 20$',
     category: 'Video de Fe'
@@ -267,18 +267,18 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_o7',
     title: 'Compartir: El Sembrador y las Tierras Fértiles',
     description: 'Sembrar buenas acciones da frutos al ciento por uno. Comparte con tus amados.',
-    rewardValue: 104.90,
+    rewardValue: 114.32,
     isCompleted: false,
     vipRequired: 'VIP ORO 20$',
     category: 'Compartir'
   },
 
-  // === VIP RUBÍ 40$ (10 Tareas de $4.90 USD c/u - Total: $49.00 USD Diario / $1,470.00 USD Mensual) ===
+  // === VIP RUBÍ 40$ (10 Tareas - Total: 1600 monedas / $2.00 USD Diario) ===
   {
     id: 'task_r1',
     title: 'Visualizar: El Poder del Salmo 121 - Tu Socorro Divino',
     description: 'Medita en la promesa protectora más hermosa: Alzaré mis ojos a los montes; ¿de dónde vendrá mi socorro? Mi socorro viene del Señor.',
-    rewardValue: 146.80,
+    rewardValue: 160.00,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
     category: 'Video de Fe'
@@ -287,7 +287,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_r2',
     title: 'Compartir: La Fórmula de la Excelencia Rubí',
     description: 'Involucra a tus contactos enviando un estímulo de motivación y esperanza de vida.',
-    rewardValue: 146.80,
+    rewardValue: 160.00,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
     category: 'Compartir'
@@ -296,7 +296,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_r3',
     title: 'Verificar: Sabiduría de Salomón para Finanzas',
     description: 'Mira el testimonio explicativo sobre la sabiduría por encima del oro y plata.',
-    rewardValue: 146.80,
+    rewardValue: 160.00,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
     category: 'Mentalidad'
@@ -305,7 +305,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_r4',
     title: 'Calificar: Educación con Amor y Autoridad',
     description: 'Califica la charla de bienestar enfocada en educar hijos con fe en el porvenir.',
-    rewardValue: 146.80,
+    rewardValue: 160.00,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
     category: 'Familia'
@@ -314,7 +314,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_r5',
     title: 'Comentario: Jesús el Proveedor Celestial',
     description: 'Expresa tu gozo espiritual dejando un comentario positivo sobre el Salvador.',
-    rewardValue: 146.80,
+    rewardValue: 160.00,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
     category: 'Mentalidad'
@@ -323,7 +323,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_r6',
     title: 'Visualizar: El Milagro de la Cosecha Rubí',
     description: 'Mira la ilustración real sobre la perseverancia de los agricultores de fe.',
-    rewardValue: 146.80,
+    rewardValue: 160.00,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
     category: 'Video de Fe'
@@ -332,7 +332,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_r7',
     title: 'Compartir: Paz en la Tormenta Diaria',
     description: 'Lleva paz a tus conocidos compartiendo el link de fe de Tappmusic.',
-    rewardValue: 146.80,
+    rewardValue: 160.00,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
     category: 'Compartir'
@@ -341,7 +341,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_r8',
     title: 'Verificar: Supera el Temor al Fracaso',
     description: 'Mira el video de coaching sobre cómo el amor perfecto echa fuera el temor.',
-    rewardValue: 146.80,
+    rewardValue: 160.00,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
     category: 'Mentalidad'
@@ -350,7 +350,7 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_r9',
     title: 'Calificar: Sanidad de Relaciones Familiares',
     description: 'Califica el panel de consejería familiar sobre restaurar la comunicación.',
-    rewardValue: 146.80,
+    rewardValue: 160.00,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
     category: 'Familia'
@@ -359,13 +359,13 @@ export const TASKS_DATABASE: UserTask[] = [
     id: 'task_r10',
     title: 'Comentario: Salmo de Confianza Completa - Salmo 37',
     description: 'Proclama tu bendición y prosperidad comentando sobre el Salmo 37: Encomienda al Señor tu camino, confía en Él, y Él hará.',
-    rewardValue: 146.80,
+    rewardValue: 160.00,
     isCompleted: false,
     vipRequired: 'VIP RUBÍ 40$',
     category: 'Mentalidad'
   },
 
-  // === VIP DIAMANTE 120$ (15 Tareas - Total: 5 USDT / 3670 Monedas Diarias) ===
+  // === VIP DIAMANTE 120$ (15 Tareas - Total: 5 USDT / 4000 Monedas Diarias) ===
   ...Array.from({ length: 15 }, (_, i) => ({
     id: `task_d${i + 1}`,
     title: [
@@ -386,13 +386,13 @@ export const TASKS_DATABASE: UserTask[] = [
       'Comentario: Declaro Cosecha de 100 Veces Más'
     ][i] || `Misión Diamante de Crecimiento #${i + 1}`,
     description: `Completa este paso de formación superior Diamante para optimizar tu mente de abundancia y recibir regalías.`,
-    rewardValue: i === 14 ? 244.76 : 244.66,
+    rewardValue: i === 14 ? 266.76 : 266.66,
     isCompleted: false,
     vipRequired: 'VIP DIAMANTE 120$' as VipLevel,
     category: (['Video de Fe', 'Compartir', 'Familia', 'Mentalidad'][i % 4] || 'Mentalidad') as any
   })),
 
-  // === VIP PLATINO 420$ (17 Tareas - Total: 16 USDT / 11744 Monedas Diarias) ===
+  // === VIP PLATINO 420$ (17 Tareas - Total: 16 USDT / 12800 Monedas Diarias) ===
   ...Array.from({ length: 17 }, (_, i) => ({
     id: `task_pl${i + 1}`,
     title: [
@@ -415,13 +415,13 @@ export const TASKS_DATABASE: UserTask[] = [
       'Compartir: Mensaje Celestial de Paz y Gozo'
     ][i] || `Mentoría Platino de Éxito Supremo #${i + 1}`,
     description: `Estudio bíblico de excelencia Platino en el que se reflexiona y proclaman verdades de éxito y familia.`,
-    rewardValue: i === 16 ? 690.88 : 690.82,
+    rewardValue: i === 16 ? 752.96 : 752.94,
     isCompleted: false,
     vipRequired: 'VIP PLATINO 420$' as VipLevel,
     category: (['Video de Fe', 'Sharing', 'Familia', 'Mentalidad'][i % 4] || 'Mentalidad') as any
   })),
 
-  // === VIP CORONA IMPERIAL 1000$ (20 Tareas - Total: 40 USDT / 29360 Monedas Diarias) ===
+  // === VIP CORONA IMPERIAL 1000$ (20 Tareas - Total: 40 USDT / 32000 Monedas Diarias) ===
   ...Array.from({ length: 20 }, (_, i) => ({
     id: `task_c${i + 1}`,
     title: [
@@ -447,7 +447,7 @@ export const TASKS_DATABASE: UserTask[] = [
       'Comentario: Declaración de Gozo Celestial Eterno'
     ][i] || `Misión Corona Imperial de Éxito #${i + 1}`,
     description: `Reflexión suprema reservada exclusivamente para miembros del Rango Corona Imperial para validar regalías reales de fe.`,
-    rewardValue: 1468.00,
+    rewardValue: 1600.00,
     isCompleted: false,
     vipRequired: 'VIP CORONA IMPERIAL 1000$' as VipLevel,
     category: (['Video de Fe', 'Compartir', 'Familia', 'Mentalidad'][i % 4] || 'Mentalidad') as any

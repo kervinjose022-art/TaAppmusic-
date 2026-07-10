@@ -24,14 +24,14 @@ const getEsDateTimeString = (date: Date = new Date()): string => {
 };
 
 const WITHDRAW_OPTIONS = [
-  { coins: 3670, usdt: 5 },
-  { coins: 7340, usdt: 10 },
-  { coins: 11010, usdt: 15 },
-  { coins: 22020, usdt: 30 },
-  { coins: 36700, usdt: 50 },
-  { coins: 73400, usdt: 100 },
-  { coins: 146800, usdt: 200 },
-  { coins: 367000, usdt: 500 }
+  { coins: 4000, usdt: 5 },
+  { coins: 8000, usdt: 10 },
+  { coins: 12000, usdt: 15 },
+  { coins: 24000, usdt: 30 },
+  { coins: 40000, usdt: 50 },
+  { coins: 80000, usdt: 100 },
+  { coins: 160000, usdt: 200 },
+  { coins: 400000, usdt: 500 }
 ];
 
 interface VipTasksProps {
@@ -85,7 +85,7 @@ export default function VipTasks({
   inviteCommissionsEarned = 0
 }: VipTasksProps) {
   const totalCoinsAvailable = userProfile.earnings || 0;
-  const totalUsdtAvailable = totalCoinsAvailable / 734;
+  const totalUsdtAvailable = totalCoinsAvailable / 800;
 
   const [tasks, setTasks] = useState<UserTask[]>(() => {
     // Check if task IDs already stored in user profile to mark as completed
@@ -231,7 +231,7 @@ export default function VipTasks({
   const [pmCedula, setPmCedula] = useState('');
   const [pmBank, setPmBank] = useState('Banco de Venezuela (0102)');
   const [pmCustomBank, setPmCustomBank] = useState('');
-  const [withdrawalAmount, setWithdrawalAmount] = useState<string>('3670');
+  const [withdrawalAmount, setWithdrawalAmount] = useState<string>('4000');
   const [isSubmittingWithdrawal, setIsSubmittingWithdrawal] = useState(false);
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
   const [withdrawalError, setWithdrawalError] = useState('');
@@ -242,8 +242,8 @@ export default function VipTasks({
     setWithdrawalError('');
 
     const amountVal = parseFloat(withdrawalAmount);
-    if (isNaN(amountVal) || amountVal < 3670) {
-      setWithdrawalError('El retiro mínimo es de 3670 monedas (5 USDT).');
+    if (isNaN(amountVal) || amountVal < 4000) {
+      setWithdrawalError('El retiro mínimo es de 4000 monedas (5 USDT).');
       return;
     }
 
@@ -338,7 +338,7 @@ export default function VipTasks({
       const generatedId = `TAPP-WD-${Math.floor(1000 + Math.random() * 9000)}`;
       const randomTxid = Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
       
-      const rawUsdt = Number((amountVal / 734).toFixed(2));
+      const rawUsdt = Number((amountVal / 800).toFixed(2));
       const feeUsdt = 0;
       const netUsdt = rawUsdt;
 
@@ -364,7 +364,7 @@ export default function VipTasks({
           const cleanName = userProfile.username ? userProfile.username.toLowerCase().trim() : '';
           
           const newEarnings = Math.max(0, Number((userProfile.earnings - amountVal).toFixed(2)));
-          const amountUsdtVal = amountVal / 734;
+          const amountUsdtVal = amountVal / 800;
           const newInviteCommissionsEarned = Math.max(0, Number(((userProfile.inviteCommissionsEarned || 0) - amountUsdtVal).toFixed(2)));
 
           const proceedWithLocalDeduction = () => {
@@ -383,7 +383,7 @@ export default function VipTasks({
 
             setIsSubmittingWithdrawal(false);
             setWithdrawalSuccess(true);
-            setWithdrawalAmount('3670'); // reset placeholder
+            setWithdrawalAmount('4000'); // reset placeholder
             setPmPhone('');
             setPmCedula('');
             setWithdrawalAddress('');
@@ -900,7 +900,7 @@ export default function VipTasks({
             </div>
           </div>
           <p className="text-[9px] text-zinc-500 font-mono leading-none mt-2">
-            Mínimo: 5 USDT (3670 monedas)
+            Mínimo: 5 USDT (4000 monedas)
           </p>
         </div>
       </div>
@@ -1550,11 +1550,11 @@ export default function VipTasks({
                     </div>
 
                     {/* Breakdown ticket card */}
-                    {!isNaN(parseFloat(withdrawalAmount)) && parseFloat(withdrawalAmount) >= 3670 && (
+                    {!isNaN(parseFloat(withdrawalAmount)) && parseFloat(withdrawalAmount) >= 4000 && (
                       <div className="bg-black/40 border border-white/5 rounded-xl p-3 space-y-1.5 font-mono text-[9px] text-zinc-400 mt-2">
                         <div className="flex justify-between items-center">
                           <span>Monto de Retiro (Bruto):</span>
-                          <span className="text-white">{(parseFloat(withdrawalAmount) / 734).toFixed(2)} USDT</span>
+                          <span className="text-white">{(parseFloat(withdrawalAmount) / 800).toFixed(2)} USDT</span>
                         </div>
                         <div className="flex justify-between items-center text-emerald-400">
                           <span>Comisión de Retiro (0% Fee):</span>
@@ -1563,14 +1563,14 @@ export default function VipTasks({
                         <div className="border-t border-white/5 my-1.5 pt-1.5 flex justify-between items-center text-[#39FF14] font-bold text-[10px]">
                           <span>Recibes Netos en tu Billetera:</span>
                           <span className="text-shadow-[0_0_8px_rgba(57,255,20,0.2)]">
-                            {(parseFloat(withdrawalAmount) / 734).toFixed(2)} USDT
+                            {(parseFloat(withdrawalAmount) / 800).toFixed(2)} USDT
                           </span>
                         </div>
                       </div>
                     )}
                     
                     <p className="text-[9px] text-zinc-500 font-mono mt-1">
-                      * Mínimo de retiro: 3670 monedas (≈ {(3670 / 734).toFixed(2)} USDT). Comisión de Retiro: ¡Gratis! (Sin Comisión). Conversión: 734 Monedas = 1 USDT.
+                      * Mínimo de retiro: 4000 monedas (≈ {(4000 / 800).toFixed(2)} USDT). Comisión de Retiro: ¡Gratis! (Sin Comisión). Conversión: 800 Monedas = 1 USDT.
                     </p>
                   </div>
 
@@ -1585,7 +1585,7 @@ export default function VipTasks({
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2">
                     <button
                       type="submit"
-                      disabled={totalCoinsAvailable < (parseFloat(withdrawalAmount) || 3670)}
+                      disabled={totalCoinsAvailable < (parseFloat(withdrawalAmount) || 4000)}
                       className="sm:col-span-3 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#39FF14] to-emerald-400 hover:from-emerald-400 hover:to-[#39FF14] text-xs font-black uppercase text-black font-sans tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed text-shadow-none cursor-pointer"
                     >
                       <ArrowUpRight className="h-4 w-4 text-black" />

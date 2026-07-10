@@ -1071,7 +1071,7 @@ export default function App() {
         if (u.username && u.username.toLowerCase() === referrerUsername.toLowerCase()) {
           const currentCommissions = u.inviteCommissionsEarned || 0;
           const currentCount = u.inviteCount || 0;
-          const commissionCoins = Number((commissionUsd * 734).toFixed(2));
+          const commissionCoins = Number((commissionUsd * 800).toFixed(2));
           const updatedUser = {
             ...u,
             earnings: Number((u.earnings + commissionCoins).toFixed(2)),
@@ -1785,7 +1785,7 @@ export default function App() {
 
   const getLevelPriceInBs = (lvl: VipLevel | string): number => {
     const usd = getLevelPriceInUsd(lvl);
-    return usd * 734;
+    return usd * 800;
   };
 
   const getInviteCount = (): number => {
@@ -2493,7 +2493,7 @@ export default function App() {
           
           if (referrerUser) {
             const commissionEarned = 1.50;
-            const commissionEarnedCoins = Number((commissionEarned * 734).toFixed(2));
+            const commissionEarnedCoins = Number((commissionEarned * 800).toFixed(2));
             const updatedReferrer = {
               ...referrerUser,
               earnings: Number((referrerUser.earnings + commissionEarnedCoins).toFixed(2)),
@@ -3988,12 +3988,12 @@ export default function App() {
 
                 <div className="space-y-2 pt-2 text-left max-h-[350px] overflow-y-auto pr-1">
                   {[
-                    { lvl: 'VIP PLATA 10$', desc: '5 Videos/Día | Recompensa: 367 monedas diarias', bonus: 'Bono x1.0', col: 'text-zinc-400' },
-                    { lvl: 'VIP ORO 20$', desc: '7 Videos/Día | Recompensa: 734 monedas diarias', bonus: 'Bono x1.5', col: 'text-yellow-400' },
-                    { lvl: 'VIP RUBÍ 40$', desc: '10 Videos/Día | Recompensa: 1468 monedas diarias', bonus: 'Bono x2.2', col: 'text-red-400' },
-                    { lvl: 'VIP DIAMANTE 120$', desc: '15 Videos/Día | Recompensa: 3670 monedas diarias', bonus: 'Bono x3.5', col: 'text-sky-400 border border-sky-500/20 px-1 rounded' },
-                    { lvl: 'VIP PLATINO 420$', desc: '17 Videos/Día | Recompensa: 11744 monedas diarias', bonus: 'Bono x5.0', col: 'text-purple-400 border border-purple-500/20 px-1 rounded' },
-                    { lvl: 'VIP CORONA IMPERIAL 1000$', desc: '20 Videos/Día | Recompensa: 29360  monedas diarias', bonus: 'Bono x8.0', col: 'text-emerald-400 font-extrabold border border-emerald-500/35 px-1 rounded' }
+                    { lvl: 'VIP PLATA 10$', desc: '5 Videos/Día | Recompensa: 400 monedas diarias', bonus: 'Bono x1.0', col: 'text-zinc-400' },
+                    { lvl: 'VIP ORO 20$', desc: '7 Videos/Día | Recompensa: 800 monedas diarias', bonus: 'Bono x1.5', col: 'text-yellow-400' },
+                    { lvl: 'VIP RUBÍ 40$', desc: '10 Videos/Día | Recompensa: 1600 monedas diarias', bonus: 'Bono x2.2', col: 'text-red-400' },
+                    { lvl: 'VIP DIAMANTE 120$', desc: '15 Videos/Día | Recompensa: 4000 monedas diarias', bonus: 'Bono x3.5', col: 'text-sky-400 border border-sky-500/20 px-1 rounded' },
+                    { lvl: 'VIP PLATINO 420$', desc: '17 Videos/Día | Recompensa: 12800 monedas diarias', bonus: 'Bono x5.0', col: 'text-purple-400 border border-purple-500/20 px-1 rounded' },
+                    { lvl: 'VIP CORONA IMPERIAL 1000$', desc: '20 Videos/Día | Recompensa: 32000  monedas diarias', bonus: 'Bono x8.0', col: 'text-emerald-400 font-extrabold border border-emerald-500/35 px-1 rounded' }
                   ].map((item) => (
                     <button
                       key={item.lvl}
@@ -5707,7 +5707,7 @@ export default function App() {
                                   <div>Email: <strong className="text-zinc-300 select-all">{u.email || 'N/A'}</strong></div>
                                   <div>Contraseña: <strong className="text-yellow-500 select-all">{u.password || 'N/A'}</strong></div>
                                   <div>VIP Actual: <strong className="text-purple-300 uppercase font-bold">{u.vipLevel}</strong></div>
-                                  <div>Saldo Actual: <strong className="text-[#39FF14] font-mono">{u.earnings ? u.earnings.toLocaleString() : 0} Monedas (~${((u.earnings || 0) / 734).toFixed(2)} USD)</strong></div>
+                                  <div>Saldo Actual: <strong className="text-[#39FF14] font-mono">{u.earnings ? u.earnings.toLocaleString() : 0} Monedas (~${((u.earnings || 0) / 800).toFixed(2)} USD)</strong></div>
                                   <div>Fecha de Ascenso: <strong className="text-purple-400 font-bold">{u.vipPromotionDate || (u.status === 'active' ? (registrations.find(r => r.username && r.username.toLowerCase().trim() === u.username.toLowerCase().trim() && r.status === 'approved')?.date || u.createdAt || '11/06/2026') : 'Pendiente')}</strong></div>
                                   <div>Tareas Completadas Hoy: <strong className="text-purple-300">{completedCountToday > 0 ? `${completedCountToday} (${completedListToday.join(', ')})` : '0 realizadas hoy'}</strong>{(!isCompletedToday && u.completedTaskIds && u.completedTaskIds.length > 0) && <span className="text-[10px] text-zinc-500 block">⚠️ Sin ingresar hoy (Último ingreso/tareas el {u.lastResetDate || 'N/A'})</span>}</div>
                                   <div>Comisiones Guardadas: <strong className="text-[#39FF14]">{u.inviteCommissionsEarned || 0} USD</strong></div>
