@@ -871,7 +871,7 @@
       "email": "blancabrandon04@gmail.com",
       "status": "active",
       "username": "brandongo",
-      "vipLevel": "VIP ORO 20$",
+      "vipLevel": "VIP PLATA 10$",
       "earnings": 367,
       "invitedBy": "brian",
       "migratedV3": true,
@@ -1117,7 +1117,7 @@
     "david": {
       "username": "david",
       "email": "briandblancag@gmail.com",
-      "password": "12345",
+      "password": "David1234",
       "vipLevel": "VIP ORO 20$",
       "earnings": 0,
       "completedTaskIds": [],
