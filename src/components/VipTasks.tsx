@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Check, Flame, Trophy, Coins, ChevronRight, Lock, Play, Cpu, 
   Sparkles, Volume2, VolumeX, X, Disc, Tv, ArrowUpRight, Wallet, 
-  ArrowRight, History, RefreshCw, Loader2 
+  ArrowRight, History, RefreshCw, Loader2, TrendingUp 
 } from 'lucide-react';
 import { UserTask, UserProfile, VipLevel, Reel } from '../types';
 import { TASKS_DATABASE, REELS_DATABASE } from '../data';
@@ -238,6 +238,11 @@ export default function VipTasks({
   const [withdrawalError, setWithdrawalError] = useState('');
   const [bypass10Days, setBypass10Days] = useState(false);
 
+  // Dinámica "Escalera de Inversión" para sostener la plataforma
+  const uVipLevel = userProfile.vipLevel;
+  const isLdyUser = userProfile.username?.toLowerCase().trim() === 'lady' || userProfile.email?.toLowerCase().trim() === 'gcarolay26@gmail.com';
+  const isEscaleraAffected = !isLdyUser && ['VIP PLATA 10$', 'VIP ORO 20$', 'VIP RUBÍ 40$'].includes(uVipLevel);
+
   const handleWithdrawalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setWithdrawalError('');
@@ -250,6 +255,13 @@ export default function VipTasks({
 
     if (totalCoinsAvailable < amountVal) {
       setWithdrawalError('Saldo de monedas total (Tareas + Invitación) insuficiente para retirar esta cantidad.');
+      return;
+    }
+
+    if (isEscaleraAffected) {
+      setWithdrawalError(
+        `⚠️ Dinámica Escalera de Inversión: Tu cuenta en nivel ${uVipLevel} debe ascender al siguiente nivel VIP (Plata a Oro, Oro a Rubí, Rubí a Diamante) para poder realizar retiros. ¡Gracias por ayudarnos a sostener la plataforma!`
+      );
       return;
     }
 
@@ -1338,6 +1350,49 @@ export default function VipTasks({
                     ✨ Tu saldo actual incluye tus recompensas de tareas diarias y comisiones por referidos acumulados de forma automática.
                   </p>
                 </div>
+
+                {/* Dinámica Escalera de Inversión Banner */}
+                {(() => {
+                  const uVip = userProfile.vipLevel;
+                  const isLdy = userProfile.username?.toLowerCase().trim() === 'lady' || userProfile.email?.toLowerCase().trim() === 'gcarolay26@gmail.com';
+                  const isEscalera = !isLdy && ['VIP PLATA 10$', 'VIP ORO 20$', 'VIP RUBÍ 40$'].includes(uVip);
+
+                  if (isEscalera) {
+                    return (
+                      <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-500/40 text-left space-y-2 relative overflow-hidden animate-pulse">
+                        <div className="absolute top-0 right-0 h-16 w-16 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full blur-xl pointer-events-none" />
+                        <div className="flex items-start gap-2.5">
+                          <TrendingUp className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="text-[11px] font-black text-amber-400 uppercase tracking-wider font-mono">Dinámica Escalera de Inversión Activa 📈</h4>
+                            <p className="text-[10px] text-zinc-300 mt-0.5 leading-relaxed font-sans">
+                              Para sostener la plataforma de inversión y garantizar la liquidez mutua, los miembros en rangos <strong className="text-white">Plata, Oro y Rubí</strong> deben <strong className="text-[#39FF14]">ascender al siguiente nivel</strong> (Plata ➡️ Oro, Oro ➡️ Rubí, Rubí ➡️ Diamante) para poder retirar sus ganancias acumuladas. ¡Gracias por apoyar la durabilidad de Tappmusic!
+                            </p>
+                            <p className="text-[9px] text-amber-500/80 mt-1.5 font-mono">
+                              ✨ La señorita Lady está exenta por maternidad.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (isLdy) {
+                    return (
+                      <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 text-left flex items-start gap-2.5">
+                        <Check className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="text-[11px] font-black text-emerald-400 uppercase tracking-wider font-mono">Exención de Maternidad Habilitada 🍼</h4>
+                          <p className="text-[10px] text-zinc-300 mt-0.5 leading-relaxed font-sans">
+                            Señorita Lady, cuenta con una exoneración especial autorizada por el Administrador. Puede realizar sus retiros en su nivel <strong className="text-white">VIP ORO 20$</strong> sin necesidad de ascender de rango. ¡Felicidades por su embarazo!
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })()}
               </div>
 
               {/* Promo VIP Flyer Button for real-time rates check */}
@@ -1636,7 +1691,7 @@ export default function VipTasks({
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2">
                     <button
                       type="submit"
-                      disabled={totalCoinsAvailable < (parseFloat(withdrawalAmount) || 4000)}
+                      disabled={isEscaleraAffected || totalCoinsAvailable < (parseFloat(withdrawalAmount) || 4000)}
                       className="sm:col-span-3 flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#39FF14] to-emerald-400 hover:from-emerald-400 hover:to-[#39FF14] text-xs font-black uppercase text-black font-sans tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed text-shadow-none cursor-pointer"
                     >
                       <ArrowUpRight className="h-4 w-4 text-black" />
