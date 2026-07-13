@@ -1369,7 +1369,7 @@ export default function VipTasks({
                               Para sostener la plataforma de inversión y garantizar la liquidez mutua, los miembros en rangos <strong className="text-white">Plata, Oro y Rubí</strong> deben <strong className="text-[#39FF14]">ascender al siguiente nivel</strong> (Plata ➡️ Oro, Oro ➡️ Rubí, Rubí ➡️ Diamante) para poder retirar sus ganancias acumuladas. ¡Gracias por apoyar la durabilidad de Tappmusic!
                             </p>
                             <p className="text-[9px] text-amber-500/80 mt-1.5 font-mono">
-                              ✨ La señorita Lady está exenta por maternidad.
+                              ✨ Cuentas con exenciones médicas justificadas se encuentran exentas.
                             </p>
                           </div>
                         </div>
@@ -1382,9 +1382,9 @@ export default function VipTasks({
                       <div className="p-3.5 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 text-left flex items-start gap-2.5">
                         <Check className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
                         <div>
-                          <h4 className="text-[11px] font-black text-emerald-400 uppercase tracking-wider font-mono">Exención de Maternidad Habilitada 🍼</h4>
+                          <h4 className="text-[11px] font-black text-emerald-400 uppercase tracking-wider font-mono">Exención Especial Habilitada 🍼</h4>
                           <p className="text-[10px] text-zinc-300 mt-0.5 leading-relaxed font-sans">
-                            Señorita Lady, cuenta con una exoneración especial autorizada por el Administrador. Puede realizar sus retiros en su nivel <strong className="text-white">VIP ORO 20$</strong> sin necesidad de ascender de rango. ¡Felicidades por su embarazo!
+                            Tu cuenta cuenta con una exoneración especial autorizada por el Administrador. Puedes realizar tus retiros en tu nivel <strong className="text-white">{userProfile.vipLevel}</strong> sin necesidad de ascender de rango.
                           </p>
                         </div>
                       </div>

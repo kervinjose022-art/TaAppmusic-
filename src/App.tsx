@@ -10,7 +10,7 @@ import { UserProfile, VipLevel, Reel, RecoveryRequest } from './types';
 import { 
   Sparkles, ShieldCheck, Share2, CircleAlert, Globe, X, 
   Check, Copy, MessageSquare, Send, Trophy, Flame, UserCheck, Play, ArrowRight, Lock, Eye, EyeOff, Users, CreditCard, Volume2, Film, PlusCircle, Trash2, Edit2,
-  Smartphone, Download
+  Smartphone, Download, TrendingUp, Megaphone
 } from 'lucide-react';
 import { db, auth, handleFirestoreError, OperationType } from './firebase';
 import { collection, doc, onSnapshot, setDoc, getDoc, updateDoc, deleteDoc, getDocs, query, where } from 'firebase/firestore';
@@ -2986,6 +2986,43 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-8 text-center">
         
+        {/* AVISO DE LA COMUNIDAD - DINÁMICA ESCALERA DE INVERSIÓN */}
+        <div className="bg-gradient-to-r from-amber-950/45 to-zinc-950 border border-amber-500/35 p-5 rounded-3xl max-w-xl mx-auto text-left shadow-[0_0_30px_rgba(245,158,11,0.08)] relative overflow-hidden animate-fade-in space-y-3">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shrink-0">
+              <Megaphone className="h-5 w-5 animate-bounce" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-black tracking-widest font-mono px-2 py-0.5 rounded-full uppercase">
+                  Comunicado Oficial 🚨
+                </span>
+                <span className="text-[10px] text-zinc-500 font-mono">12 de Julio, 2026</span>
+              </div>
+              <h3 className="text-sm font-black text-white uppercase tracking-wider font-sans">
+                ¡Dinámica "Escalera de Inversión" para sostener la plataforma! 📈
+              </h3>
+            </div>
+          </div>
+
+          <div className="text-xs text-zinc-300 leading-relaxed space-y-2">
+            <p>
+              Estimada familia y comunidad de <strong className="text-white">Tappmusic</strong>, dado que varios de nuestros miembros ya han recuperado su capital inicial y están obteniendo excelentes ganancias, queremos garantizar la durabilidad y sustentabilidad de la plataforma a largo plazo.
+            </p>
+            <p>
+              Para ello, anunciamos con antelación la nueva <strong className="text-[#39FF14]">Dinámica Escalera de Inversión</strong>. Los usuarios que se encuentren en los rangos <strong className="text-amber-400">Plata, Oro y Rubí</strong> deberán ascender al siguiente nivel VIP (Plata ➡️ Oro, Oro ➡️ Rubí, Rubí ➡️ Diamante) para poder realizar y procesar solicitudes de retiro.
+            </p>
+            <p className="bg-black/30 border border-white/5 p-2.5 rounded-xl text-[11px] text-zinc-400 leading-relaxed">
+              🍼 <strong className="text-emerald-400">Casos Especiales:</strong> Aquellas cuentas con estados de exención médica o de salud previamente autorizados de manera privada por el Administrador se mantendrán exoneradas de esta dinámica.
+            </p>
+            <p className="text-[10px] text-amber-400/90 font-mono font-semibold">
+              ✨ Este aviso se publica para darles el tiempo necesario de organizar y planificar sus ascensos correspondientes. ¡Juntos sostenemos Tappmusic!
+            </p>
+          </div>
+        </div>
+
         {/* Graceful Database Quota Banner (Non-blocking alert) */}
         {isQuotaExceeded && (
           <div className="bg-[#39FF14]/5 border border-[#39FF14]/15 text-zinc-300 text-xs py-3 px-4 flex items-center justify-between gap-3 max-w-xl mx-auto rounded-2xl text-left shadow-[0_0_20px_rgba(57,255,20,0.03)] animate-fade-in">
