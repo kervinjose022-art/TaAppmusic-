@@ -220,6 +220,22 @@ export default function App() {
   }, []);
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [customAlert, setCustomAlert] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'warning' | 'info' | 'error';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const showCustomAlert = (title: string, message: string, type: 'success' | 'warning' | 'info' | 'error' = 'info') => {
+    setCustomAlert({ isOpen: true, title, message, type });
+  };
+
   const [copiedModalLink, setCopiedModalLink] = useState(false);
   const [isVipSelectorOpen, setIsVipSelectorOpen] = useState(false);
   const [isP2PExchangeOpen, setIsP2PExchangeOpen] = useState(() => {
@@ -2109,7 +2125,11 @@ export default function App() {
 
       // Block registering under system placeholder or protected accounts
       if (['usuario_vip', 'visitante_tapp', 'admin_tapp', 'invitado_vip'].includes(name)) {
-        alert("❌ Este nombre de usuario es reservado o protegido. Por favor, elige otro nombre de usuario.");
+        showCustomAlert(
+          "⚠️ Usuario Reservado",
+          "Este nombre de usuario es reservado o protegido. Por favor, elige otro nombre de usuario.",
+          "warning"
+        );
         return;
       }
 
@@ -2118,12 +2138,20 @@ export default function App() {
       const emailExists = allUsers.some(u => u.email && u.email.toLowerCase() === emailLower);
 
       if (nameExists || emailExists) {
-        alert("❌ Este nombre de usuario o correo ya está registrado en Tappmusic.com. Por favor, inicia sesión con tu cuenta actual usando la opción de abajo.");
+        showCustomAlert(
+          "⚠️ Cuenta Existente",
+          "Este nombre de usuario o correo ya está registrado en Tappmusic.com. Por favor, inicia sesión con tu cuenta actual usando la opción de abajo.",
+          "warning"
+        );
         return;
       }
 
       if (!attachedFileName || !previewBlob) {
-        alert("⚠️ Por favor, carga el Capture de pago o Voucher para completar tu registro.");
+        showCustomAlert(
+          "⚠️ Capture Requerido",
+          "Por favor, carga el Capture de pago o Voucher para completar tu registro.",
+          "warning"
+        );
         return;
       }
 
@@ -2207,7 +2235,11 @@ export default function App() {
       setPreviewBlob('');
       
       setIsVipSelectorOpen(false);
-      alert("⚡ ¡Registro de Membresía VIP Enviado! Tu solicitud de depósito está siendo verificada por el Administrador para activar tu casilla VIP.");
+      showCustomAlert(
+        "⚡ ¡Registro de Membresía VIP Enviado!",
+        "Tu solicitud de depósito está siendo verificada por el Administrador para activar tu casilla VIP.",
+        "success"
+      );
     } catch (err) {
       console.error("Critical error in handleRegister:", err);
       alert("⚠️ Error al registrarse: " + (err instanceof Error ? err.message : String(err)));
@@ -2792,7 +2824,11 @@ export default function App() {
     if (!upgradeVipLevel) return;
 
     if (!upgradeFileName || !upgradeFileBlob) {
-      alert("⚠️ Por favor, carga el Capture de pago o Voucher para completar tu solicitud de upgrade.");
+      showCustomAlert(
+        "⚠️ Capture Requerido",
+        "Por favor, carga el Capture de pago o Voucher para completar tu solicitud de upgrade.",
+        "warning"
+      );
       return;
     }
 
@@ -2829,7 +2865,11 @@ export default function App() {
     setUpgradeFileBlob('');
     setIsVipSelectorOpen(false);
 
-    alert(`⚡ Solicitud de Cambio VIP a ${upgradeVipLevel} enviada con éxito. El Equipo de Verificación de Tappmusic validará tu depósito para activar el rango.`);
+    showCustomAlert(
+      "⚡ Solicitud de Cambio VIP Enviada",
+      `Tu solicitud de cambio a ${upgradeVipLevel} fue enviada con éxito. El Equipo de Verificación de Tappmusic validará tu depósito para activar el rango.`,
+      "success"
+    );
   };
 
   const handleLogout = () => {
@@ -7136,6 +7176,43 @@ export default function App() {
               >
                 <span>Enviar WhatsApp</span>
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GORGEOUS CUSTOM ALERT DIALOG MODAL */}
+      {customAlert.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-sm rounded-3xl border border-[#39FF14]/35 bg-black p-6 shadow-[0_0_50px_rgba(57,255,20,0.15)] text-center space-y-4 overflow-hidden">
+            <div className="absolute top-0 right-0 h-32 w-32 bg-gradient-to-br from-[#39FF14]/5 to-transparent rounded-full blur-2xl pointer-events-none" />
+            
+            <div className="space-y-3">
+              <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#39FF14]/10 border border-[#39FF14]/25 text-[#39FF14] animate-pulse">
+                {customAlert.type === 'success' ? (
+                  <Sparkles className="h-7 w-7 text-[#39FF14]" />
+                ) : (
+                  <CircleAlert className="h-7 w-7 text-amber-400" />
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <h3 className="text-md font-black tracking-wider text-white uppercase font-sans">
+                  {customAlert.title}
+                </h3>
+                <p className="text-xs text-zinc-300 font-sans leading-relaxed">
+                  {customAlert.message}
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => setCustomAlert(prev => ({ ...prev, isOpen: false }))}
+                className="w-full h-11 bg-[#39FF14] hover:bg-emerald-400 text-black text-xs font-black uppercase rounded-2xl tracking-wider transition-all duration-200 active:scale-95 shadow-[0_4px_20px_rgba(57,255,20,0.25)] hover:shadow-[0_4px_25px_rgba(16,185,129,0.35)] cursor-pointer border-none font-sans"
+              >
+                Cerrar Ventana
+              </button>
             </div>
           </div>
         </div>
