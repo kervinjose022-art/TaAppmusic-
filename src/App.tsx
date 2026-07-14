@@ -3026,39 +3026,69 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-8 text-center">
         
-        {/* AVISO DE LA COMUNIDAD - DINÁMICA ESCALERA DE INVERSIÓN */}
-        <div className="bg-gradient-to-r from-amber-950/45 to-zinc-950 border border-amber-500/35 p-5 rounded-3xl max-w-xl mx-auto text-left shadow-[0_0_30px_rgba(245,158,11,0.08)] relative overflow-hidden animate-fade-in space-y-3">
-          <div className="absolute top-0 right-0 h-24 w-24 bg-gradient-to-br from-amber-500/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+        {/* ESTRATEGIA DE LA PLATAFORMA DE INVERSIÓN */}
+        <div className="bg-gradient-to-r from-emerald-950/30 to-zinc-950 border border-emerald-500/30 p-5 rounded-3xl max-w-xl mx-auto text-left shadow-[0_0_30px_rgba(57,255,20,0.06)] relative overflow-hidden animate-fade-in space-y-4">
+          <div className="absolute top-0 right-0 h-24 w-24 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-full blur-2xl pointer-events-none" />
           
           <div className="flex items-start gap-3">
-            <div className="p-2 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shrink-0">
-              <Megaphone className="h-5 w-5 animate-bounce" />
+            <div className="p-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-[#39FF14] shrink-0">
+              <TrendingUp className="h-5 w-5 animate-pulse" />
             </div>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-black tracking-widest font-mono px-2 py-0.5 rounded-full uppercase">
-                  Comunicado Oficial 🚨
+                <span className="bg-[#39FF14]/15 text-[#39FF14] border border-[#39FF14]/25 text-[9px] font-black tracking-widest font-mono px-2 py-0.5 rounded-full uppercase">
+                  Estrategia de Sostenibilidad 📈
                 </span>
-                <span className="text-[10px] text-zinc-500 font-mono">12 de Julio, 2026</span>
+                <span className="text-[10px] text-zinc-500 font-mono">Plan de Crecimiento Mutuo</span>
               </div>
               <h3 className="text-sm font-black text-white uppercase tracking-wider font-sans">
-                ¡Dinámica "Escalera de Inversión" para sostener la plataforma! 📈
+                Estrategia de la Plataforma de Inversión 🌟
               </h3>
             </div>
           </div>
 
-          <div className="text-xs text-zinc-300 leading-relaxed space-y-2">
+          <div className="text-xs text-zinc-300 leading-relaxed space-y-3 font-sans">
             <p>
-              Estimada familia y comunidad de <strong className="text-white">Tappmusic</strong>, dado que varios de nuestros miembros ya han recuperado su capital inicial y están obteniendo excelentes ganancias, queremos garantizar la durabilidad y sustentabilidad de la plataforma a largo plazo.
+              Estimada familia y comunidad de <strong className="text-[#39FF14]">Tappmusic</strong>, nuestro norte es garantizar la durabilidad de la plataforma. Para lograr una economía descentralizada y sólida, nos guiamos por tres pilares estratégicos:
             </p>
-            <p>
-              Para ello, anunciamos con antelación la nueva <strong className="text-[#39FF14]">Dinámica Escalera de Inversión</strong>. Los usuarios que se encuentren en los rangos <strong className="text-amber-400">Plata, Oro y Rubí</strong> deberán ascender al siguiente nivel VIP (Plata ➡️ Oro, Oro ➡️ Rubí, Rubí ➡️ Diamante) para poder realizar y procesar solicitudes de retiro.
-            </p>
-            <p className="bg-black/30 border border-white/5 p-2.5 rounded-xl text-[11px] text-zinc-400 leading-relaxed">
-              🍼 <strong className="text-emerald-400">Casos Especiales:</strong> Aquellas cuentas con estados de exención médica o de salud previamente autorizados de manera privada por el Administrador se mantendrán exoneradas de esta dinámica.
-            </p>
-            <p className="text-[10px] text-amber-400/90 font-mono font-semibold">
-              ✨ Este aviso se publica para darles el tiempo necesario de organizar y planificar sus ascensos correspondientes. ¡Juntos sostenemos Tappmusic!
+            
+            <div className="space-y-2.5 pt-1">
+              {/* Pillar 1 */}
+              <div className="flex items-start gap-2 bg-black/20 border border-white/5 p-2.5 rounded-xl">
+                <span className="text-base shrink-0">👤</span>
+                <div>
+                  <h4 className="text-[11px] font-black text-white uppercase font-mono tracking-wide">1. Crecimiento Personal</h4>
+                  <p className="text-[10px] text-zinc-400 mt-0.5">
+                    Cada miembro incrementa sus ganancias individuales escuchando música y acumulando regalías de forma segura en su billetera para mejorar su economía.
+                  </p>
+                </div>
+              </div>
+
+              {/* Pillar 2 */}
+              <div className="flex items-start gap-2 bg-black/20 border border-white/5 p-2.5 rounded-xl">
+                <span className="text-base shrink-0">⚙️</span>
+                <div>
+                  <h4 className="text-[11px] font-black text-[#39FF14] uppercase font-mono tracking-wide">2. Crecimiento del Sistema</h4>
+                  <p className="text-[10px] text-zinc-400 mt-0.5">
+                    La dinámica <strong className="text-white">Escalera de Inversión</strong> para rangos <strong className="text-amber-400">Plata, Oro y Rubí</strong> (avanzando al siguiente nivel VIP) resguarda la liquidez y robustece las bases financieras del ecosistema.
+                  </p>
+                </div>
+              </div>
+
+              {/* Pillar 3 */}
+              <div className="flex items-start gap-2 bg-black/20 border border-white/5 p-2.5 rounded-xl">
+                <span className="text-base shrink-0">🤝</span>
+                <div>
+                  <h4 className="text-[11px] font-black text-purple-400 uppercase font-mono tracking-wide">3. Crecimiento Mutuo</h4>
+                  <p className="text-[10px] text-zinc-400 mt-0.5">
+                    Al unificar esfuerzos y optimizar los retiros mediante la escala de niveles, logramos un beneficio colectivo continuo, asegurando la sustentabilidad a largo plazo.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-[10px] text-zinc-400 text-center font-mono italic pt-1">
+              ✨ ¡Planifica tus ascensos con anticipación y sé parte de la solidez de Tappmusic!
             </p>
           </div>
         </div>
