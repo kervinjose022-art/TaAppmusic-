@@ -3069,8 +3069,8 @@ export default function App() {
                 <span className="text-base shrink-0">⚙️</span>
                 <div>
                   <h4 className="text-[11px] font-black text-[#39FF14] uppercase font-mono tracking-wide">2. Crecimiento del Sistema</h4>
-                  <p className="text-[10px] text-zinc-400 mt-0.5">
-                    La dinámica <strong className="text-white">Escalera de Inversión</strong> para rangos <strong className="text-amber-400">Plata, Oro y Rubí</strong> (avanzando al siguiente nivel VIP) resguarda la liquidez y robustece las bases financieras del ecosistema.
+                  <p className="text-[10px] text-zinc-400 mt-0.5 leading-normal">
+                    La dinámica <strong className="text-white">Escalera de Inversión</strong> requiere que los rangos <strong className="text-amber-400">Plata, Oro y Rubí</strong> asciendan al siguiente nivel VIP para habilitar sus retiros, complementándose con la <strong className="text-[#39FF14]">invitación de nuevos usuarios activos</strong> para expandir la liquidez y consolidar la sostenibilidad financiera.
                   </p>
                 </div>
               </div>
