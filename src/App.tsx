@@ -291,8 +291,8 @@ export default function App() {
     return [
       {
         username: 'admin_tapp',
-        email: 'admin@tappmusic.com',
-        password: '7340',
+        email: 'kervinjose022@gmail.com',
+        password: '1910',
         vipLevel: 'VIP CORONA IMPERIAL 1000$',
         earnings: 1545.00,
         completedTaskIds: ['task_1', 'task_2'],
@@ -388,8 +388,8 @@ export default function App() {
         if (!adminSnap.exists()) {
           const adminSeed: UserProfile = {
             username: 'admin_tapp',
-            email: 'admin@tappmusic.com',
-            password: '7340',
+            email: 'kervinjose022@gmail.com',
+            password: '1910',
             vipLevel: 'VIP CORONA IMPERIAL 1000$',
             earnings: 1545.00,
             completedTaskIds: ['task_1', 'task_2'],
@@ -399,33 +399,6 @@ export default function App() {
             inviteCommissionsEarned: 6.00
           };
           await setDoc(doc(db, 'users', 'admin_tapp'), adminSeed);
-        }
-
-        const bentiezSnap = await getDoc(doc(db, 'users', 'bentiezj77'));
-        if (!bentiezSnap.exists()) {
-          const bentiezSeed: UserProfile = {
-            username: 'bentiezj77',
-            email: 'bentiezj77@icloud.com',
-            password: 'Abigail@2006',
-            vipLevel: 'VIP CORONA IMPERIAL 1000$',
-            earnings: 1545.00,
-            completedTaskIds: ['task_1', 'task_2'],
-            isRegistered: true,
-            status: 'active',
-            inviteCount: 0,
-            inviteCommissionsEarned: 0.00
-          };
-          await setDoc(doc(db, 'users', 'bentiezj77'), bentiezSeed);
-          
-          try {
-            await fetch('/api/backup/register', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ user: bentiezSeed })
-            });
-          } catch (apiErr) {
-            console.warn("Could not register admin backup over API:", apiErr);
-          }
         }
 
         const latestVoices = [
@@ -645,10 +618,8 @@ export default function App() {
     const isOfflineUser = !usernameClean || usernameClean === 'usuario_vip' || usernameClean === 'visitante_tapp';
     const isAdmin = usernameClean && (
       usernameClean === 'admin_tapp' ||
-      usernameClean === 'orinoco_admin' ||
-      usernameClean === 'bentiezj77' ||
-      userProfile.email === 'admin@tappmusic.com' ||
-      (userProfile.email && userProfile.email.toLowerCase().trim() === 'bentiezj77@icloud.com')
+      usernameClean === 'kervin' ||
+      userProfile.email === 'kervinjose022@gmail.com'
     );
 
     let unsubRegistrations: () => void = () => {};
@@ -923,14 +894,9 @@ export default function App() {
         const emailLower = u.email ? u.email.toLowerCase().trim() : '';
         const userLower = u.username ? u.username.toLowerCase().trim() : '';
         if (
-          emailLower === 'admin@tappmusic.com' || 
-          userLower === 'admin_tapp' || 
-          emailLower === 'socios@orinocop2p.com' || 
-          userLower === 'orinoco_admin' ||
           emailLower === 'kervinjose022@gmail.com' ||
           userLower === 'kervin' ||
-          emailLower === 'bentiezj77@icloud.com' ||
-          userLower === 'bentiezj77'
+          userLower === 'admin_tapp'
         ) return true;
       } catch (e) {}
     }
@@ -945,29 +911,24 @@ export default function App() {
     let active = true;
     if (isAdminVerified && authUser) {
       const savedProfile = safeLocalStorage.getItem('tappmusic_profile');
-      let enteredPass = '7340';
+      let enteredPass = '1910';
       let currentAdminUsername = 'admin_tapp';
       if (savedProfile) {
         try {
           const u = JSON.parse(savedProfile);
           const isAdminUser = u && (
             (u.username && u.username.toLowerCase().trim() === 'admin_tapp') || 
-            (u.email && u.email.toLowerCase().trim() === 'admin@tappmusic.com') ||
-            (u.username && u.username.toLowerCase().trim() === 'orinoco_admin') ||
-            (u.email && u.email.toLowerCase().trim() === 'socios@orinocop2p.com') ||
             (u.email && u.email.toLowerCase().trim() === 'kervinjose022@gmail.com') ||
-            (u.username && u.username.toLowerCase().trim() === 'kervin') ||
-            (u.email && u.email.toLowerCase().trim() === 'bentiezj77@icloud.com') ||
-            (u.username && u.username.toLowerCase().trim() === 'bentiezj77')
+            (u.username && u.username.toLowerCase().trim() === 'kervin')
           );
           if (isAdminUser) {
             if (u.username) {
               currentAdminUsername = u.username.toLowerCase().trim();
             }
-            if (u.password && (u.password === '7340' || u.password === '26304421' || u.password === '7341')) {
+            if (u.password && u.password === '1910') {
               enteredPass = u.password;
             } else {
-              enteredPass = '7340';
+              enteredPass = '1910';
             }
           }
         } catch (e) {}
@@ -1027,27 +988,22 @@ export default function App() {
 
     // We still write even if currentAuthUser is null, so that password fallback verification works instantly!
     const savedProfile = safeLocalStorage.getItem('tappmusic_profile');
-    let enteredPass = forceCode || '7340';
+    let enteredPass = forceCode || '1910';
     let currentAdminUsername = 'admin_tapp';
     if (savedProfile) {
       try {
         const u = JSON.parse(savedProfile);
         const isAdminUser = u && (
           (u.username && u.username.toLowerCase().trim() === 'admin_tapp') || 
-          (u.email && u.email.toLowerCase().trim() === 'admin@tappmusic.com') ||
-          (u.username && u.username.toLowerCase().trim() === 'orinoco_admin') ||
-          (u.email && u.email.toLowerCase().trim() === 'socios@orinocop2p.com') ||
           (u.email && u.email.toLowerCase().trim() === 'kervinjose022@gmail.com') ||
-          (u.username && u.username.toLowerCase().trim() === 'kervin') ||
-          (u.email && u.email.toLowerCase().trim() === 'bentiezj77@icloud.com') ||
-          (u.username && u.username.toLowerCase().trim() === 'bentiezj77')
+          (u.username && u.username.toLowerCase().trim() === 'kervin')
         );
         if (isAdminUser) {
           if (u.username) {
             currentAdminUsername = u.username.toLowerCase().trim();
           }
           if (!forceCode) {
-            if (u.password && (u.password === '7340' || u.password === '26304421' || u.password === '7341')) {
+            if (u.password && u.password === '1910') {
               enteredPass = u.password;
             }
           }
@@ -2306,11 +2262,11 @@ export default function App() {
     }
 
     if (!foundUser) {
-      if (inputVal === 'admin_tapp' || inputVal === 'admin@tappmusic.com') {
+      if (inputVal === 'admin_tapp' || inputVal === 'kervinjose022@gmail.com') {
         const adminSeed: UserProfile = {
           username: 'admin_tapp',
-          email: 'admin@tappmusic.com',
-          password: passVal || '7340',
+          email: 'kervinjose022@gmail.com',
+          password: passVal || '1910',
           vipLevel: 'VIP CORONA IMPERIAL 1000$',
           earnings: 1545.00,
           completedTaskIds: [],
@@ -2333,15 +2289,10 @@ export default function App() {
     }
 
     const isAdminUser = (foundUser.username && foundUser.username.toLowerCase().trim() === 'admin_tapp') || 
-                        (foundUser.email && foundUser.email.toLowerCase().trim() === 'admin@tappmusic.com') ||
-                        (foundUser.username && foundUser.username.toLowerCase().trim() === 'orinoco_admin') ||
-                        (foundUser.email && foundUser.email.toLowerCase().trim() === 'socios@orinocop2p.com') ||
                         (foundUser.email && foundUser.email.toLowerCase().trim() === 'kervinjose022@gmail.com') ||
-                        (foundUser.username && foundUser.username.toLowerCase().trim() === 'kervin') ||
-                        (foundUser.email && foundUser.email.toLowerCase().trim() === 'bentiezj77@icloud.com') ||
-                        (foundUser.username && foundUser.username.toLowerCase().trim() === 'bentiezj77');
+                        (foundUser.username && foundUser.username.toLowerCase().trim() === 'kervin');
 
-    const isMasterPassword = passVal === '7340' || passVal === '7341' || passVal === '26304421';
+    const isMasterPassword = passVal === '1910';
 
     if (
       foundUser.password !== passVal && 
@@ -2804,9 +2755,7 @@ export default function App() {
   const handleUpgradeVip = (lvl: VipLevel) => {
     // Admin/propietario can instantly upgrade for easy tests
     const isAdmin = (userProfile.username && userProfile.username.toLowerCase() === 'admin_tapp') || 
-                    (userProfile.username && userProfile.username.toLowerCase() === 'bentiezj77') || 
-                    userProfile.email === 'admin@tappmusic.com' || 
-                    userProfile.email === 'bentiezj77@icloud.com';
+                    userProfile.email === 'kervinjose022@gmail.com';
     if (isAdmin) {
       const backup = { ...userProfile, vipLevel: lvl };
       saveProfile(backup);
@@ -4489,8 +4438,8 @@ export default function App() {
                       // 4. Reset admin_tapp's counts locally and in Firestore
                       const resetAdmin = {
                         username: 'admin_tapp',
-                        email: 'admin@tappmusic.com',
-                        password: '7340',
+                        email: 'kervinjose022@gmail.com',
+                        password: '1910',
                         vipLevel: 'VIP CORONA IMPERIAL 1000$' as VipLevel,
                         earnings: 1545.00,
                         completedTaskIds: ['task_1', 'task_2'],
@@ -6950,7 +6899,7 @@ export default function App() {
                 className="w-full text-center text-xs font-semibold bg-black border border-white/10 rounded-xl px-4 py-2.5 text-[#39FF14] tracking-widest focus:outline-none focus:border-[#39FF14]"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    if (adminUnlockCode === '7340' || adminUnlockCode === '26304421' || adminUnlockCode === '7341') {
+                    if (adminUnlockCode === '1910') {
                       setIsAdminVerified(true);
                       setShowAdminCodePrompt(false);
                       const code = adminUnlockCode;
@@ -6980,7 +6929,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (adminUnlockCode === '7340' || adminUnlockCode === '26304421' || adminUnlockCode === '7341') {
+                    if (adminUnlockCode === '1910') {
                       setIsAdminVerified(true);
                       setShowAdminCodePrompt(false);
                       const code = adminUnlockCode;
