@@ -8,26 +8,26 @@
 
 @layer base {
   body {
-    background-color: #000000;
-    color: #39FF14;
+    background-color: #f8fafc;
+    color: #0f172a;
     font-family: var(--font-sans);
   }
 
-  /* Custom thin scrollbars in phosphorescent green */
+  /* Custom thin scrollbars in vibrant green */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #000000;
+    background: #f1f5f9;
   }
   ::-webkit-scrollbar-thumb {
-    background: #39FF14;
+    background: #059669;
     border-radius: 4px;
-    box-shadow: 0 0 5px rgba(57, 255, 20, 0.5);
+    box-shadow: 0 0 5px rgba(5, 150, 105, 0.3);
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #4efc30;
+    background: #047857;
   }
 }
 
@@ -102,16 +102,119 @@
   animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Venezuelan Flag Sunset Sky Background Gradient - Elegant & High Contrast */
+/* Venezuelan Flag Sunset Sky Background Gradient - Redefined for Pristine Light Theme */
 .bg-venezuela-sky {
   background: 
     linear-gradient(180deg, 
-      rgba(240, 185, 11, 0.22) 0%, 
-      rgba(0, 50, 130, 0.26) 45%, 
-      rgba(206, 17, 38, 0.15) 100%
+      rgba(240, 185, 11, 0.08) 0%, 
+      rgba(0, 50, 130, 0.05) 45%, 
+      rgba(206, 17, 38, 0.05) 100%
     ),
-    radial-gradient(circle at 50% -10%, rgba(240, 185, 11, 0.12) 0%, rgba(2, 2, 4, 1) 75%),
-    #020204 !important;
+    radial-gradient(circle at 50% -10%, rgba(255, 255, 255, 1) 0%, rgba(248, 250, 252, 1) 100%) !important;
   background-attachment: fixed !important;
   background-size: cover !important;
+}
+
+/* GLOBAL PREMIUM WHITE LIGHT THEME OVERRIDES */
+
+/* Core Card Containers & Panels */
+div.bg-zinc-950,
+div.bg-zinc-900,
+div.bg-\[\#121214\],
+div.bg-\[\#16161a\],
+div.bg-black,
+div.bg-zinc-950\/50,
+div.bg-black\/40,
+div.bg-zinc-950\/90,
+div.bg-zinc-900\/50 {
+  background-color: #ffffff !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 10px -3px rgba(15, 23, 42, 0.03), inset 0 1px 0 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Interactive elements and lists inside cards */
+div[class*="bg-black/20"],
+div[class*="bg-black/30"],
+div[class*="bg-zinc-900"] {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Custom Phosphorescent Green -> Elegant & Accessible Deep Emerald Green */
+.text-\[\#39FF14\],
+.text-neon-green {
+  color: #059669 !important;
+  text-shadow: none !important;
+}
+
+.bg-\[\#39FF14\],
+.bg-neon-green {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+/* Inputs, Select Dropdowns, Textareas */
+input, select, textarea {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+input::placeholder, select::placeholder, textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Typography & Accessibility Upgrades for Light Theme */
+.text-zinc-400,
+.text-gray-400,
+.text-neutral-400 {
+  color: #475569 !important; /* slate-600 */
+}
+
+.text-zinc-300,
+.text-gray-300,
+.text-neutral-300 {
+  color: #1e293b !important; /* slate-800 */
+}
+
+.text-zinc-500,
+.text-gray-500 {
+  color: #64748b !important; /* slate-500 */
+}
+
+.text-white {
+  color: #0f172a !important; /* slate-900 */
+}
+
+/* Glowing animations converted to soft pulsing effects */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Support Modals & Dialogs overlays */
+.fixed.inset-0.bg-black\/95,
+.fixed.inset-0.bg-black\/90,
+.fixed.inset-0.bg-zinc-950\/90 {
+  background-color: rgba(15, 23, 42, 0.7) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.fixed.inset-0.bg-black\/95 > div,
+.fixed.inset-0.bg-black\/90 > div,
+.fixed.inset-0.bg-zinc-950\/90 > div {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Labels & Accents */
+label {
+  color: #334155 !important;
+}
+
+/* Buttons overriding bright neon hover text */
+button:hover {
+  text-shadow: none !important;
 }
