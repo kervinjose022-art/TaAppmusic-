@@ -6,3 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+tappmusic_server_backup.json
+*-config.ts
+test-*.ts
+fix-*.ts
+
