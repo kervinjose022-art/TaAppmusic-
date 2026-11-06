@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GOLD BROKER - Plataforma de Trading en Vivo</title>
-  <!-- Tailwind CSS CDN -->
+  <title>GOLD BROKER - Plataforma de Trading y Panel Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,34 +16,22 @@
       user-select: none;
       -webkit-user-select: none;
     }
-    .font-mono {
-      font-family: 'JetBrains+Mono', monospace;
-    }
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #090f1d;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #1e293b;
-      border-radius: 4px;
-    }
+    .font-mono { font-family: 'JetBrains+Mono', monospace; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #090f1d; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
     @keyframes pulseGlow {
       0%, 100% { opacity: 0.8; transform: scale(1); }
       50% { opacity: 1; transform: scale(1.05); }
     }
-    .glow-dot {
-      animation: pulseGlow 1.8s infinite ease-in-out;
-    }
+    .glow-dot { animation: pulseGlow 1.8s infinite ease-in-out; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col overflow-x-hidden">
 
-  <!-- BARRA SUPERIOR DE NAVEGACIÓN -->
+  <!-- TOP NAVIGATION BAR -->
   <header class="h-14 bg-[#090f1e] border-b border-slate-800 px-3 md:px-5 flex items-center justify-between sticky top-0 z-30 shadow-lg">
-    <!-- Marca y Selector de Activo -->
+    <!-- Brand & Asset Selector -->
     <div class="flex items-center gap-3">
       <div class="flex items-center gap-2 pr-3 border-r border-slate-800">
         <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center shadow-lg shadow-amber-500/20 text-slate-950 font-black text-sm">
@@ -55,11 +42,15 @@
             GOLD BROKER
             <span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded font-mono font-bold">PRO</span>
           </span>
-          <span class="text-[10px] text-slate-400 font-mono -mt-0.5">TRADING ENGINE v2.4</span>
+          <!-- Botón Camuflajeado Admin 1: Al tocar "TRADING ENGINE v2.4" -->
+          <button onclick="openAdminModal()" title="Consola del Sistema" class="text-[10px] text-slate-400 font-mono -mt-0.5 hover:text-amber-400 transition-colors text-left flex items-center gap-1 group cursor-pointer">
+            <span>TRADING ENGINE v2.4</span>
+            <span class="opacity-0 group-hover:opacity-100 text-[8px] text-amber-500">🛡️</span>
+          </button>
         </div>
       </div>
 
-      <!-- Botón de Activo -->
+      <!-- Asset Button -->
       <button onclick="openAssetModal()" class="flex items-center gap-2.5 bg-slate-950/80 hover:bg-slate-900 border border-slate-800 hover:border-amber-500/50 px-3 py-1.5 rounded-xl transition-all cursor-pointer">
         <div class="flex flex-col text-left">
           <div class="flex items-center gap-2">
@@ -72,7 +63,7 @@
       </button>
     </div>
 
-    <!-- Ticker Central en Vivo -->
+    <!-- Center Market Status -->
     <div class="hidden lg:flex items-center gap-3 bg-slate-950/60 border border-slate-800/80 px-3 py-1 rounded-full">
       <div class="flex items-center gap-1.5">
         <span class="w-2 h-2 rounded-full bg-emerald-400 glow-dot"></span>
@@ -83,8 +74,12 @@
       <span class="text-[10px] font-bold text-emerald-400">+1.42%</span>
     </div>
 
-    <!-- Controles de Cuenta y Depósito -->
+    <!-- Right Controls: Auth, Account Switcher & Deposit -->
     <div class="flex items-center gap-2 md:gap-3">
+      <!-- Auth Container -->
+      <div id="authHeaderContainer" class="flex items-center gap-1.5"></div>
+
+      <!-- Balance toggle -->
       <div class="relative">
         <button onclick="toggleAccountDropdown()" class="flex items-center gap-2 bg-slate-950 hover:bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl transition-all cursor-pointer">
           <div class="text-right">
@@ -96,7 +91,7 @@
           <span class="text-slate-400 text-xs">▼</span>
         </button>
 
-        <!-- Menú Cuenta Demo / Real -->
+        <!-- Dropdown menu -->
         <div id="accountDropdown" class="hidden absolute right-0 mt-2 w-64 bg-[#0c1427] border border-slate-800 rounded-2xl p-2 shadow-2xl z-50">
           <div class="text-[10px] font-bold text-slate-400 px-3 py-1">Seleccionar Tipo de Cuenta</div>
           <button onclick="switchAccountType('real')" class="w-full flex items-center justify-between p-2.5 rounded-xl text-left hover:bg-slate-800/60 transition-colors cursor-pointer text-slate-300">
@@ -117,19 +112,24 @@
         </div>
       </div>
 
-      <!-- Botón Depositar -->
+      <!-- Deposit Button -->
       <button onclick="openDepositModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs md:text-sm px-3 md:px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer">
         <span>💰 DEPOSITAR</span>
       </button>
 
-      <!-- Botón Audio -->
+      <!-- Audio Mute -->
       <button onclick="toggleAudio()" id="soundBtn" class="p-2 rounded-xl text-amber-400 bg-slate-950 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer">
         🔊
+      </button>
+
+      <!-- Botón Camuflajeado Admin 2: Escudo discreto en la esquina derecha -->
+      <button onclick="openAdminModal()" title="Consola de Seguridad" class="p-1 text-slate-600 hover:text-amber-400 transition-colors cursor-pointer text-xs">
+        🛡️
       </button>
     </div>
   </header>
 
-  <!-- NOTIFICACIÓN FLOTANTE GANANCIA / PÉRDIDA -->
+  <!-- WIN/LOSS TOAST -->
   <div id="tradeToast" class="hidden fixed top-16 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-2xl shadow-2xl border flex items-center gap-3">
     <div id="toastIcon" class="w-7 h-7 rounded-full flex items-center justify-center font-black">✓</div>
     <div>
@@ -138,13 +138,11 @@
     </div>
   </div>
 
-  <!-- ESPACIO DE TRADING PRINCIPAL -->
+  <!-- MAIN WORKSPACE -->
   <main class="flex-1 p-2 md:p-3 flex flex-col lg:flex-row gap-3 max-w-[1920px] mx-auto w-full">
-    <!-- Columna Izquierda: Gráfico y Libro de Operaciones -->
+    <!-- Left: Chart & Trades -->
     <div class="flex-1 flex flex-col gap-3 min-w-0">
-      <!-- Tarjeta del Gráfico -->
       <div class="bg-[#090f1d] border border-slate-800 rounded-2xl p-4 flex flex-col flex-1 shadow-2xl relative min-h-[480px]">
-        <!-- Barra de Controles de Temporalidad y Modo -->
         <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
           <div class="flex items-center gap-3">
             <div class="flex items-center gap-2">
@@ -158,13 +156,10 @@
           </div>
 
           <div class="flex items-center gap-2">
-            <!-- Alternar Velas o Área -->
             <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
               <button onclick="setChartType('candles')" id="btnCandles" class="px-2.5 py-1 rounded-lg font-bold bg-amber-500 text-slate-950 shadow-sm cursor-pointer">Velas</button>
               <button onclick="setChartType('area')" id="btnArea" class="px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-white cursor-pointer">Área</button>
             </div>
-
-            <!-- Temporalidades -->
             <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
               <button onclick="setTimeframe('5s')" class="tf-btn px-2 py-1 rounded-lg font-bold text-slate-400 hover:text-white cursor-pointer" data-tf="5s">5s</button>
               <button onclick="setTimeframe('15s')" class="tf-btn px-2 py-1 rounded-lg font-bold bg-amber-500 text-slate-950 cursor-pointer" data-tf="15s">15s</button>
@@ -174,11 +169,8 @@
           </div>
         </div>
 
-        <!-- Canvas del Gráfico -->
         <div class="relative flex-1 w-full min-h-[360px] mt-2">
           <canvas id="tradingCanvas" class="w-full h-full block rounded-xl bg-[#060a12]"></canvas>
-
-          <!-- Indicador de Sentimiento -->
           <div class="absolute bottom-4 left-4 bg-slate-950/85 backdrop-blur-md border border-slate-800 p-2.5 rounded-xl shadow-xl flex flex-col gap-1 w-44">
             <div class="flex justify-between text-[10px] font-bold">
               <span class="text-emerald-400 font-mono">COMPRADORES 64%</span>
@@ -192,7 +184,7 @@
         </div>
       </div>
 
-      <!-- Panel de Órdenes Abiertas e Historial -->
+      <!-- Trades Ledger Panel -->
       <div class="bg-[#090f1d] border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col space-y-3">
         <div class="flex items-center justify-between border-b border-slate-800 pb-2">
           <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
@@ -212,15 +204,13 @@
             No tienes órdenes activas en este momento. Selecciona SUBE o BAJA para comenzar.
           </div>
         </div>
-
         <div id="closedTradesContainer" class="hidden space-y-2 max-h-48 overflow-y-auto"></div>
       </div>
     </div>
 
-    <!-- Columna Derecha: Panel de Ejecución SUBE / BAJA -->
+    <!-- Right: Binary Execution Panel -->
     <div class="w-full lg:w-80 flex flex-col gap-3">
       <div class="bg-[#090f1d] border border-slate-800 rounded-2xl p-4 flex flex-col justify-between gap-4 shadow-2xl">
-        <!-- Tiempo de Expiración -->
         <div class="space-y-1.5">
           <div class="flex items-center justify-between text-xs text-slate-400">
             <span class="font-bold flex items-center gap-1">⏰ Tiempo de Expiración</span>
@@ -234,7 +224,6 @@
           </div>
         </div>
 
-        <!-- Importe de Inversión -->
         <div class="space-y-1.5">
           <div class="flex items-center justify-between text-xs text-slate-400">
             <span class="font-bold flex items-center gap-1">💵 Importe de Inversión</span>
@@ -247,7 +236,6 @@
             <button onclick="adjustAmount(5)" class="p-3 text-slate-400 hover:text-white hover:bg-slate-900 transition-colors cursor-pointer font-bold text-lg">+</button>
           </div>
 
-          <!-- Montos rápidos -->
           <div class="grid grid-cols-4 gap-1.5 pt-1">
             <button onclick="setAmountVal(10)" class="py-1 text-xs font-mono rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-white cursor-pointer">$10</button>
             <button onclick="setAmountVal(25)" class="py-1 text-xs font-mono rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-white cursor-pointer">$25</button>
@@ -256,7 +244,6 @@
           </div>
         </div>
 
-        <!-- Tarjeta de Beneficio -->
         <div class="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3 space-y-2">
           <div class="flex items-center justify-between text-xs">
             <span class="text-slate-400">Retorno del Broker:</span>
@@ -274,12 +261,9 @@
 
         <!-- BOTONES SUBE Y BAJA -->
         <div class="flex flex-col gap-2.5 pt-1">
-          <!-- SUBE (CALL) -->
           <button onclick="executeTrade('call')" class="relative overflow-hidden group bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-black rounded-2xl p-3.5 flex items-center justify-between shadow-lg shadow-emerald-500/25 transition-all cursor-pointer">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-slate-950/20 flex items-center justify-center font-black text-xl">
-                ▲
-              </div>
+              <div class="w-10 h-10 rounded-xl bg-slate-950/20 flex items-center justify-center font-black text-xl">▲</div>
               <div class="text-left">
                 <div class="text-base tracking-wider">SUBE</div>
                 <div class="text-[10px] opacity-80 uppercase tracking-widest font-mono">CALL / ALZA</div>
@@ -291,12 +275,9 @@
             </div>
           </button>
 
-          <!-- BAJA (PUT) -->
           <button onclick="executeTrade('put')" class="relative overflow-hidden group bg-rose-500 hover:bg-rose-400 active:scale-[0.98] text-white font-black rounded-2xl p-3.5 flex items-center justify-between shadow-lg shadow-rose-500/25 transition-all cursor-pointer">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-black/20 flex items-center justify-center font-black text-xl">
-                ▼
-              </div>
+              <div class="w-10 h-10 rounded-xl bg-black/20 flex items-center justify-center font-black text-xl">▼</div>
               <div class="text-left">
                 <div class="text-base tracking-wider">BAJA</div>
                 <div class="text-[10px] opacity-80 uppercase tracking-widest font-mono">PUT / BAJA</div>
@@ -310,7 +291,6 @@
         </div>
       </div>
 
-      <!-- Señal del Algoritmo Pro -->
       <div class="bg-[#090f1d] border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
         <div class="flex items-center justify-between text-xs text-slate-400">
           <span class="font-bold flex items-center gap-1.5">⚡ Señal del Algoritmo Pro</span>
@@ -322,709 +302,4 @@
             <div class="text-sm font-black text-emerald-400 flex items-center gap-1">▲ COMPRA FUERTE</div>
           </div>
           <div class="text-right font-mono text-xs text-slate-300">
-            <div>RSI: <span class="text-amber-400">58.2</span></div>
-            <div>MACD: <span class="text-emerald-400">Alcista</span></div>
-          </div>
-        </div>
-        <div class="text-[11px] text-slate-500 leading-relaxed">
-          Ejecución interbancaria garantizada a cero slippage y liquidación inmediata.
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- MODAL CAMBIAR ACTIVO -->
-  <div id="assetModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-    <div class="w-full max-w-md bg-[#0c1427] border border-slate-800 rounded-3xl p-5 shadow-2xl text-white">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-        <h3 class="font-black text-base">Seleccionar Activo de Trading</h3>
-        <button onclick="closeAssetModal()" class="text-slate-400 hover:text-white p-1">✕</button>
-      </div>
-      <div class="mt-4 space-y-2" id="assetListContainer"></div>
-    </div>
-  </div>
-
-  <!-- MODAL CAJERO Y FONDOS -->
-  <div id="depositModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-    <div class="w-full max-w-lg bg-[#0c1427] border border-slate-800 rounded-3xl p-6 shadow-2xl text-white">
-      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
-        <div class="flex items-center gap-2">
-          <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold">💳</div>
-          <div>
-            <h3 class="font-black text-base text-white">Cajero y Fondos</h3>
-            <p class="text-xs text-slate-400">Saldo Disponible: <span id="cashierBalanceDisplay" class="font-mono font-bold text-emerald-400">$350.00 USD</span></p>
-          </div>
-        </div>
-        <button onclick="closeDepositModal()" class="text-slate-400 hover:text-white p-1">✕</button>
-      </div>
-
-      <div class="grid grid-cols-2 gap-2 p-1 mt-4 bg-slate-950 rounded-2xl border border-slate-800">
-        <button onclick="setCashierTab('deposit')" id="cashierDepTab" class="py-2 text-xs font-black rounded-xl bg-emerald-500 text-slate-950 cursor-pointer">Depositar Fondos</button>
-        <button onclick="setCashierTab('withdraw')" id="cashierWithTab" class="py-2 text-xs font-bold rounded-xl text-slate-400 hover:text-white cursor-pointer">Retirar Fondos</button>
-      </div>
-
-      <div class="mt-4 space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-2">Método de Pago</label>
-          <div class="grid grid-cols-3 gap-2">
-            <div class="p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/10 text-emerald-400 cursor-pointer">
-              <div class="font-bold text-xs">USDT</div>
-              <div class="text-[10px] text-slate-400">BEP-20 / TRC20</div>
-            </div>
-            <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 cursor-pointer">
-              <div class="font-bold text-xs">Binance Pay</div>
-              <div class="text-[10px] text-slate-500">ID Directo</div>
-            </div>
-            <div class="p-2.5 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 cursor-pointer">
-              <div class="font-bold text-xs">Pago Móvil</div>
-              <div class="text-[10px] text-slate-500">Tasa Oficial</div>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-400 mb-1">Monto (USD)</label>
-          <input type="number" id="cashierAmountInput" value="50" min="10" step="5" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white font-mono font-bold focus:outline-none focus:border-amber-500">
-        </div>
-
-        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-1 text-xs text-slate-300">
-          <div class="flex justify-between text-slate-400">
-            <span>Billetera Oficial USDT (BEP-20):</span>
-            <span class="text-amber-400 font-bold cursor-pointer" onclick="navigator.clipboard.writeText('0x71C5A898F6543b593A16A54B9bFcC0E931892eB8F'); alert('¡Dirección copiada!')">Copiar</span>
-          </div>
-          <div class="font-mono text-[11px] text-slate-400 break-all select-all">0x71C5A898F6543b593A16A54B9bFcC0E931892eB8F</div>
-        </div>
-
-        <button onclick="confirmCashierAction()" id="cashierActionBtn" class="w-full py-3.5 rounded-xl font-black text-sm uppercase bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 cursor-pointer">
-          Confirmar Depósito
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MOTOR DE TRADING JAVASCRIPT -->
-  <script>
-    const ASSETS = [
-      { symbol: 'XAU/USD', name: 'Oro / Dólar Americano', price: 3892.38, payout: 95 },
-      { symbol: 'BTC/USDT', name: 'Bitcoin / Tether USD', price: 91450.00, payout: 92 },
-      { symbol: 'ETH/USDT', name: 'Ethereum / Tether USD', price: 3240.50, payout: 90 },
-      { symbol: 'EUR/USD', name: 'Euro / Dólar Americano', price: 1.0845, payout: 88 },
-      { symbol: 'GBP/USD', name: 'Libra Esterlina / Dólar', price: 1.2980, payout: 87 },
-      { symbol: 'USD/JPY', name: 'Dólar Americano / Yen', price: 153.20, payout: 85 }
-    ];
-
-    let currentAsset = ASSETS[0];
-    let currentPrice = currentAsset.price;
-    let chartType = 'candles';
-    let timeframe = '15s';
-    let durationSec = 30;
-    let amount = 25;
-
-    let isDemo = true;
-    let demoBalance = 10000.00;
-    let realBalance = 350.00;
-    let soundEnabled = true;
-
-    let activeTrades = [];
-    let closedTrades = [
-      { id: 'c1', asset: 'XAU/USD', type: 'call', entryPrice: 3889.40, amount: 50, payout: 95, profit: 47.50, won: true, time: 'Hace 3 min' },
-      { id: 'c2', asset: 'BTC/USDT', type: 'put', entryPrice: 91600.00, amount: 25, payout: 92, profit: 23.00, won: true, time: 'Hace 8 min' }
-    ];
-
-    let candles = [];
-    function initCandles() {
-      candles = [];
-      let base = currentPrice - 2.5;
-      const count = 45;
-      for (let i = 0; i < count; i++) {
-        const open = base;
-        const change = (Math.random() - 0.49) * (currentPrice * 0.001);
-        const close = open + change;
-        const high = Math.max(open, close) + Math.random() * (currentPrice * 0.0006);
-        const low = Math.min(open, close) - Math.random() * (currentPrice * 0.0006);
-        candles.push({ open, high, low, close });
-        base = close;
-      }
-      currentPrice = candles[candles.length - 1].close;
-    }
-    initCandles();
-
-    // SINTETIZADOR DE SONIDO REALISTA
-    let audioCtx = null;
-    function getAudio() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      return audioCtx;
-    }
-
-    function playSound(type) {
-      if (!soundEnabled) return;
-      try {
-        const ctx = getAudio();
-        if (!ctx) return;
-        const now = ctx.currentTime;
-        if (type === 'order') {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(500, now);
-          osc.frequency.linearRampToValueAtTime(750, now + 0.08);
-          gain.gain.setValueAtTime(0.15, now);
-          gain.gain.linearRampToValueAtTime(0, now + 0.1);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start();
-          osc.stop(now + 0.1);
-        } else if (type === 'win') {
-          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.frequency.setValueAtTime(freq, now + i * 0.08);
-            gain.gain.setValueAtTime(0.18, now + i * 0.08);
-            gain.gain.linearRampToValueAtTime(0, now + i * 0.08 + 0.15);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(now + i * 0.08);
-            osc.stop(now + i * 0.08 + 0.18);
-          });
-        } else if (type === 'loss') {
-          [350, 260].forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(freq, now + i * 0.1);
-            gain.gain.setValueAtTime(0.12, now + i * 0.1);
-            gain.gain.linearRampToValueAtTime(0, now + i * 0.1 + 0.14);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start(now + i * 0.1);
-            osc.stop(now + i * 0.1 + 0.15);
-          });
-        }
-      } catch (e) {}
-    }
-
-    // CANVAS DE TRADING
-    const canvas = document.getElementById('tradingCanvas');
-    const ctx = canvas.getContext('2d');
-
-    function resizeCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
-    }
-    window.addEventListener('resize', resizeCanvas);
-    setTimeout(resizeCanvas, 50);
-
-    function drawChart() {
-      const rect = canvas.getBoundingClientRect();
-      const w = rect.width;
-      const h = rect.height;
-      if (!w || !h) return;
-
-      ctx.clearRect(0, 0, w, h);
-
-      // Cuadrícula de fondo
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 1;
-      for (let y = 30; y < h; y += 45) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
-      }
-      for (let x = 40; x < w; x += 60) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-        ctx.stroke();
-      }
-
-      let minP = Infinity;
-      let maxP = -Infinity;
-      candles.forEach(c => {
-        if (c.low < minP) minP = c.low;
-        if (c.high > maxP) maxP = c.high;
-      });
-      activeTrades.forEach(t => {
-        if (t.entryPrice < minP) minP = t.entryPrice;
-        if (t.entryPrice > maxP) maxP = t.entryPrice;
-      });
-
-      const pad = (maxP - minP) * 0.15 || 1;
-      minP -= pad;
-      maxP += pad;
-
-      const getY = (val) => h - ((val - minP) / (maxP - minP)) * (h - 40) - 20;
-
-      const candleWidth = Math.max(4, (w - 70) / candles.length - 2);
-      const stepX = (w - 70) / candles.length;
-
-      if (chartType === 'area') {
-        ctx.beginPath();
-        candles.forEach((c, i) => {
-          const x = i * stepX + 10;
-          const y = getY(c.close);
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        ctx.strokeStyle = '#10b981';
-        ctx.lineWidth = 2.5;
-        ctx.stroke();
-
-        ctx.lineTo((candles.length - 1) * stepX + 10, h);
-        ctx.lineTo(10, h);
-        const grad = ctx.createLinearGradient(0, 0, 0, h);
-        grad.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
-        grad.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
-        ctx.fillStyle = grad;
-        ctx.fill();
-      } else {
-        candles.forEach((c, i) => {
-          const x = i * stepX + 10;
-          const isUp = c.close >= c.open;
-          const color = isUp ? '#10b981' : '#f43f5e';
-
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.moveTo(x + candleWidth / 2, getY(c.high));
-          ctx.lineTo(x + candleWidth / 2, getY(c.low));
-          ctx.stroke();
-
-          const top = getY(Math.max(c.open, c.close));
-          const bot = getY(Math.min(c.open, c.close));
-          const bodyH = Math.max(2, bot - top);
-          ctx.fillStyle = color;
-          ctx.fillRect(x, top, candleWidth, bodyH);
-        });
-      }
-
-      // Línea SMA 14
-      if (candles.length >= 14) {
-        ctx.beginPath();
-        for (let i = 13; i < candles.length; i++) {
-          let sum = 0;
-          for (let k = 0; k < 14; k++) sum += candles[i - k].close;
-          const avg = sum / 14;
-          const x = i * stepX + 10 + candleWidth / 2;
-          const y = getY(avg);
-          if (i === 13) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = 'rgba(251, 191, 36, 0.7)';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([4, 4]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-
-      // Líneas de operaciones activas
-      activeTrades.forEach(trade => {
-        const y = getY(trade.entryPrice);
-        const isUp = trade.type === 'call';
-        const color = isUp ? '#10b981' : '#f43f5e';
-
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([3, 3]);
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        ctx.fillStyle = color;
-        ctx.fillRect(w - 110, y - 11, 100, 22);
-        ctx.fillStyle = '#020617';
-        ctx.font = 'bold 10px monospace';
-        ctx.fillText(`${trade.type.toUpperCase()} $${trade.amount} (${trade.timeLeft}s)`, w - 105, y + 4);
-      });
-
-      // Baliza de precio en vivo
-      const currentY = getY(currentPrice);
-      ctx.strokeStyle = '#f59e0b';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([2, 2]);
-      ctx.beginPath();
-      ctx.moveTo(0, currentY);
-      ctx.lineTo(w, currentY);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      ctx.fillStyle = '#f59e0b';
-      ctx.fillRect(w - 75, currentY - 10, 70, 20);
-      ctx.fillStyle = '#0f172a';
-      ctx.font = 'bold 11px monospace';
-      ctx.fillText(currentPrice.toFixed(currentPrice > 100 ? 2 : 4), w - 70, currentY + 4);
-
-      ctx.fillStyle = '#f59e0b';
-      ctx.beginPath();
-      ctx.arc((candles.length - 1) * stepX + 10 + candleWidth / 2, currentY, 4, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // SIMULADOR DE PRECIO EN TIEMPO REAL
-    setInterval(() => {
-      const volatility = currentPrice * 0.0003;
-      const delta = (Math.random() - 0.495) * volatility;
-      currentPrice = Math.max(0.01, currentPrice + delta);
-
-      const last = candles[candles.length - 1];
-      last.close = currentPrice;
-      if (currentPrice > last.high) last.high = currentPrice;
-      if (currentPrice < last.low) last.low = currentPrice;
-
-      updateUI();
-      drawChart();
-    }, 600);
-
-    setInterval(() => {
-      const open = currentPrice;
-      candles.shift();
-      candles.push({ open, high: open, low: open, close: open });
-    }, 4000);
-
-    // TEMPORIZADOR Y LIQUIDACIÓN DE OPERACIONES
-    setInterval(() => {
-      const now = Date.now();
-      const stillActive = [];
-
-      activeTrades.forEach(trade => {
-        trade.timeLeft = Math.max(0, Math.round((trade.endTime - now) / 1000));
-
-        if (trade.timeLeft <= 0) {
-          const won = trade.type === 'call' ? currentPrice > trade.entryPrice : currentPrice < trade.entryPrice;
-          const profit = won ? Math.round(trade.amount * (trade.payout / 100) * 100) / 100 : -trade.amount;
-
-          if (won) {
-            playSound('win');
-            if (isDemo) demoBalance += (trade.amount + profit);
-            else realBalance += (trade.amount + profit);
-            showToast(true, trade.amount + profit);
-          } else {
-            playSound('loss');
-            showToast(false, trade.amount);
-          }
-
-          closedTrades.unshift({
-            id: trade.id,
-            asset: trade.asset,
-            type: trade.type,
-            entryPrice: trade.entryPrice,
-            amount: trade.amount,
-            payout: trade.payout,
-            profit,
-            won,
-            time: 'Ahora'
-          });
-        } else {
-          stillActive.push(trade);
-        }
-      });
-
-      activeTrades = stillActive;
-      renderTradesList();
-      updateUI();
-    }, 500);
-
-    function updateUI() {
-      const activeBal = isDemo ? demoBalance : realBalance;
-      document.getElementById('topBalanceDisplay').innerText = `$${activeBal.toFixed(2)}`;
-      document.getElementById('tickerTopPrice').innerText = `$${currentPrice.toFixed(currentPrice > 100 ? 2 : 4)}`;
-      document.getElementById('chartLivePrice').innerText = `$${currentPrice.toFixed(currentPrice > 100 ? 2 : 4)}`;
-      document.getElementById('activeTradesCount').innerText = activeTrades.length;
-      document.getElementById('cashierBalanceDisplay').innerText = `$${realBalance.toFixed(2)} USD`;
-
-      const netProfit = Math.round(amount * (currentAsset.payout / 100) * 100) / 100;
-      const totalReturn = Math.round((amount + netProfit) * 100) / 100;
-
-      document.getElementById('netProfitLabel').innerText = `+$${netProfit.toFixed(2)} USD`;
-      document.getElementById('totalReturnLabel').innerText = `$${totalReturn.toFixed(2)} USD`;
-      document.getElementById('callProfitBtn').innerText = `+$${netProfit.toFixed(2)}`;
-      document.getElementById('putProfitBtn').innerText = `+$${netProfit.toFixed(2)}`;
-    }
-
-    function executeTrade(type) {
-      const activeBal = isDemo ? demoBalance : realBalance;
-      if (amount > activeBal) {
-        openDepositModal();
-        return;
-      }
-
-      playSound('order');
-
-      if (isDemo) demoBalance -= amount;
-      else realBalance -= amount;
-
-      const newTrade = {
-        id: 't-' + Date.now(),
-        asset: currentAsset.symbol,
-        type: type,
-        entryPrice: currentPrice,
-        amount: amount,
-        payout: currentAsset.payout,
-        duration: durationSec,
-        startTime: Date.now(),
-        endTime: Date.now() + durationSec * 1000,
-        timeLeft: durationSec
-      };
-
-      activeTrades.unshift(newTrade);
-      renderTradesList();
-      updateUI();
-    }
-
-    function renderTradesList() {
-      const activeDiv = document.getElementById('activeTradesContainer');
-      const closedDiv = document.getElementById('closedTradesContainer');
-
-      if (activeTrades.length === 0) {
-        activeDiv.innerHTML = `<div class="py-6 text-center text-xs text-slate-500">No tienes órdenes activas en este momento. Selecciona SUBE o BAJA para comenzar.</div>`;
-      } else {
-        activeDiv.innerHTML = activeTrades.map(t => {
-          const isCall = t.type === 'call';
-          const inTheMoney = isCall ? currentPrice > t.entryPrice : currentPrice < t.entryPrice;
-          return `
-            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
-              <div class="flex items-center gap-2.5">
-                <span class="${isCall ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'} px-2 py-1 rounded font-black text-xs font-mono">
-                  ${isCall ? '▲ SUBE' : '▼ BAJA'}
-                </span>
-                <div>
-                  <div class="font-bold text-xs text-white">${t.asset}</div>
-                  <div class="text-[10px] text-slate-400 font-mono">Entrada: $${t.entryPrice.toFixed(2)}</div>
-                </div>
-              </div>
-              <div class="text-right">
-                <div class="font-mono font-bold text-xs ${inTheMoney ? 'text-emerald-400' : 'text-rose-400'}">
-                  ${inTheMoney ? '+$' + (t.amount * 0.95).toFixed(2) : '-$' + t.amount}
-                </div>
-                <div class="text-[10px] text-amber-400 font-mono font-bold">⏱ ${t.timeLeft}s restantes</div>
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-
-      closedDiv.innerHTML = closedTrades.map(c => `
-        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
-          <div class="flex items-center gap-2">
-            <span class="${c.won ? 'text-emerald-400' : 'text-rose-400'} font-bold">${c.won ? '✓ GANADA' : '✕ EXPIRADA'}</span>
-            <span class="text-white font-bold">${c.asset}</span>
-            <span class="text-slate-400 font-mono">${c.type.toUpperCase()}</span>
-          </div>
-          <div class="text-right font-mono">
-            <span class="${c.won ? 'text-emerald-400 font-bold' : 'text-slate-500'}">
-              ${c.won ? '+$' + c.profit.toFixed(2) : '-$' + c.amount.toFixed(2)}
-            </span>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function setChartType(type) {
-      chartType = type;
-      document.getElementById('btnCandles').className = type === 'candles' 
-        ? 'px-2.5 py-1 rounded-lg font-bold bg-amber-500 text-slate-950 shadow-sm cursor-pointer'
-        : 'px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-white cursor-pointer';
-      document.getElementById('btnArea').className = type === 'area'
-        ? 'px-2.5 py-1 rounded-lg font-bold bg-amber-500 text-slate-950 shadow-sm cursor-pointer'
-        : 'px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-white cursor-pointer';
-      drawChart();
-    }
-
-    function setTimeframe(tf) {
-      timeframe = tf;
-      document.querySelectorAll('.tf-btn').forEach(btn => {
-        if (btn.getAttribute('data-tf') === tf) {
-          btn.className = 'tf-btn px-2 py-1 rounded-lg font-bold bg-amber-500 text-slate-950 cursor-pointer';
-        } else {
-          btn.className = 'tf-btn px-2 py-1 rounded-lg font-bold text-slate-400 hover:text-white cursor-pointer';
-        }
-      });
-      initCandles();
-      drawChart();
-    }
-
-    function setExpiration(sec) {
-      durationSec = sec;
-      document.getElementById('expirationDisplay').innerText = `${sec}s`;
-      document.querySelectorAll('.exp-btn').forEach(btn => {
-        if (Number(btn.getAttribute('data-sec')) === sec) {
-          btn.className = 'exp-btn py-2 text-xs font-mono font-bold rounded-xl border border-amber-500 bg-amber-500/20 text-amber-300 cursor-pointer';
-        } else {
-          btn.className = 'exp-btn py-2 text-xs font-mono font-bold rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 cursor-pointer';
-        }
-      });
-    }
-
-    function updateAmount(val) {
-      amount = Math.max(1, Math.min(5000, Number(val) || 1));
-      document.getElementById('amountInput').value = amount;
-      document.getElementById('investmentDisplay').innerText = `$${amount.toFixed(2)}`;
-      updateUI();
-    }
-
-    function adjustAmount(delta) { updateAmount(amount + delta); }
-    function setAmountVal(val) { updateAmount(val); }
-    function multiplyAmount(mult) { updateAmount(Math.round(amount * mult)); }
-
-    function switchTradeTab(tab) {
-      if (tab === 'active') {
-        document.getElementById('tabActiveBtn').className = 'px-3 py-1 text-xs font-bold rounded-lg bg-amber-500 text-slate-950 flex items-center gap-1.5 cursor-pointer';
-        document.getElementById('tabClosedBtn').className = 'px-3 py-1 text-xs font-bold rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 cursor-pointer';
-        document.getElementById('activeTradesContainer').classList.remove('hidden');
-        document.getElementById('closedTradesContainer').classList.add('hidden');
-      } else {
-        document.getElementById('tabActiveBtn').className = 'px-3 py-1 text-xs font-bold rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 cursor-pointer';
-        document.getElementById('tabClosedBtn').className = 'px-3 py-1 text-xs font-bold rounded-lg bg-amber-500 text-slate-950 flex items-center gap-1.5 cursor-pointer';
-        document.getElementById('activeTradesContainer').classList.add('hidden');
-        document.getElementById('closedTradesContainer').classList.remove('hidden');
-      }
-    }
-
-    function toggleAccountDropdown() {
-      document.getElementById('accountDropdown').classList.toggle('hidden');
-    }
-
-    function switchAccountType(type) {
-      isDemo = type === 'demo';
-      const badge = document.getElementById('accountBadge');
-      if (isDemo) {
-        badge.className = 'text-[9px] uppercase font-black px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30';
-        badge.innerText = 'DEMO';
-      } else {
-        badge.className = 'text-[9px] uppercase font-black px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
-        badge.innerText = 'REAL';
-      }
-      toggleAccountDropdown();
-      updateUI();
-    }
-
-    function resetDemoBalance() {
-      demoBalance = 10000.00;
-      toggleAccountDropdown();
-      updateUI();
-    }
-
-    function toggleAudio() {
-      soundEnabled = !soundEnabled;
-      document.getElementById('soundBtn').innerText = soundEnabled ? '🔊' : '🔇';
-    }
-
-    function showToast(won, amt) {
-      const t = document.getElementById('tradeToast');
-      const icon = document.getElementById('toastIcon');
-      const title = document.getElementById('toastTitle');
-      const sub = document.getElementById('toastSubtitle');
-
-      if (won) {
-        t.className = 'fixed top-16 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-2xl shadow-2xl border flex items-center gap-3 bg-emerald-950/90 border-emerald-500 text-emerald-200 shadow-emerald-500/30';
-        icon.className = 'w-7 h-7 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-black';
-        icon.innerText = '✓';
-        title.innerText = '¡OPERACIÓN GANADA!';
-        title.className = 'text-xs font-black uppercase tracking-wider text-emerald-400';
-        sub.innerText = `+$${amt.toFixed(2)} USD acreditados`;
-      } else {
-        t.className = 'fixed top-16 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-2xl shadow-2xl border flex items-center gap-3 bg-rose-950/90 border-rose-500 text-rose-200 shadow-rose-500/30';
-        icon.className = 'w-7 h-7 rounded-full bg-rose-500 text-white flex items-center justify-center font-black';
-        icon.innerText = '✕';
-        title.innerText = 'OPERACIÓN EXPIRADA';
-        title.className = 'text-xs font-black uppercase tracking-wider text-rose-400';
-        sub.innerText = `-$${amt.toFixed(2)} USD`;
-      }
-      t.classList.remove('hidden');
-      setTimeout(() => t.classList.add('hidden'), 3500);
-    }
-
-    function openAssetModal() {
-      const cont = document.getElementById('assetListContainer');
-      cont.innerHTML = ASSETS.map(a => `
-        <div onclick="selectAsset('${a.symbol}')" class="p-3 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-amber-500 rounded-2xl flex items-center justify-between cursor-pointer transition-all">
-          <div>
-            <div class="font-black text-sm text-white">${a.symbol}</div>
-            <div class="text-xs text-slate-400">${a.name}</div>
-          </div>
-          <div class="text-right">
-            <div class="font-mono font-bold text-sm text-amber-400">$${a.price.toFixed(a.price > 100 ? 2 : 4)}</div>
-            <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-1.5 py-0.2 rounded text-[10px] font-mono font-bold">+${a.payout}% Retorno</span>
-          </div>
-        </div>
-      `).join('');
-      document.getElementById('assetModal').classList.remove('hidden');
-    }
-
-    function closeAssetModal() {
-      document.getElementById('assetModal').classList.add('hidden');
-    }
-
-    function selectAsset(symbol) {
-      currentAsset = ASSETS.find(a => a.symbol === symbol) || ASSETS[0];
-      currentPrice = currentAsset.price;
-      document.getElementById('currentAssetSymbol').innerText = currentAsset.symbol;
-      document.getElementById('chartAssetTitle').innerText = currentAsset.symbol;
-      document.getElementById('currentAssetName').innerText = currentAsset.name;
-      document.getElementById('currentAssetPayout').innerText = `+${currentAsset.payout}%`;
-      document.getElementById('payoutPctLabel').innerText = `+${currentAsset.payout}%`;
-      closeAssetModal();
-      initCandles();
-      updateUI();
-      drawChart();
-    }
-
-    function openDepositModal() {
-      document.getElementById('depositModal').classList.remove('hidden');
-    }
-    function closeDepositModal() {
-      document.getElementById('depositModal').classList.add('hidden');
-    }
-
-    let cashierTab = 'deposit';
-    function setCashierTab(tab) {
-      cashierTab = tab;
-      const depBtn = document.getElementById('cashierDepTab');
-      const withBtn = document.getElementById('cashierWithTab');
-      const actBtn = document.getElementById('cashierActionBtn');
-      if (tab === 'deposit') {
-        depBtn.className = 'py-2 text-xs font-black rounded-xl bg-emerald-500 text-slate-950 cursor-pointer';
-        withBtn.className = 'py-2 text-xs font-bold rounded-xl text-slate-400 hover:text-white cursor-pointer';
-        actBtn.innerText = 'Confirmar Depósito';
-        actBtn.className = 'w-full py-3.5 rounded-xl font-black text-sm uppercase bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 cursor-pointer';
-      } else {
-        depBtn.className = 'py-2 text-xs font-bold rounded-xl text-slate-400 hover:text-white cursor-pointer';
-        withBtn.className = 'py-2 text-xs font-black rounded-xl bg-amber-500 text-slate-950 cursor-pointer';
-        actBtn.innerText = 'Confirmar Retiro';
-        actBtn.className = 'w-full py-3.5 rounded-xl font-black text-sm uppercase bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg shadow-amber-500/20 cursor-pointer';
-      }
-    }
-
-    function confirmCashierAction() {
-      const val = Number(document.getElementById('cashierAmountInput').value) || 0;
-      if (val < 10) {
-        alert('El monto mínimo es de $10 USD');
-        return;
-      }
-      if (cashierTab === 'deposit') {
-        realBalance += val;
-        playSound('win');
-        alert(`¡Depósito de $${val.toFixed(2)} USD acreditado con éxito!`);
-      } else {
-        if (val > realBalance) {
-          alert('Saldo insuficiente');
-          return;
-        }
-        realBalance -= val;
-        alert(`¡Retiro de $${val.toFixed(2)} USD procesado a tu billetera!`);
-      }
-      closeDepositModal();
-      updateUI();
-    }
-
-    updateUI();
-    renderTradesList();
-  </script>
-</body>
-</html>
+            <div>RSI: <span class="text
