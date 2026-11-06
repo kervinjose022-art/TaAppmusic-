@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GOLD BROKER - Plataforma de Trading y Panel Admin</title>
+  <title>XM Trading Pro - Broker Móvil en Vivo</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,295 +11,713 @@
   <style>
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: #070b14;
+      background-color: #070c17;
       color: #f1f5f9;
       user-select: none;
       -webkit-user-select: none;
+      touch-action: pan-y;
     }
-    .font-mono { font-family: 'JetBrains+Mono', monospace; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #090f1d; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #070c17; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
-    @keyframes pulseGlow {
-      0%, 100% { opacity: 0.8; transform: scale(1); }
-      50% { opacity: 1; transform: scale(1.05); }
-    }
-    .glow-dot { animation: pulseGlow 1.8s infinite ease-in-out; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col overflow-x-hidden">
+<body class="min-h-screen flex flex-col overflow-x-hidden pb-16">
 
-  <!-- TOP NAVIGATION BAR -->
-  <header class="h-14 bg-[#090f1e] border-b border-slate-800 px-3 md:px-5 flex items-center justify-between sticky top-0 z-30 shadow-lg">
-    <!-- Brand & Asset Selector -->
-    <div class="flex items-center gap-3">
-      <div class="flex items-center gap-2 pr-3 border-r border-slate-800">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center shadow-lg shadow-amber-500/20 text-slate-950 font-black text-sm">
-          📈
-        </div>
-        <div class="hidden sm:flex flex-col">
-          <span class="font-black text-sm tracking-wide text-white flex items-center gap-1.5">
-            GOLD BROKER
-            <span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1 py-0.2 rounded font-mono font-bold">PRO</span>
-          </span>
-          <!-- Botón Camuflajeado Admin 1: Al tocar "TRADING ENGINE v2.4" -->
-          <button onclick="openAdminModal()" title="Consola del Sistema" class="text-[10px] text-slate-400 font-mono -mt-0.5 hover:text-amber-400 transition-colors text-left flex items-center gap-1 group cursor-pointer">
-            <span>TRADING ENGINE v2.4</span>
-            <span class="opacity-0 group-hover:opacity-100 text-[8px] text-amber-500">🛡️</span>
-          </button>
-        </div>
-      </div>
+  <!-- BARRA SUPERIOR -->
+  <header class="h-14 bg-[#090f1e] border-b border-slate-800/80 px-3 md:px-5 flex items-center justify-between sticky top-0 z-30 shadow-md">
+    <button onclick="openAccountModal()" class="flex items-center gap-2 bg-[#0c1427] hover:bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-2xl transition-all cursor-pointer">
+      <span id="accountTypePill" class="w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30">D</span>
+      <span id="topBalanceText" class="font-mono font-black text-xs sm:text-sm text-white">$10,000.63</span>
+      <span class="text-slate-400 text-xs">▼</span>
+    </button>
 
-      <!-- Asset Button -->
-      <button onclick="openAssetModal()" class="flex items-center gap-2.5 bg-slate-950/80 hover:bg-slate-900 border border-slate-800 hover:border-amber-500/50 px-3 py-1.5 rounded-xl transition-all cursor-pointer">
-        <div class="flex flex-col text-left">
-          <div class="flex items-center gap-2">
-            <span id="currentAssetSymbol" class="font-black text-xs md:text-sm text-white">XAU/USD</span>
-            <span id="currentAssetPayout" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-1.5 py-0.5 rounded text-[10px] font-mono font-black">+95%</span>
-          </div>
-          <span id="currentAssetName" class="text-[10px] text-slate-400 hidden md:inline">Oro / Dólar Americano</span>
-        </div>
-        <span class="text-slate-400 text-xs">▼</span>
+    <div class="flex items-center gap-2">
+      <button onclick="alert('No hay notificaciones nuevas.')" class="w-8 h-8 rounded-xl bg-[#0c1427] border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer">
+        🔔
       </button>
-    </div>
-
-    <!-- Center Market Status -->
-    <div class="hidden lg:flex items-center gap-3 bg-slate-950/60 border border-slate-800/80 px-3 py-1 rounded-full">
-      <div class="flex items-center gap-1.5">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 glow-dot"></span>
-        <span class="text-[11px] font-bold text-slate-300">Mercado Spot Activo</span>
-      </div>
-      <span class="text-slate-700">|</span>
-      <span id="tickerTopPrice" class="font-mono text-xs font-black text-amber-400">$3,892.38</span>
-      <span class="text-[10px] font-bold text-emerald-400">+1.42%</span>
-    </div>
-
-    <!-- Right Controls: Auth, Account Switcher & Deposit -->
-    <div class="flex items-center gap-2 md:gap-3">
-      <!-- Auth Container -->
-      <div id="authHeaderContainer" class="flex items-center gap-1.5"></div>
-
-      <!-- Balance toggle -->
-      <div class="relative">
-        <button onclick="toggleAccountDropdown()" class="flex items-center gap-2 bg-slate-950 hover:bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl transition-all cursor-pointer">
-          <div class="text-right">
-            <div class="flex items-center justify-end gap-1.5">
-              <span id="accountBadge" class="text-[9px] uppercase font-black px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">DEMO</span>
-              <span id="topBalanceDisplay" class="font-mono font-black text-xs md:text-sm text-white">$10,000.00</span>
-            </div>
-          </div>
-          <span class="text-slate-400 text-xs">▼</span>
-        </button>
-
-        <!-- Dropdown menu -->
-        <div id="accountDropdown" class="hidden absolute right-0 mt-2 w-64 bg-[#0c1427] border border-slate-800 rounded-2xl p-2 shadow-2xl z-50">
-          <div class="text-[10px] font-bold text-slate-400 px-3 py-1">Seleccionar Tipo de Cuenta</div>
-          <button onclick="switchAccountType('real')" class="w-full flex items-center justify-between p-2.5 rounded-xl text-left hover:bg-slate-800/60 transition-colors cursor-pointer text-slate-300">
-            <div>
-              <div class="font-bold text-xs text-emerald-400">Cuenta Real (En Vivo)</div>
-              <div id="realBalanceMenu" class="font-mono font-black text-sm text-white">$350.00 USD</div>
-            </div>
-          </button>
-          <button onclick="switchAccountType('demo')" class="w-full flex items-center justify-between p-2.5 rounded-xl text-left hover:bg-slate-800/60 transition-colors mt-1 cursor-pointer text-slate-300">
-            <div>
-              <div class="font-bold text-xs text-amber-400">Cuenta Demo de Práctica</div>
-              <div id="demoBalanceMenu" class="font-mono font-black text-sm text-white">$10,000.00 USD</div>
-            </div>
-          </button>
-          <button onclick="resetDemoBalance()" class="w-full mt-2 pt-2 border-t border-slate-800 text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center justify-center gap-1.5 p-1.5 rounded-lg hover:bg-amber-500/10 cursor-pointer">
-            🔄 Recargar Demo a $10,000 USD
-          </button>
-        </div>
-      </div>
-
-      <!-- Deposit Button -->
-      <button onclick="openDepositModal()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs md:text-sm px-3 md:px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer">
-        <span>💰 DEPOSITAR</span>
+      <button onclick="openDepositModal()" class="w-8 h-8 rounded-xl bg-[#0c1427] border border-slate-800 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/10 cursor-pointer">
+        💳
       </button>
-
-      <!-- Audio Mute -->
-      <button onclick="toggleAudio()" id="soundBtn" class="p-2 rounded-xl text-amber-400 bg-slate-950 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer">
-        🔊
+      <button onclick="switchTab('mas')" class="w-8 h-8 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center cursor-pointer shadow-md shadow-blue-500/20">
+        KP
       </button>
-
-      <!-- Botón Camuflajeado Admin 2: Escudo discreto en la esquina derecha -->
-      <button onclick="openAdminModal()" title="Consola de Seguridad" class="p-1 text-slate-600 hover:text-amber-400 transition-colors cursor-pointer text-xs">
+      <!-- BOTÓN CAMUFLADO ADMIN -->
+      <button onclick="openAdminModal()" title="Consola de Seguridad" class="p-1 text-slate-700 hover:text-amber-400 transition-colors cursor-pointer text-xs">
         🛡️
       </button>
     </div>
   </header>
 
-  <!-- WIN/LOSS TOAST -->
-  <div id="tradeToast" class="hidden fixed top-16 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-2xl shadow-2xl border flex items-center gap-3">
-    <div id="toastIcon" class="w-7 h-7 rounded-full flex items-center justify-center font-black">✓</div>
-    <div>
-      <div id="toastTitle" class="text-xs font-black uppercase tracking-wider">¡OPERACIÓN GANADA!</div>
-      <div id="toastSubtitle" class="font-mono font-bold text-sm">+$48.75 USD acreditados</div>
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main id="mainAppContainer" class="flex-1 flex flex-col min-h-0">
+    <!-- PESTAÑA TRADING (POR DEFECTO) -->
+    <div id="viewTrading" class="flex-1 flex flex-col bg-[#070c17] text-slate-100 overflow-y-auto">
+      <!-- Barra superior de la gráfica -->
+      <div class="px-4 py-2.5 flex items-center justify-between border-b border-slate-800/80 bg-[#090f1e]/80 sticky top-0 z-10 backdrop-blur-md">
+        <button onclick="openAssetSheet()" class="flex items-center gap-2 text-left cursor-pointer">
+          <div class="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-sm">🥇</div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span id="currentAssetSymbol" class="font-black text-sm text-white">GOLD</span>
+              <span class="text-slate-400 text-xs">▼</span>
+            </div>
+            <div class="flex items-center gap-1 text-[11px] font-mono">
+              <span class="text-emerald-400 font-bold">+0.96</span>
+              <span class="text-emerald-400 font-bold">0.02%</span>
+              <span class="text-slate-500">• 1 hora</span>
+            </div>
+          </div>
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button id="clearMarksBtn" onclick="clearMarks()" class="hidden text-[10px] font-bold px-2 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400 cursor-pointer">
+            Borrar Marcas
+          </button>
+          <div class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/40 flex items-center justify-center text-xs">✨</div>
+          <div class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-center text-xs">📶</div>
+        </div>
+      </div>
+
+      <!-- LIENZO DE LA GRÁFICA INTERACTIVA CON LONG-PRESS -->
+      <div class="relative w-full h-[350px] sm:h-[400px] bg-[#060a12] border-b border-slate-800/80 touch-none">
+        <canvas id="tradingCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+        <div class="absolute bottom-2 left-3 text-[10px] font-black text-slate-500 flex items-center gap-1 pointer-events-none">
+          <span class="bg-slate-800 px-1 py-0.2 rounded font-mono">TV</span>
+          <span>TradingView</span>
+        </div>
+
+        <!-- POPUP FLOTANTE AL DEJAR APRETADA LA VELA -->
+        <div id="quickOrderPopup" class="hidden absolute z-20 flex flex-col gap-1.5 p-2 bg-[#090f1e]/95 backdrop-blur-md border border-cyan-500/80 rounded-2xl shadow-2xl shadow-cyan-500/20 animate-in fade-in zoom-in-95">
+          <div class="flex items-center justify-between gap-2 px-1 text-[11px] text-slate-300 font-mono">
+            <span id="popupCandleLabel" class="font-bold text-amber-400">Vela</span>
+            <span id="popupPriceLabel" class="font-black text-white">$4,066.00</span>
+            <button onclick="cancelMarker()" class="text-slate-500 hover:text-white p-0.5">✕</button>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="confirmMarkedTrade('buy')" class="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-1 shadow-md cursor-pointer active:scale-95 transition-transform">
+              ▲ COMPRA
+            </button>
+            <button onclick="confirmMarkedTrade('sell')" class="px-3 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-black text-xs flex items-center gap-1 shadow-md cursor-pointer active:scale-95 transition-transform">
+              ▼ VENTA
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Selector de Temporalidades -->
+      <div class="px-4 py-2 border-b border-slate-800/80 bg-[#080e1b] flex items-center justify-between">
+        <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800/80 text-xs font-mono font-bold">
+          <button onclick="setTimeframe('1H')" class="tf-btn px-3 py-1 rounded-lg bg-slate-800 text-white font-black cursor-pointer" data-tf="1H">1H</button>
+          <button onclick="setTimeframe('1D')" class="tf-btn px-3 py-1 rounded-lg text-slate-400 hover:text-white cursor-pointer" data-tf="1D">1D</button>
+          <button onclick="setTimeframe('1W')" class="tf-btn px-3 py-1 rounded-lg text-slate-400 hover:text-white cursor-pointer" data-tf="1W">1W</button>
+          <button onclick="setTimeframe('1M')" class="tf-btn px-3 py-1 rounded-lg text-slate-400 hover:text-white cursor-pointer" data-tf="1M">1M</button>
+          <button onclick="setTimeframe('3M')" class="tf-btn px-3 py-1 rounded-lg text-slate-400 hover:text-white cursor-pointer" data-tf="3M">3M</button>
+          <button onclick="setTimeframe('1Y')" class="tf-btn px-3 py-1 rounded-lg text-slate-400 hover:text-white cursor-pointer" data-tf="1Y">1Y</button>
+        </div>
+        <button class="p-1.5 rounded-lg text-slate-400 hover:text-white">⚙️</button>
+      </div>
+
+      <!-- BOTONES DE EJECUCIÓN (VENTA / SPREAD / COMPRA) -->
+      <div class="p-3 bg-[#0a1122] border-b border-slate-800/80">
+        <div class="flex items-stretch gap-2 max-w-lg mx-auto">
+          <button onclick="openOrderModal('sell')" class="flex-1 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 text-white rounded-2xl p-3 flex flex-col items-center justify-center shadow-lg shadow-rose-500/20 active:scale-[0.98] transition-all cursor-pointer">
+            <span class="text-[11px] font-bold tracking-wider uppercase opacity-90">VENTA</span>
+            <span id="sellPriceDisplay" class="text-xl sm:text-2xl font-black font-mono">4,066.36</span>
+          </button>
+
+          <div class="flex items-center justify-center px-2">
+            <span class="bg-slate-900 border border-slate-800 text-slate-300 font-mono text-xs font-bold px-2 py-1 rounded-full">0.55</span>
+          </div>
+
+          <button onclick="openOrderModal('buy')" class="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white rounded-2xl p-3 flex flex-col items-center justify-center shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all cursor-pointer">
+            <span class="text-[11px] font-bold tracking-wider uppercase opacity-90">COMPRA</span>
+            <span id="buyPriceDisplay" class="text-xl sm:text-2xl font-black font-mono">4,066.91</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Panorama con IA y Análisis -->
+      <div class="p-3 max-w-2xl mx-auto w-full space-y-3">
+        <div class="bg-[#0b1325] border border-slate-800/80 rounded-2xl p-4 shadow-xl">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-800/60">
+            <div class="flex items-center gap-2">
+              <span class="text-purple-400 font-bold">✨ Panorama con IA</span>
+            </div>
+            <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-mono font-black px-2 py-0.5 rounded-full">
+              Alcista ↗
+            </span>
+          </div>
+          <p class="mt-2.5 text-xs text-slate-300 leading-relaxed">
+            <strong id="aiAssetLabel" class="text-amber-400">GOLD</strong> rebotó con fuerza desde los mínimos de finales de la semana pasada, aceleró por encima de 4,000 y alcanzó nuevos máximos.
+          </p>
+          <div class="mt-2 text-[10px] text-slate-500">Actualizado hace 5 min • Reuters</div>
+        </div>
+
+        <div class="bg-[#0b1325] border border-slate-800/80 rounded-2xl p-4 shadow-xl space-y-2">
+          <div class="text-xs font-bold text-slate-300">Sentimiento del mercado</div>
+          <div class="flex justify-between text-xs font-mono font-bold">
+            <span class="text-emerald-400">65% Compra</span>
+            <span class="text-rose-400">Venta 35%</span>
+          </div>
+          <div class="h-2 w-full bg-slate-900 rounded-full overflow-hidden flex">
+            <div class="bg-emerald-500 h-full w-[65%]"></div>
+            <div class="bg-rose-500 h-full w-[35%]"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA INICIO -->
+    <div id="viewInicio" class="hidden flex-1 flex flex-col bg-[#070c17] text-slate-100 overflow-y-auto p-4 space-y-4 max-w-2xl mx-auto w-full">
+      <div class="bg-gradient-to-br from-[#0e1629] via-[#0b1222] to-[#070c17] border border-slate-800 rounded-3xl p-5 shadow-2xl">
+        <div class="flex justify-between items-center text-xs font-mono text-slate-400 pb-2">
+          <span>Standard #108626489</span>
+          <button onclick="openAccountModal()" class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-white font-bold">+</button>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="homeAccountBadge" class="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">Demo</span>
+          <span class="text-[10px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">MT5 Standard</span>
+        </div>
+        <div class="text-3xl font-black font-mono text-white mt-3" id="homeBalanceDisplay">$10,000.63</div>
+        <div class="text-xs font-mono text-slate-400 mt-0.5">$0.00 flotante</div>
+        <div class="grid grid-cols-2 gap-2.5 mt-5">
+          <button onclick="openAccountModal()" class="py-2.5 rounded-2xl bg-slate-900 border border-slate-800 font-bold text-xs text-white">⚙️ Gestionar</button>
+          <button onclick="openDepositModal()" class="py-2.5 rounded-2xl bg-white text-slate-950 font-black text-xs">💰 Depositar</button>
+        </div>
+      </div>
+
+      <div class="bg-[#0b1325] border border-slate-800 rounded-2xl p-4 space-y-2">
+        <h4 class="font-black text-sm text-white">Cartera</h4>
+        <div class="py-4 text-center text-xs text-slate-400">
+          Opera directamente en tiempo real con CFDs y Forex.
+          <button onclick="switchTab('trading')" class="block mx-auto mt-2 px-5 py-2 bg-white text-slate-950 font-black rounded-xl cursor-pointer">Ir a Trading</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA MERCADOS -->
+    <div id="viewMercados" class="hidden flex-1 flex flex-col bg-[#070c17] text-slate-100 overflow-y-auto p-4 max-w-2xl mx-auto w-full">
+      <h3 class="font-black text-lg text-white mb-3">Cotizaciones en Vivo</h3>
+      <div id="marketsListContainer" class="space-y-1.5 divide-y divide-slate-800/60 bg-[#0a1122] rounded-2xl p-2 border border-slate-800">
+        <!-- Renderizado dinámico -->
+      </div>
+    </div>
+
+    <!-- PESTAÑA CARTERA -->
+    <div id="viewCartera" class="hidden flex-1 flex flex-col bg-[#070c17] text-slate-100 overflow-y-auto p-4 max-w-2xl mx-auto w-full">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-black text-lg text-white">Posiciones Abiertas</h3>
+        <button onclick="switchTab('trading')" class="text-xs font-bold px-3 py-1 rounded-xl bg-white text-slate-950 cursor-pointer">+ Nueva</button>
+      </div>
+      <div id="positionsContainer" class="space-y-3">
+        <!-- Posiciones abiertas se insertan aquí -->
+      </div>
+    </div>
+
+    <!-- PESTAÑA MÁS / PERFIL -->
+    <div id="viewMas" class="hidden flex-1 flex flex-col bg-[#070c17] text-slate-100 overflow-y-auto p-4 space-y-4 max-w-2xl mx-auto w-full">
+      <div class="flex items-center gap-4 bg-[#0b1325] border border-slate-800 rounded-3xl p-4">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white font-black text-xl flex items-center justify-center shadow-lg">
+          KP
+        </div>
+        <div>
+          <h3 class="font-black text-base text-white">Hola, Kervin</h3>
+          <p class="text-xs text-slate-400 font-mono">ID: #994821 • Verificado</p>
+          <span class="inline-block mt-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">Nivel Bronce</span>
+        </div>
+      </div>
+
+      <div class="bg-[#0b1325] border border-slate-800 rounded-2xl p-2 space-y-1">
+        <button onclick="openDepositModal()" class="w-full p-3 flex justify-between items-center text-sm font-bold hover:bg-slate-900 rounded-xl cursor-pointer">
+          <span>💳 Métodos de Depósito</span>
+          <span class="text-slate-500">›</span>
+        </button>
+        <button onclick="openAdminModal()" class="w-full p-3 flex justify-between items-center text-sm font-bold text-amber-400 hover:bg-slate-900 rounded-xl cursor-pointer">
+          <span>🛡️ Acceso Administrador (Panel de Control)</span>
+          <span class="text-amber-500">›</span>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- BARRA DE NAVEGACIÓN INFERIOR (5 PESTAÑAS) -->
+  <nav class="h-16 bg-[#090f1e] border-t border-slate-800/80 px-2 flex items-center justify-around fixed bottom-0 left-0 right-0 z-30 shadow-2xl">
+    <button id="navInicio" onclick="switchTab('inicio')" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-white cursor-pointer">
+      <span class="text-lg">🏠</span>
+      <span class="text-[10px] font-bold mt-0.5">Inicio</span>
+    </button>
+    <button id="navMercados" onclick="switchTab('mercados')" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-white cursor-pointer">
+      <span class="text-lg">📊</span>
+      <span class="text-[10px] font-bold mt-0.5">Mercados</span>
+    </button>
+    <button id="navTrading" onclick="switchTab('trading')" class="flex flex-col items-center justify-center flex-1 py-1 text-emerald-400 font-bold cursor-pointer">
+      <span class="text-lg">📈</span>
+      <span class="text-[10px] font-bold mt-0.5">Trading</span>
+    </button>
+    <button id="navCartera" onclick="switchTab('cartera')" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-white cursor-pointer relative">
+      <span class="text-lg">💼</span>
+      <span id="navCarteraBadge" class="hidden absolute top-1 right-5 w-4 h-4 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-black flex items-center justify-center">0</span>
+      <span class="text-[10px] font-bold mt-0.5">Cartera</span>
+    </button>
+    <button id="navMas" onclick="switchTab('mas')" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-white cursor-pointer">
+      <span class="text-lg">👤</span>
+      <span class="text-[10px] font-bold mt-0.5">Más</span>
+    </button>
+  </nav>
+
+  <!-- MODAL DE ORDEN DE TRADING -->
+  <div id="orderModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-[#0b1325] border border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-md p-5 shadow-2xl">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <h3 id="orderModalTitle" class="font-black text-base text-white">Orden de Mercado</h3>
+        <button onclick="closeOrderModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+      <div class="py-4 space-y-4">
+        <div>
+          <label class="text-xs text-slate-400 block mb-1">Volumen de Lotes</label>
+          <div class="flex items-center gap-2">
+            <button onclick="adjustOrderLots(-0.01)" class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 font-black text-lg text-white">-</button>
+            <input id="orderLotsInput" type="number" step="0.01" value="0.10" onchange="updateLots(this.value)" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-center font-mono font-bold text-white text-base">
+            <button onclick="adjustOrderLots(0.01)" class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 font-black text-lg text-white">+</button>
+          </div>
+          <span id="marginReqDisplay" class="text-[11px] text-slate-500 font-mono mt-1 block">Margen requerido: ~$200.00</span>
+        </div>
+        <button id="orderConfirmBtn" onclick="executeOrderConfirm()" class="w-full py-3.5 rounded-2xl font-black text-sm uppercase bg-emerald-500 text-slate-950 cursor-pointer shadow-lg active:scale-95 transition-transform">
+          Confirmar Orden
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- MAIN WORKSPACE -->
-  <main class="flex-1 p-2 md:p-3 flex flex-col lg:flex-row gap-3 max-w-[1920px] mx-auto w-full">
-    <!-- Left: Chart & Trades -->
-    <div class="flex-1 flex flex-col gap-3 min-w-0">
-      <div class="bg-[#090f1d] border border-slate-800 rounded-2xl p-4 flex flex-col flex-1 shadow-2xl relative min-h-[480px]">
-        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
-          <div class="flex items-center gap-3">
-            <div class="flex items-center gap-2">
-              <span id="chartAssetTitle" class="font-black text-lg text-white">XAU/USD</span>
-              <span class="text-xs text-slate-400 font-mono">SPOT LIVE</span>
-            </div>
-            <div class="flex items-center gap-2 pl-3 border-l border-slate-800">
-              <span id="chartLivePrice" class="font-mono font-black text-xl text-amber-400">$3,892.38</span>
-              <span id="chartDeltaTag" class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">+1.42%</span>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-              <button onclick="setChartType('candles')" id="btnCandles" class="px-2.5 py-1 rounded-lg font-bold bg-amber-500 text-slate-950 shadow-sm cursor-pointer">Velas</button>
-              <button onclick="setChartType('area')" id="btnArea" class="px-2.5 py-1 rounded-lg font-bold text-slate-400 hover:text-white cursor-pointer">Área</button>
-            </div>
-            <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-              <button onclick="setTimeframe('5s')" class="tf-btn px-2 py-1 rounded-lg font-bold text-slate-400 hover:text-white cursor-pointer" data-tf="5s">5s</button>
-              <button onclick="setTimeframe('15s')" class="tf-btn px-2 py-1 rounded-lg font-bold bg-amber-500 text-slate-950 cursor-pointer" data-tf="15s">15s</button>
-              <button onclick="setTimeframe('1m')" class="tf-btn px-2 py-1 rounded-lg font-bold text-slate-400 hover:text-white cursor-pointer" data-tf="1m">1m</button>
-              <button onclick="setTimeframe('5m')" class="tf-btn px-2 py-1 rounded-lg font-bold text-slate-400 hover:text-white cursor-pointer" data-tf="5m">5m</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="relative flex-1 w-full min-h-[360px] mt-2">
-          <canvas id="tradingCanvas" class="w-full h-full block rounded-xl bg-[#060a12]"></canvas>
-          <div class="absolute bottom-4 left-4 bg-slate-950/85 backdrop-blur-md border border-slate-800 p-2.5 rounded-xl shadow-xl flex flex-col gap-1 w-44">
-            <div class="flex justify-between text-[10px] font-bold">
-              <span class="text-emerald-400 font-mono">COMPRADORES 64%</span>
-              <span class="text-rose-400 font-mono">36%</span>
-            </div>
-            <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden flex">
-              <div class="bg-emerald-500 h-full w-[64%]"></div>
-              <div class="bg-rose-500 h-full w-[36%]"></div>
-            </div>
-          </div>
-        </div>
+  <!-- MODAL CAMUFLADO DE SUPER ADMIN -->
+  <div id="adminModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#0b1325] border border-amber-500/30 rounded-3xl w-full max-w-lg p-5 shadow-2xl">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+        <h3 class="font-black text-base text-amber-400 flex items-center gap-2">🛡️ Panel Super Admin</h3>
+        <button onclick="closeAdminModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
       </div>
 
-      <!-- Trades Ledger Panel -->
-      <div class="bg-[#090f1d] border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col space-y-3">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-          <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-            <button onclick="switchTradeTab('active')" id="tabActiveBtn" class="px-3 py-1 text-xs font-bold rounded-lg bg-amber-500 text-slate-950 flex items-center gap-1.5 cursor-pointer">
-              <span>⏱ Abiertas</span>
-              <span id="activeTradesCount" class="bg-slate-950 text-amber-400 px-1.5 rounded-full text-[10px] font-black">0</span>
-            </button>
-            <button onclick="switchTradeTab('closed')" id="tabClosedBtn" class="px-3 py-1 text-xs font-bold rounded-lg text-slate-400 hover:text-white flex items-center gap-1.5 cursor-pointer">
-              <span>📜 Historial</span>
-            </button>
-          </div>
-          <span class="text-xs text-slate-400">Liquidación garantizada</span>
-        </div>
+      <!-- Login Gate del Admin -->
+      <div id="adminAuthGate" class="py-4 space-y-3">
+        <p class="text-xs text-slate-400">Ingresa tus credenciales maestras de administrador:</p>
+        <input id="adminEmail" type="email" placeholder="kervinjose022@gmail.com" value="kervinjose022@gmail.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white">
+        <input id="adminPass" type="password" placeholder="Contraseña (1910)" value="1910" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white">
+        <button onclick="unlockAdmin()" class="w-full py-2.5 bg-amber-500 text-slate-950 font-black rounded-xl text-xs uppercase cursor-pointer">
+          Ingresar al Panel
+        </button>
+      </div>
 
-        <div id="activeTradesContainer" class="space-y-2 max-h-48 overflow-y-auto">
-          <div id="noActiveMsg" class="py-6 text-center text-xs text-slate-500">
-            No tienes órdenes activas en este momento. Selecciona SUBE o BAJA para comenzar.
-          </div>
+      <!-- Consola de Gestión -->
+      <div id="adminPanelContent" class="hidden py-3 space-y-3">
+        <div class="text-xs font-bold text-slate-300">Gestión de Usuarios y Saldos:</div>
+        <div class="max-h-60 overflow-y-auto">
+          <table class="w-full text-left text-xs text-slate-300 border-collapse">
+            <tbody id="adminUsersTbody"></tbody>
+          </table>
         </div>
-        <div id="closedTradesContainer" class="hidden space-y-2 max-h-48 overflow-y-auto"></div>
       </div>
     </div>
+  </div>
 
-    <!-- Right: Binary Execution Panel -->
-    <div class="w-full lg:w-80 flex flex-col gap-3">
-      <div class="bg-[#090f1d] border border-slate-800 rounded-2xl p-4 flex flex-col justify-between gap-4 shadow-2xl">
-        <div class="space-y-1.5">
-          <div class="flex items-center justify-between text-xs text-slate-400">
-            <span class="font-bold flex items-center gap-1">⏰ Tiempo de Expiración</span>
-            <span id="expirationDisplay" class="font-mono text-amber-400 font-bold">30s</span>
-          </div>
-          <div class="grid grid-cols-4 gap-1.5">
-            <button onclick="setExpiration(30)" class="exp-btn py-2 text-xs font-mono font-bold rounded-xl border border-amber-500 bg-amber-500/20 text-amber-300 cursor-pointer" data-sec="30">30s</button>
-            <button onclick="setExpiration(60)" class="exp-btn py-2 text-xs font-mono font-bold rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 cursor-pointer" data-sec="60">1m</button>
-            <button onclick="setExpiration(120)" class="exp-btn py-2 text-xs font-mono font-bold rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 cursor-pointer" data-sec="120">2m</button>
-            <button onclick="setExpiration(300)" class="exp-btn py-2 text-xs font-mono font-bold rounded-xl border border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 cursor-pointer" data-sec="300">5m</button>
-          </div>
-        </div>
+  <!-- SCRIPT DE TRADING CON LONG-PRESS EN VELAS -->
+  <script>
+    const ASSETS = [
+      { symbol: 'GOLD', name: 'Oro al contado (XAU/USD)', price: 4066.63, change: 0.96 },
+      { symbol: 'EUR/USD', name: 'Euro / Dólar Estadounidense', price: 1.0845, change: -0.15 },
+      { symbol: 'BTC/USD', name: 'Bitcoin CFD', price: 89450.00, change: 3.24 },
+      { symbol: 'US30', name: 'Dow Jones Index', price: 43720.50, change: 0.42 },
+      { symbol: 'OIL', name: 'Crudo Brent', price: 74.20, change: -0.85 }
+    ];
 
-        <div class="space-y-1.5">
-          <div class="flex items-center justify-between text-xs text-slate-400">
-            <span class="font-bold flex items-center gap-1">💵 Importe de Inversión</span>
-            <span id="investmentDisplay" class="font-mono text-white font-bold">$25.00</span>
-          </div>
+    let currentAsset = ASSETS[0];
+    let currentPrice = currentAsset.price;
+    let demoBalance = 10000.63;
+    let realBalance = 250.00;
+    let isDemo = true;
+    let activePositions = [];
+    let markedOrders = [];
+    let currentLots = 0.10;
+    let orderType = 'buy';
 
-          <div class="flex items-center bg-slate-950 border border-slate-800 rounded-xl overflow-hidden focus-within:border-amber-500">
-            <button onclick="adjustAmount(-5)" class="p-3 text-slate-400 hover:text-white hover:bg-slate-900 transition-colors cursor-pointer font-bold text-lg">-</button>
-            <input type="number" id="amountInput" value="25" min="1" max="5000" onchange="updateAmount(this.value)" class="flex-1 bg-transparent text-center font-mono font-black text-lg text-white focus:outline-none">
-            <button onclick="adjustAmount(5)" class="p-3 text-slate-400 hover:text-white hover:bg-slate-900 transition-colors cursor-pointer font-bold text-lg">+</button>
-          </div>
+    // Generar velas realistas
+    let candles = [];
+    function initCandles() {
+      candles = [];
+      let base = currentPrice - 6.0;
+      for (let i = 0; i < 40; i++) {
+        const open = base;
+        const change = (Math.random() - 0.495) * 2.8;
+        const close = open + change;
+        const high = Math.max(open, close) + Math.random() * 2.2;
+        const low = Math.min(open, close) - Math.random() * 2.2;
+        candles.push({ open, high, low, close });
+        base = close;
+      }
+    }
+    initCandles();
 
-          <div class="grid grid-cols-4 gap-1.5 pt-1">
-            <button onclick="setAmountVal(10)" class="py-1 text-xs font-mono rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-white cursor-pointer">$10</button>
-            <button onclick="setAmountVal(25)" class="py-1 text-xs font-mono rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-white cursor-pointer">$25</button>
-            <button onclick="setAmountVal(50)" class="py-1 text-xs font-mono rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-white cursor-pointer">$50</button>
-            <button onclick="multiplyAmount(2)" class="py-1 text-xs font-mono font-bold rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 cursor-pointer">X2</button>
-          </div>
-        </div>
+    // DIBUJADO DE LA GRÁFICA EN CANVAS
+    const canvas = document.getElementById('tradingCanvas');
+    const ctx = canvas.getContext('2d');
 
-        <div class="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3 space-y-2">
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-slate-400">Retorno del Broker:</span>
-            <span id="payoutPctLabel" class="font-mono font-bold text-emerald-400">+95%</span>
-          </div>
-          <div class="flex items-center justify-between text-xs">
-            <span class="text-slate-400">Beneficio Neto Estimado:</span>
-            <span id="netProfitLabel" class="font-mono font-black text-emerald-400">+$23.75 USD</span>
-          </div>
-          <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-800/60">
-            <span class="text-slate-300 font-bold">Total a Cobrar:</span>
-            <span id="totalReturnLabel" class="font-mono font-black text-amber-400">$48.75 USD</span>
-          </div>
-        </div>
+    function drawChart() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
 
-        <!-- BOTONES SUBE Y BAJA -->
-        <div class="flex flex-col gap-2.5 pt-1">
-          <button onclick="executeTrade('call')" class="relative overflow-hidden group bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-black rounded-2xl p-3.5 flex items-center justify-between shadow-lg shadow-emerald-500/25 transition-all cursor-pointer">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-slate-950/20 flex items-center justify-center font-black text-xl">▲</div>
-              <div class="text-left">
-                <div class="text-base tracking-wider">SUBE</div>
-                <div class="text-[10px] opacity-80 uppercase tracking-widest font-mono">CALL / ALZA</div>
-              </div>
-            </div>
-            <div class="text-right">
-              <div class="font-mono font-black text-sm" id="callProfitBtn">+$23.75</div>
-              <div class="text-[10px] opacity-80 font-mono">+95%</div>
-            </div>
-          </button>
+      const w = rect.width;
+      const h = rect.height;
+      ctx.clearRect(0, 0, w, h);
 
-          <button onclick="executeTrade('put')" class="relative overflow-hidden group bg-rose-500 hover:bg-rose-400 active:scale-[0.98] text-white font-black rounded-2xl p-3.5 flex items-center justify-between shadow-lg shadow-rose-500/25 transition-all cursor-pointer">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-black/20 flex items-center justify-center font-black text-xl">▼</div>
-              <div class="text-left">
-                <div class="text-base tracking-wider">BAJA</div>
-                <div class="text-[10px] opacity-80 uppercase tracking-widest font-mono">PUT / BAJA</div>
-              </div>
-            </div>
-            <div class="text-right">
-              <div class="font-mono font-black text-sm" id="putProfitBtn">+$23.75</div>
-              <div class="text-[10px] opacity-80 font-mono">+95%</div>
-            </div>
-          </button>
-        </div>
-      </div>
+      let minP = Infinity, maxP = -Infinity;
+      candles.forEach(c => {
+        if (c.low < minP) minP = c.low;
+        if (c.high > maxP) maxP = c.high;
+      });
+      const pad = (maxP - minP) * 0.12 || 1;
+      minP -= pad; maxP += pad;
 
-      <div class="bg-[#090f1d] border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
-        <div class="flex items-center justify-between text-xs text-slate-400">
-          <span class="font-bold flex items-center gap-1.5">⚡ Señal del Algoritmo Pro</span>
-          <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-mono font-bold">98.4% FIABILIDAD</span>
-        </div>
-        <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800/80 flex items-center justify-between">
+      const getY = p => h - 20 - ((p - minP) / (maxP - minP)) * (h - 35);
+      const candleWidth = Math.max(4, Math.floor((w - 65) / candles.length - 2));
+      const stepX = (w - 65) / candles.length;
+
+      // Dibujar Velas Japonesas
+      candles.forEach((c, i) => {
+        const x = i * stepX + 8;
+        const isUp = c.close >= c.open;
+        const color = isUp ? '#10b981' : '#f43f5e';
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(x + candleWidth / 2, getY(c.high));
+        ctx.lineTo(x + candleWidth / 2, getY(c.low));
+        ctx.stroke();
+
+        const top = getY(Math.max(c.open, c.close));
+        const bot = getY(Math.min(c.open, c.close));
+        ctx.fillStyle = color;
+        ctx.fillRect(x, top, candleWidth, Math.max(2, bot - top));
+      });
+
+      // Dibujar órdenes marcadas (las que fijaste al quedar apretado)
+      markedOrders.forEach(m => {
+        const lineY = getY(m.price);
+        const color = m.type === 'buy' ? '#10b981' : '#f43f5e';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(0, lineY); ctx.lineTo(w - 70, lineY); ctx.stroke();
+        ctx.setLineDash([]);
+
+        const candleX = m.candleIndex * stepX + 8 + candleWidth / 2;
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(candleX, lineY, 5, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillRect(candleX - 35, lineY - 24, 70, 18);
+        ctx.fillStyle = '#060a12';
+        ctx.font = 'bold 9px monospace';
+        ctx.fillText(m.type === 'buy' ? '▲ COMPRA' : '▼ VENTA', candleX - 30, lineY - 12);
+      });
+
+      // Línea Faro de Precio Actual
+      const currentY = getY(currentPrice);
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(0, currentY); ctx.lineTo(w - 70, currentY); ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#10b981';
+      ctx.fillRect(w - 72, currentY - 11, 70, 22);
+      ctx.fillStyle = '#060a12';
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText(`$${currentPrice.toFixed(2)}`, w - 68, currentY + 4);
+
+      // Precios del eje vertical
+      ctx.fillStyle = '#64748b';
+      ctx.font = '10px monospace';
+      for (let i = 0; i <= 5; i++) {
+        const p = minP + (maxP - minP) * (i / 5);
+        ctx.fillText(`$${p.toFixed(0)}`, w - 65, getY(p) + 3);
+      }
+    }
+
+    // DETECCIÓN DE APRETAR VELA (LONG PRESS & TAP)
+    let pressTimer = null;
+    let selectedPoint = null;
+
+    canvas.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+
+      if (pressTimer) clearTimeout(pressTimer);
+      pressTimer = setTimeout(() => {
+        handleCandleHeld(x, y, rect);
+      }, 260); // 260 milisegundos apretado
+    }, { passive: true });
+
+    canvas.addEventListener('touchmove', () => {
+      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', () => {
+      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    });
+
+    // Clic en computadora
+    canvas.addEventListener('mousedown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      handleCandleHeld(e.clientX - rect.left, e.clientY - rect.top, rect);
+    });
+
+    function handleCandleHeld(x, y, rect) {
+      const w = rect.width;
+      const h = rect.height;
+      let minP = Infinity, maxP = -Infinity;
+      candles.forEach(c => {
+        if (c.low < minP) minP = c.low;
+        if (c.high > maxP) maxP = c.high;
+      });
+      const pad = (maxP - minP) * 0.12 || 1;
+      minP -= pad; maxP += pad;
+
+      const stepX = (w - 65) / candles.length;
+      const candleIndex = Math.max(0, Math.min(candles.length - 1, Math.floor((x - 8) / stepX)));
+      const price = Math.round((minP + ((h - 20 - y) / (h - 35)) * (maxP - minP)) * 100) / 100;
+
+      selectedPoint = { x, y, price, candleIndex };
+
+      try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
+
+      const popup = document.getElementById('quickOrderPopup');
+      document.getElementById('popupCandleLabel').innerText = `Vela #${candleIndex + 1}`;
+      document.getElementById('popupPriceLabel').innerText = `$${price.toFixed(2)}`;
+      popup.style.left = `${Math.max(10, Math.min(rect.width - 200, x - 70))}px`;
+      popup.style.top = `${Math.max(10, Math.min(240, y - 65))}px`;
+      popup.classList.remove('hidden');
+    }
+
+    function cancelMarker() {
+      document.getElementById('quickOrderPopup').classList.add('hidden');
+    }
+
+    function confirmMarkedTrade(type) {
+      if (!selectedPoint) return;
+      markedOrders.push({
+        id: 'm_' + Date.now(),
+        candleIndex: selectedPoint.candleIndex,
+        price: selectedPoint.price,
+        type: type
+      });
+      document.getElementById('clearMarksBtn').classList.remove('hidden');
+      cancelMarker();
+      drawChart();
+      openOrderModal(type);
+    }
+
+    function clearMarks() {
+      markedOrders = [];
+      document.getElementById('clearMarksBtn').classList.add('hidden');
+      drawChart();
+    }
+
+    // Simulación de Ticks en tiempo real
+    setInterval(() => {
+      const vol = currentPrice * 0.0002;
+      const delta = (Math.random() - 0.498) * vol;
+      currentPrice = Math.round((currentPrice + delta) * 100) / 100;
+      candles[candles.length - 1].close = currentPrice;
+      document.getElementById('sellPriceDisplay').innerText = (currentPrice - 0.27).toFixed(2);
+      document.getElementById('buyPriceDisplay').innerText = (currentPrice + 0.28).toFixed(2);
+      drawChart();
+    }, 600);
+
+    // Cambio de Pestañas
+    function switchTab(tab) {
+      ['inicio', 'mercados', 'trading', 'cartera', 'mas'].forEach(t => {
+        const view = document.getElementById('view' + t.charAt(0).toUpperCase() + t.slice(1));
+        const nav = document.getElementById('nav' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (t === tab) {
+          view.classList.remove('hidden');
+          nav.className = 'flex flex-col items-center justify-center flex-1 py-1 text-emerald-400 font-bold cursor-pointer';
+        } else {
+          view.classList.add('hidden');
+          nav.className = 'flex flex-col items-center justify-center flex-1 py-1 text-slate-400 cursor-pointer';
+        }
+      });
+      if (tab === 'trading') setTimeout(drawChart, 30);
+      if (tab === 'mercados') renderMarkets();
+      if (tab === 'cartera') renderPositions();
+    }
+
+    function renderMarkets() {
+      const cont = document.getElementById('marketsListContainer');
+      cont.innerHTML = ASSETS.map(a => `
+        <div onclick="selectMarketAsset('${a.symbol}')" class="p-3 flex justify-between items-center hover:bg-slate-900 cursor-pointer rounded-xl">
           <div>
-            <div class="text-[11px] text-slate-400">Tendencia XAU/USD</div>
-            <div class="text-sm font-black text-emerald-400 flex items-center gap-1">▲ COMPRA FUERTE</div>
+            <div class="font-bold text-white">${a.symbol}</div>
+            <div class="text-xs text-slate-400">${a.name}</div>
           </div>
-          <div class="text-right font-mono text-xs text-slate-300">
-            <div>RSI: <span class="text
+          <div class="text-right font-mono">
+            <div class="font-bold text-white">$${a.price.toFixed(2)}</div>
+            <div class="text-xs ${a.change >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${a.change >= 0 ? '+' : ''}${a.change}%</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectMarketAsset(sym) {
+      currentAsset = ASSETS.find(x => x.symbol === sym) || ASSETS[0];
+      currentPrice = currentAsset.price;
+      document.getElementById('currentAssetSymbol').innerText = currentAsset.symbol;
+      document.getElementById('aiAssetLabel').innerText = currentAsset.symbol;
+      initCandles();
+      switchTab('trading');
+    }
+
+    function openOrderModal(type) {
+      orderType = type;
+      document.getElementById('orderModalTitle').innerText = type === 'buy' ? 'Orden de COMPRA (Long)' : 'Orden de VENTA (Short)';
+      const btn = document.getElementById('orderConfirmBtn');
+      btn.className = type === 'buy' 
+        ? 'w-full py-3.5 rounded-2xl font-black text-sm uppercase bg-emerald-500 text-slate-950 cursor-pointer active:scale-95 transition-transform'
+        : 'w-full py-3.5 rounded-2xl font-black text-sm uppercase bg-rose-500 text-white cursor-pointer active:scale-95 transition-transform';
+      btn.innerText = type === 'buy' ? 'Confirmar Compra' : 'Confirmar Venta';
+      document.getElementById('orderModal').classList.remove('hidden');
+    }
+    function closeOrderModal() { document.getElementById('orderModal').classList.add('hidden'); }
+
+    function updateLots(val) {
+      currentLots = Math.max(0.01, Math.min(10, Number(val) || 0.01));
+      document.getElementById('orderLotsInput').value = currentLots;
+      document.getElementById('marginReqDisplay').innerText = `Margen: ~$${(currentLots * 2000).toFixed(2)}`;
+    }
+    function adjustOrderLots(d) { updateLots(currentLots + d); }
+
+    function executeOrderConfirm() {
+      const activeBal = isDemo ? demoBalance : realBalance;
+      const margin = currentLots * 2000;
+      if (margin > activeBal) { alert('Saldo insuficiente para el margen'); return; }
+
+      if (isDemo) demoBalance -= margin; else realBalance -= margin;
+
+      activePositions.unshift({
+        id: 'pos_' + Date.now(),
+        symbol: currentAsset.symbol,
+        type: orderType,
+        lots: currentLots,
+        entryPrice: currentPrice
+      });
+
+      updateUI();
+      closeOrderModal();
+      alert(`¡Orden de ${orderType === 'buy' ? 'COMPRA' : 'VENTA'} abierta con éxito!`);
+      switchTab('cartera');
+    }
+
+    function renderPositions() {
+      const cont = document.getElementById('positionsContainer');
+      const badge = document.getElementById('navCarteraBadge');
+      if (activePositions.length === 0) {
+        badge.classList.add('hidden');
+        cont.innerHTML = `
+          <div class="py-16 text-center text-xs text-slate-400">
+            No tienes posiciones abiertas en este momento.
+            <button onclick="switchTab('trading')" class="block mx-auto mt-2 px-5 py-2 bg-white text-slate-950 font-black rounded-xl cursor-pointer">Abrir una posición</button>
+          </div>
+        `;
+      } else {
+        badge.innerText = activePositions.length;
+        badge.classList.remove('hidden');
+        cont.innerHTML = activePositions.map(p => {
+          const diff = p.type === 'buy' ? currentPrice - p.entryPrice : p.entryPrice - currentPrice;
+          const pnl = (diff * p.lots * 100);
+          return `
+            <div class="bg-[#0b1325] border border-slate-800 rounded-2xl p-4 space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="font-black text-sm">${p.symbol} (${p.type === 'buy' ? 'COMPRA' : 'VENTA'} ${p.lots}L)</span>
+                <span class="font-mono font-bold ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)} USD</span>
+              </div>
+              <div class="flex justify-between text-xs text-slate-400 font-mono">
+                <span>Entrada: $${p.entryPrice.toFixed(2)}</span>
+                <span>Actual: $${currentPrice.toFixed(2)}</span>
+              </div>
+              <button onclick="closePos('${p.id}')" class="w-full py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-white hover:bg-slate-800 cursor-pointer">
+                Cerrar Posición
+              </button>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function closePos(id) {
+      const p = activePositions.find(x => x.id === id);
+      if (!p) return;
+      const diff = p.type === 'buy' ? currentPrice - p.entryPrice : p.entryPrice - currentPrice;
+      const pnl = (diff * p.lots * 100);
+      const ret = p.lots * 2000 + pnl;
+      if (isDemo) demoBalance += ret; else realBalance += ret;
+      activePositions = activePositions.filter(x => x.id !== id);
+      updateUI();
+      renderPositions();
+    }
+
+    function updateUI() {
+      const bal = isDemo ? demoBalance : realBalance;
+      document.getElementById('topBalanceText').innerText = `$${bal.toFixed(2)}`;
+      document.getElementById('homeBalanceDisplay').innerText = `$${bal.toFixed(2)}`;
+      document.getElementById('accountTypePill').innerText = isDemo ? 'D' : 'R';
+    }
+
+    function openAdminModal() { document.getElementById('adminModal').classList.remove('hidden'); }
+    function closeAdminModal() { document.getElementById('adminModal').classList.add('hidden'); }
+    function unlockAdmin() {
+      const e = document.getElementById('adminEmail').value.trim();
+      const p = document.getElementById('adminPass').value.trim();
+      if (e === 'kervinjose022@gmail.com' && p === '1910') {
+        document.getElementById('adminAuthGate').classList.add('hidden');
+        document.getElementById('adminPanelContent').classList.remove('hidden');
+        renderAdmin();
+      } else { alert('Credenciales incorrectas'); }
+    }
+
+    function renderAdmin() {
+      const users = [
+        { name: 'Kervin José (Admin)', email: 'kervinjose022@gmail.com', bal: 5000 },
+        { name: 'Carlos Trader', email: 'carlos@trader.com', bal: 1250 },
+        { name: 'María Inversora', email: 'maria@trader.com', bal: 450 }
+      ];
+      document.getElementById('adminUsersTbody').innerHTML = users.map(u => `
+        <tr class="border-b border-slate-800">
+          <td class="p-2">${u.name}<br><span class="text-slate-500">${u.email}</span></td>
+          <td class="p-2 font-mono text-emerald-400 font-bold">$${u.bal}</td>
+          <td class="p-2"><button onclick="alert('Recarga de saldo realizada')" class="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded cursor-pointer">+$100</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function openDepositModal() {
+      const amt = prompt('¿Cuánto saldo deseas depositar (USD)?', '100');
+      if (amt && !isNaN(Number(amt))) {
+        realBalance += Number(amt);
+        updateUI();
+        alert(`¡Depósito de $${amt} USD acreditado a tu cuenta Real!`);
+      }
+    }
+
+    updateUI();
+    drawChart();
+  </script>
+</body>
+</html>
